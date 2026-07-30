@@ -46,22 +46,22 @@ def event_response(event: OutboxEvent) -> OutboxEventResponse:
 
 
 @router.get("/jobs", response_model=JobListResponse)
-async def list_jobs(authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobListResponse:
-    return JobListResponse(jobs=[job_response(job) for job in await service.list_jobs(account_id=authenticated.account_id)])
+async def list_jobs(user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobListResponse:
+    return JobListResponse(jobs=[job_response(job) for job in await service.list_jobs(account_id=user.account_id)])
 
 
 @router.get("/jobs/{job_id}", response_model=JobResponse)
-async def get_job(job_id: str, authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
-    return job_response(await service.get_job(account_id=authenticated.account_id, job_id=job_id))
+async def get_job(job_id: str, user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
+    return job_response(await service.get_job(account_id=user.account_id, job_id=job_id))
 
 @router.get("/jobs/{job_id}/extraction", response_model=ExtractionSnapshotResponse)
 async def get_job_extraction(
     job_id: str,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     service: JobService = Depends(get_job_service),
     repository: ExtractionRepository = Depends(get_extraction_repository),
 ) -> ExtractionSnapshotResponse:
-    job = await service.get_job(account_id=authenticated.account_id, job_id=job_id)
+    job = await service.get_job(account_id=user.account_id, job_id=job_id)
     snapshot = await repository.for_job(job.id, job.admitted_asset_id)
     if snapshot is None:
         raise ApiError(404, "extraction_not_ready", "Normalized extraction is not ready for this job")
@@ -70,20 +70,20 @@ async def get_job_extraction(
 
 
 @router.post("/jobs/{job_id}/cancel", response_model=JobResponse)
-async def cancel_job(job_id: str, authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
-    return job_response(await service.request_cancel(account_id=authenticated.account_id, job_id=job_id))
+async def cancel_job(job_id: str, user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
+    return job_response(await service.request_cancel(account_id=user.account_id, job_id=job_id))
 
 
 @router.post("/jobs/{job_id}/retry", response_model=JobResponse)
-async def retry_job(job_id: str, body: JobRetryRequest, authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
-    return job_response(await service.retry_import(account_id=authenticated.account_id, job_id=job_id, request_idempotency_key=body.idempotency_key))
+async def retry_job(job_id: str, body: JobRetryRequest, user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> JobResponse:
+    return job_response(await service.retry_import(account_id=user.account_id, job_id=job_id, request_idempotency_key=body.idempotency_key))
 
 
 @router.get("/jobs/{job_id}/events", response_model=OutboxEventListResponse)
-async def list_job_events(job_id: str, authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> OutboxEventListResponse:
-    return OutboxEventListResponse(events=[event_response(event) for event in await service.events_for_job(account_id=authenticated.account_id, job_id=job_id)])
+async def list_job_events(job_id: str, user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> OutboxEventListResponse:
+    return OutboxEventListResponse(events=[event_response(event) for event in await service.events_for_job(account_id=user.account_id, job_id=job_id)])
 
 
 @router.post("/jobs/events/{event_id}/retry", response_model=OutboxEventResponse)
-async def retry_event(event_id: str, authenticated: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> OutboxEventResponse:
-    return event_response(await service.retry_owned_poison_event(account_id=authenticated.account_id, event_id=event_id))
+async def retry_event(event_id: str, user: FixedUser = Depends(get_fixed_user), service: JobService = Depends(get_job_service)) -> OutboxEventResponse:
+    return event_response(await service.retry_owned_poison_event(account_id=user.account_id, event_id=event_id))

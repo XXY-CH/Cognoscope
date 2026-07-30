@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Request, Response, status
 
-from cognoscope.api.dependencies import get_library_service, require_csrf_session, require_session
+from cognoscope.api.dependencies import FixedUser, get_fixed_user, get_library_service
 from cognoscope.api.errors import ApiError
 from cognoscope.api.schemas import AssetAdmissionResponse, AssetMetadataResponse
 
@@ -19,13 +19,13 @@ async def create_asset(
     project_title: Annotated[str, Query(min_length=1, max_length=256)],
     document_title: Annotated[str, Query(min_length=1, max_length=512)],
     declared_media_type: Annotated[str | None, Query(max_length=256)] = None,
-    authenticated: FixedUser = Depends(require_csrf_session),
+    user: FixedUser = Depends(get_fixed_user),
     service: LibraryService = Depends(get_library_service),
 ) -> AssetAdmissionResponse:
     try:
         admitted = await service.admit(
             AdmissionRequest(
-                owner_account_id=authenticated.account.id,
+                owner_account_id=user.account_id,
                 project_title=project_title,
                 document_title=document_title,
                 declared_media_type=declared_media_type,
@@ -49,11 +49,11 @@ async def create_asset(
 @router.get("/library/assets/{asset_id}", response_model=AssetMetadataResponse)
 async def get_asset(
     asset_id: str,
-    authenticated: FixedUser = Depends(require_session),
+    user: FixedUser = Depends(get_fixed_user),
     service: LibraryService = Depends(get_library_service),
 ) -> AssetMetadataResponse:
     try:
-        owned_id, asset_format, tier, media_type, _ = await service.owned_asset(owner_account_id=authenticated.account.id, asset_id=asset_id)
+        owned_id, asset_format, tier, media_type, _ = await service.owned_asset(owner_account_id=user.account_id, asset_id=asset_id)
     except ValueError as exc:
         raise ApiError(404, "asset_not_found", "The asset was not found") from exc
     return AssetMetadataResponse(id=owned_id, format=asset_format.value, tier=tier.value, media_type=media_type)
@@ -62,11 +62,11 @@ async def get_asset(
 @router.get("/library/assets/{asset_id}/content", response_class=Response)
 async def get_asset_content(
     asset_id: str,
-    authenticated: FixedUser = Depends(require_session),
+    user: FixedUser = Depends(get_fixed_user),
     service: LibraryService = Depends(get_library_service),
 ) -> Response:
     try:
-        media_type, payload = await service.read_owned_asset(owner_account_id=authenticated.account.id, asset_id=asset_id)
+        media_type, payload = await service.read_owned_asset(owner_account_id=user.account_id, asset_id=asset_id)
     except ValueError as exc:
         raise ApiError(404, "asset_not_found", "The asset was not found") from exc
     return Response(content=payload, media_type=media_type, headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"})

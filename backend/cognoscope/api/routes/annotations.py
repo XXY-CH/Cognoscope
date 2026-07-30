@@ -34,12 +34,12 @@ def _api_error(exc: ValueError) -> None:
 @router.post("/annotations", response_model=AnnotationResponse, status_code=status.HTTP_201_CREATED)
 async def create_annotation(
     body: AnnotationCreateRequest,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationResponse:
     try:
-        annotation = await repository.create_annotation(owner_account_id=authenticated.account_id, **body.model_dump())
-        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=authenticated.account_id, annotation_id=annotation.id))
+        annotation = await repository.create_annotation(owner_account_id=user.account_id, **body.model_dump())
+        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=user.account_id, annotation_id=annotation.id))
     except ValueError as exc:
         _api_error(exc)
 
@@ -47,28 +47,28 @@ async def create_annotation(
 @router.get("/annotations", response_model=AnnotationListResponse)
 async def list_annotations(
     include_tombstoned: bool = False,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationListResponse:
-    return AnnotationListResponse(annotations=[AnnotationResponse.model_validate(item) for item in await repository.list_annotations(owner_account_id=authenticated.account_id, include_tombstoned=include_tombstoned)])
+    return AnnotationListResponse(annotations=[AnnotationResponse.model_validate(item) for item in await repository.list_annotations(owner_account_id=user.account_id, include_tombstoned=include_tombstoned)])
 
 
 @router.get("/annotations/repair-queue", response_model=AnnotationRepairQueueResponse)
 async def repair_queue(
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationRepairQueueResponse:
-    return AnnotationRepairQueueResponse(repairs=await repository.repair_queue(owner_account_id=authenticated.account_id))
+    return AnnotationRepairQueueResponse(repairs=await repository.repair_queue(owner_account_id=user.account_id))
 
 
 @router.get("/annotations/{annotation_id}", response_model=AnnotationResponse)
 async def get_annotation(
     annotation_id: str,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationResponse:
     try:
-        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=authenticated.account_id, annotation_id=annotation_id))
+        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=user.account_id, annotation_id=annotation_id))
     except ValueError as exc:
         _api_error(exc)
 
@@ -77,12 +77,12 @@ async def get_annotation(
 async def revise_annotation(
     annotation_id: str,
     body: AnnotationRevisionRequest,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationResponse:
     try:
-        await repository.append_annotation_revision(owner_account_id=authenticated.account_id, annotation_id=annotation_id, **body.model_dump())
-        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=authenticated.account_id, annotation_id=annotation_id))
+        await repository.append_annotation_revision(owner_account_id=user.account_id, annotation_id=annotation_id, **body.model_dump())
+        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=user.account_id, annotation_id=annotation_id))
     except ValueError as exc:
         _api_error(exc)
 
@@ -91,12 +91,12 @@ async def revise_annotation(
 async def restore_annotation(
     annotation_id: str,
     body: AnnotationRestoreRequest,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationResponse:
     try:
-        await repository.append_annotation_revision(owner_account_id=authenticated.account_id, annotation_id=annotation_id, expected_revision=body.expected_revision, restore=True)
-        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=authenticated.account_id, annotation_id=annotation_id))
+        await repository.append_annotation_revision(owner_account_id=user.account_id, annotation_id=annotation_id, expected_revision=body.expected_revision, restore=True)
+        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=user.account_id, annotation_id=annotation_id))
     except ValueError as exc:
         _api_error(exc)
 
@@ -105,12 +105,12 @@ async def restore_annotation(
 async def decide_repair(
     annotation_id: str,
     body: AnnotationRepairDecisionRequest,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> AnnotationResponse:
     try:
-        await repository.decide_annotation_repair(owner_account_id=authenticated.account_id, annotation_id=annotation_id, **body.model_dump())
-        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=authenticated.account_id, annotation_id=annotation_id))
+        await repository.decide_annotation_repair(owner_account_id=user.account_id, annotation_id=annotation_id, **body.model_dump())
+        return AnnotationResponse.model_validate(await repository.annotation_view(owner_account_id=user.account_id, annotation_id=annotation_id))
     except ValueError as exc:
         _api_error(exc)
 
@@ -118,11 +118,11 @@ async def decide_repair(
 @router.get("/annotations/{annotation_id}/export.json", response_model=AnnotationExportResponse)
 async def export_annotation_json(
     annotation_id: str,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> Response:
     try:
-        exported = await repository.annotation_export(owner_account_id=authenticated.account_id, annotation_id=annotation_id)
+        exported = await repository.annotation_export(owner_account_id=user.account_id, annotation_id=annotation_id)
     except ValueError as exc:
         _api_error(exc)
     return Response(content=json.dumps(jsonable_encoder(exported), ensure_ascii=False, sort_keys=True, separators=(",", ":")), media_type="application/json")
@@ -131,11 +131,11 @@ async def export_annotation_json(
 @router.get("/annotations/{annotation_id}/export.md", response_class=PlainTextResponse)
 async def export_annotation_markdown(
     annotation_id: str,
-    authenticated: FixedUser = Depends(get_fixed_user),
+    user: FixedUser = Depends(get_fixed_user),
     repository: AuthorityRepository = Depends(get_authority_repository),
 ) -> PlainTextResponse:
     try:
-        exported = await repository.annotation_export(owner_account_id=authenticated.account_id, annotation_id=annotation_id)
+        exported = await repository.annotation_export(owner_account_id=user.account_id, annotation_id=annotation_id)
     except ValueError as exc:
         _api_error(exc)
     revisions = exported["revisions"]

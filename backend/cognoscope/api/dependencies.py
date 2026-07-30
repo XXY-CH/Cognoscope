@@ -28,6 +28,7 @@ def get_extraction_repository(request: Request) -> ExtractionRepository:
 def get_authority_repository(request: Request) -> AuthorityRepository:
     return request.app.state.authority_repository
 
+
 def get_library_service(request: Request) -> LibraryService:
     return LibraryService(
         request.app.state.authority_repository,
@@ -40,16 +41,4 @@ def get_preference_service(request: Request) -> PreferenceService:
 
 
 def get_fixed_user() -> FixedUser:
-    """Return fixed single user for all requests."""
-    return FixedUser()
-
-
-# Compatibility aliases for auth
-async def require_session() -> FixedUser:
-    """Simplified session: always returns default user."""
-    return FixedUser()
-
-
-async def require_csrf_session() -> FixedUser:
-    """Simplified CSRF: always returns default user (no CSRF check)."""
     return FixedUser()
