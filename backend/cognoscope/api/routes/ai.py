@@ -33,6 +33,34 @@ class SummaryResponse(BaseModel):
     main_topics: list[str]
 
 
+class ContentGraphRequest(BaseModel):
+    """生成内容图谱请求"""
+    document_text: str = Field(..., description="文档文本内容")
+    max_nodes: int = Field(default=20, ge=5, le=50)
+
+
+class ContentNodeResponse(BaseModel):
+    """内容节点响应"""
+    label: str
+    node_type: str
+    description: str
+
+
+class ContentEdgeResponse(BaseModel):
+    """内容边响应"""
+    source: str
+    target: str
+    relation: str
+    weight: float
+
+
+class ContentGraphResponse(BaseModel):
+    """内容图谱响应"""
+    nodes: list[ContentNodeResponse]
+    edges: list[ContentEdgeResponse]
+    document_id: str
+
+
 @router.post("/ai/chat", response_model=ChatResponse)
 async def chat_completion(
     request: ChatRequest,
@@ -56,6 +84,66 @@ async def chat_completion(
         content=response.content,
         model=response.model,
         usage_tokens=response.usage_tokens,
+    )
+
+
+class ContentNodeResponse(BaseModel):
+    """内容节点响应"""
+    label: str
+    type: str
+    description: str
+
+
+class ContentEdgeResponse(BaseModel):
+    """内容边响应"""
+    source: str
+    target: str
+    relation: str
+    weight: float
+
+
+class ExtractNodesResponse(BaseModel):
+    """提取节点响应"""
+    nodes: list[ContentNodeResponse]
+    edges: list[ContentEdgeResponse]
+
+
+@router.post("/documents/{document_id}/extract-nodes", response_model=ExtractNodesResponse)
+async def extract_content_nodes(
+    document_id: str,
+    document_text: str = Query(..., description="文档文本内容"),
+    max_nodes: int = Query(default=20, ge=5, le=50),
+    user: FixedUser = Depends(get_fixed_user),
+    ai: AIClient | None = Depends(get_ai_client),
+) -> ExtractNodesResponse:
+    """从文档内容中提取概念节点和关系边"""
+    if ai is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured (missing LLM_API_KEY)",
+        )
+    
+    ai_service = AIGraphService(ai)
+    nodes, edges = await ai_service.extract_content_nodes(document_text, max_nodes)
+    
+    return ExtractNodesResponse(
+        nodes=[
+            ContentNodeResponse(
+                label=n.label,
+                type=n.node_type,
+                description=n.description,
+            )
+            for n in nodes
+        ],
+        edges=[
+            ContentEdgeResponse(
+                source=e.source_label,
+                target=e.target_label,
+                relation=e.relation_type,
+                weight=e.weight,
+            )
+            for e in edges
+        ],
     )
 
 
@@ -116,3 +204,45 @@ async def ask_in_library(
         "answer": response.content,
         "sources": [],
     }
+
+
+@router.post("/documents/{document_id}/content-graph", response_model=ContentGraphResponse)
+async def generate_content_graph(
+    document_id: str,
+    request: ContentGraphRequest,
+    user: FixedUser = Depends(get_fixed_user),
+    ai: AIClient | None = Depends(get_ai_client),
+) -> ContentGraphResponse:
+    """为文档生成内容图谱（提取概念节点和关系）"""
+    if ai is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured (missing LLM_API_KEY)",
+        )
+    
+    ai_service = AIGraphService(ai)
+    nodes, edges = await ai_service.extract_content_nodes(
+        request.document_text,
+        max_nodes=request.max_nodes,
+    )
+    
+    return ContentGraphResponse(
+        document_id=document_id,
+        nodes=[
+            ContentNodeResponse(
+                label=n.label,
+                node_type=n.node_type,
+                description=n.description,
+            )
+            for n in nodes
+        ],
+        edges=[
+            ContentEdgeResponse(
+                source=e.source_label,
+                target=e.target_label,
+                relation=e.relation_type,
+                weight=e.weight,
+            )
+            for e in edges
+        ],
+    )
