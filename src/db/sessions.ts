@@ -63,6 +63,17 @@ export async function deleteSession(id: string): Promise<void> {
 }
 
 /**
+ * 按 id 批量删除（清理演示会话等）
+ */
+export async function deleteSessions(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const db = await getDb();
+  const tx = db.transaction('sessions', 'readwrite');
+  await Promise.all(ids.map((id) => tx.store.delete(id)));
+  await tx.done;
+}
+
+/**
  * 清空全部会话（设置「清除数据」等场景）
  */
 export async function clearSessions(): Promise<void> {

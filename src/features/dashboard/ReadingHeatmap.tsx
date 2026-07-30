@@ -8,7 +8,7 @@ import { Flame } from 'lucide-react';
 import { Tooltip } from '../../components/common';
 import type { ReadingSession } from '../../types';
 import {
-  buildHeatmap,
+  buildHeatmapMerged,
   computeReadingStreak,
   heatLevel,
   HEATMAP_DAYS,
@@ -95,18 +95,23 @@ export function ReadingHeatmap({
   monitorMetas = [],
 }: ReadingHeatmapProps) {
   const days = useMemo(() => {
-    // 两路时长按日累加：专注表有数据的日期，热力图同步着色
-    const entries = [
-      ...sessions.map((s) => ({
-        startedAt: s.startedAt,
-        durationSec: s.durationSec,
-      })),
-      ...monitorMetas.map((m) => ({
-        startedAt: m.startedAt,
-        durationSec: m.durationSec,
-      })),
-    ];
-    return buildHeatmap(entries, HEATMAP_DAYS);
+    // 排除旧演示会话；IDB 与 monitor 分源合并，同日取较大值
+    const realSessions = sessions.filter(
+      (s) => !s.fileId.startsWith('demo-file-'),
+    );
+    return buildHeatmapMerged(
+      [
+        realSessions.map((s) => ({
+          startedAt: s.startedAt,
+          durationSec: s.durationSec,
+        })),
+        monitorMetas.map((m) => ({
+          startedAt: m.startedAt,
+          durationSec: m.durationSec,
+        })),
+      ],
+      HEATMAP_DAYS,
+    );
   }, [sessions, monitorMetas]);
   const weeks = useMemo(() => buildWeekGrid(days), [days]);
   const monthLabels = useMemo(() => monthLabelForWeeks(weeks), [weeks]);

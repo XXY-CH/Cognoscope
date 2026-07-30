@@ -5,13 +5,17 @@
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { Button, Input, toast } from '../../components/common';
 import type { FileNode } from '../../types';
 import {
   useFileStore,
   type FileSortKey,
 } from '../../stores/fileStore';
+import { useFileDocMetaStore } from '../../stores/fileDocMetaStore';
 import { formatFileSize, formatFriendlyTime } from '../../utils/format';
+import { FRONT_MATTER_EXTRACTOR_VERSION } from '../../utils/pdfFrontMatter';
+import { FileDocMetaCell } from './FileDocMetaCell';
 import { FileRowActions } from './FileRowActions';
 import { FileTypeIcon } from './FileTypeIcon';
 import styles from './FileTable.module.css';
@@ -76,6 +80,17 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
   const renameInputRef = useRef<HTMLInputElement>(null);
   /** 用 JS 跟踪悬停行：取消多选后需重新移入才显示操作，避免 :hover 粘滞 */
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  /** 展开摘要的文件 id */
+  const [openAbstractId, setOpenAbstractId] = useState<string | null>(null);
+
+  const metaById = useFileDocMetaStore(useShallow((s) => s.byId));
+  const extractingIds = useFileDocMetaStore(useShallow((s) => s.extractingIds));
+  const ensureForFiles = useFileDocMetaStore((s) => s.ensureForFiles);
+
+  useEffect(() => {
+    // 可见 PDF 按需抽取；版本号变化时强制全量重抽
+    void ensureForFiles(rows);
+  }, [rows, ensureForFiles, FRONT_MATTER_EXTRACTOR_VERSION]);
 
   useEffect(() => {
     // 选中变化时清空悬停，取消多选后按钮不会立刻因残留 :hover 出现
@@ -284,19 +299,35 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
                       }}
                     />
                   ) : (
-                    <button
-                      type="button"
-                      className={styles.nameBtn}
-                      aria-label={
-                        file.type === 'folder'
-                          ? `打开文件夹 ${file.name}`
-                          : `打开文件 ${file.name}`
-                      }
-                      onClick={() => onOpen(file)}
-                    >
-                      <FileTypeIcon type={file.type} />
-                      <span className={styles.nameText}>{file.name}</span>
-                    </button>
+                    <div className={styles.nameStack}>
+                      <button
+                        type="button"
+                        className={styles.nameBtn}
+                        aria-label={
+                          file.type === 'folder'
+                            ? `打开文件夹 ${file.name}`
+                            : `打开文件 ${file.name}`
+                        }
+                        onClick={() => onOpen(file)}
+                      >
+                        <FileTypeIcon type={file.type} />
+                        <span className={styles.nameText}>{file.name}</span>
+                      </button>
+                      {file.type === 'pdf' ? (
+                        <FileDocMetaCell
+                          fileId={file.id}
+                          fileName={file.name}
+                          meta={metaById[file.id]}
+                          extracting={extractingIds.includes(file.id)}
+                          abstractOpen={openAbstractId === file.id}
+                          onToggleAbstract={() =>
+                            setOpenAbstractId((id) =>
+                              id === file.id ? null : file.id,
+                            )
+                          }
+                        />
+                      ) : null}
+                    </div>
                   )}
                 </td>
                 <td className={styles.timeCol}>

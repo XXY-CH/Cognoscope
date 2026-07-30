@@ -22,7 +22,14 @@ import {
 } from '../utils/monitorApi';
 import { fromApiAnalysis } from '../utils/sessionAnalyze';
 
-const DEMO_CLEANUP_KEY = 'xuesen.demoCleanup';
+/** v2：按 fileId 识别演示会话；旧版只认 localStorage 标记，易漏清 */
+const DEMO_CLEANUP_KEY = 'xuesen.demoCleanup.v2';
+const DEMO_HEATMAP_YEAR_KEY = 'xuesen.demoHeatmapYear';
+
+/** 旧 seedSessions 写入的演示文献 id 前缀 */
+function isDemoSession(s: ReadingSession): boolean {
+  return s.fileId.startsWith('demo-file-');
+}
 
 type LoadStatus = 'idle' | 'loading' | 'error';
 type MonitorStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
@@ -62,27 +69,55 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   loadSessions: async () => {
     set({ status: 'loading' });
     try {
-      // 一次性清理此前种子生成的演示数据
+      // 一次性清除 seedSessions 留下的演示数据（不依赖易丢的 localStorage 标记）
       const needsCleanup = (() => {
-        try { return localStorage.getItem(DEMO_CLEANUP_KEY) !== '1'; } catch { return false; }
+        try {
+          return localStorage.getItem(DEMO_CLEANUP_KEY) !== '1';
+        } catch {
+          return true;
+        }
       })();
       if (needsCleanup) {
+        const existing = await sessionsDb.listSessions();
+        const demoIds = existing.filter(isDemoSession).map((s) => s.id);
+        // 有演示标记且几乎全是演示时整表清空，避免残留随机 id 污染热力图
         const hadDemoMark = (() => {
-          try { return localStorage.getItem('xuesen.demoHeatmapYear') === '1'; } catch { return false; }
+          try {
+            return localStorage.getItem(DEMO_HEATMAP_YEAR_KEY) === '1';
+          } catch {
+            return false;
+          }
         })();
-        if (hadDemoMark) {
+        if (
+          hadDemoMark &&
+          existing.length > 0 &&
+          demoIds.length >= existing.length * 0.8
+        ) {
           await sessionsDb.clearSessions();
-          try { localStorage.removeItem('xuesen.demoHeatmapYear'); } catch { /* ignore */ }
+        } else if (demoIds.length > 0) {
+          await sessionsDb.deleteSessions(demoIds);
         }
-        try { localStorage.setItem(DEMO_CLEANUP_KEY, '1'); } catch { /* ignore */ }
+        try {
+          localStorage.removeItem(DEMO_HEATMAP_YEAR_KEY);
+          localStorage.setItem(DEMO_CLEANUP_KEY, '1');
+        } catch {
+          /* ignore */
+        }
       }
 
       const sessions = await sessionsDb.listSessions();
-      const filtered = filterSessionsByRange(sessions, get().range);
+      // 防御：清理标记已写入后仍残留的演示行不再进入 store
+      const realSessions = sessions.filter((s) => !isDemoSession(s));
+      if (realSessions.length !== sessions.length) {
+        await sessionsDb.deleteSessions(
+          sessions.filter(isDemoSession).map((s) => s.id),
+        );
+      }
+      const filtered = filterSessionsByRange(realSessions, get().range);
       set({
-        sessions,
+        sessions: realSessions,
         status: 'idle',
-        activeSessionId: filtered[0]?.id ?? sessions[0]?.id ?? null,
+        activeSessionId: filtered[0]?.id ?? realSessions[0]?.id ?? null,
       });
     } catch {
       set({ status: 'error', sessions: [] });

@@ -13,6 +13,7 @@ import {
   inferFileType,
   mimeForType,
 } from '../utils/fileType';
+import { useFileDocMetaStore } from './fileDocMetaStore';
 
 export type FileSortKey = 'name' | 'updatedAt' | 'sizeBytes';
 export type SortDirection = 'asc' | 'desc';
@@ -561,6 +562,11 @@ export const useFileStore = create<FileState>((set, get) => ({
 
     if (created.length) {
       set({ files: [...get().files, ...created] });
+      // 导入完成后立即抽取 PDF 文首摘要/关键词（不阻塞导入返回）
+      const pdfCreated = created.filter((f) => f.type === 'pdf');
+      if (pdfCreated.length > 0) {
+        void useFileDocMetaStore.getState().ensureForFiles(pdfCreated);
+      }
     }
     return successCount;
   },

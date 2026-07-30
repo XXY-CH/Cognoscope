@@ -92,7 +92,7 @@ export async function softDeleteFile(
 export async function deleteFile(id: string): Promise<void> {
   const db = await getDb();
   const tx = db.transaction(
-    ['files', 'fileBlobs', 'annotations', 'bookmarks'],
+    ['files', 'fileBlobs', 'annotations', 'bookmarks', 'fileDocMeta'],
     'readwrite',
   );
   await tx.objectStore('files').delete(id);
@@ -104,6 +104,7 @@ export async function deleteFile(id: string): Promise<void> {
   const bmStore = tx.objectStore('bookmarks');
   const bms = await bmStore.index('by-file').getAll(id);
   await Promise.all(bms.map((b) => bmStore.delete(b.id)));
+  await tx.objectStore('fileDocMeta').delete(id);
   await tx.done;
 }
 

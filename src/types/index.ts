@@ -271,3 +271,25 @@ export interface GraphEdge {
   /** 关联强度，约束范围 0–1；映射连线粗细与不透明度 */
   weight: number;
 }
+
+/**
+ * FileDocMeta - 文献目录展示用元数据（摘要 / 关键词）
+ * 所属：A · 文件目录
+ * 说明：独立于 FileNode（§9），存 IndexedDB fileDocMeta，避免污染规范字段
+ */
+export type FileDocMetaStatus = 'pending' | 'ready' | 'empty' | 'error';
+
+export interface FileDocMeta {
+  /** 对应 FileNode.id */
+  fileId: string;
+  /** 从文首 Keywords/关键词 抽取；无标记则为空数组 */
+  keywords: string[];
+  /** 从文首 Abstract/摘要 抽取；无则 null */
+  abstract: string | null;
+  /** 抽取状态 */
+  status: FileDocMetaStatus;
+  /** 最近一次抽取时间，ISO 8601 */
+  extractedAt: string;
+  /** 解析器版本；落后时目录页会重抽 */
+  extractorVersion?: number;
+}

@@ -4,7 +4,13 @@
  * 规范参考：UI_spec.md §9 / §14 本地优先
  */
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Annotation, Bookmark, FileNode, ReadingSession } from '../types';
+import type {
+  Annotation,
+  Bookmark,
+  FileDocMeta,
+  FileNode,
+  ReadingSession,
+} from '../types';
 
 /** 文件二进制内容（与 FileNode 分离，避免污染 §9 字段） */
 export interface FileBlobRecord {
@@ -49,11 +55,16 @@ interface XuesenDB extends DBSchema {
       'by-file': string;
     };
   };
+  /** 文献摘要/关键词（目录展示用，与 FileNode 分离） */
+  fileDocMeta: {
+    key: string;
+    value: FileDocMeta;
+  };
 }
 
 const DB_NAME = 'xuesen';
-/** v4：新增 bookmarks */
-const DB_VERSION = 4;
+/** v5：新增 fileDocMeta（摘要 / 关键词） */
+const DB_VERSION = 5;
 
 let dbPromise: Promise<IDBPDatabase<XuesenDB>> | null = null;
 
@@ -99,6 +110,11 @@ export function getDb(): Promise<IDBPDatabase<XuesenDB>> {
         if (!db.objectStoreNames.contains('bookmarks')) {
           const bm = db.createObjectStore('bookmarks', { keyPath: 'id' });
           bm.createIndex('by-file', 'fileId');
+        }
+
+        // —— fileDocMeta（v5）——
+        if (!db.objectStoreNames.contains('fileDocMeta')) {
+          db.createObjectStore('fileDocMeta', { keyPath: 'fileId' });
         }
       },
     });

@@ -82,6 +82,23 @@ export function buildHeatmap(
 }
 
 /**
+ * 多路时长按日合并：同源累加后，跨源同日取较大值（避免一次阅读被 IDB+monitor 双计）
+ */
+export function buildHeatmapMerged(
+  sources: HeatDurationEntry[][],
+  days = HEATMAP_DAYS,
+  now = Date.now(),
+): HeatDay[] {
+  const layers = sources.map((entries) => buildHeatmap(entries, days, now));
+  if (layers.length === 0) return buildHeatmap([], days, now);
+  const base = layers[0]!;
+  return base.map((day, i) => ({
+    dateKey: day.dateKey,
+    minutes: Math.max(...layers.map((layer) => layer[i]?.minutes ?? 0)),
+  }));
+}
+
+/**
  * 连续阅读天数：从今天往回，连续有阅读分钟的天数
  * （今天为 0 则 streak = 0）
  */

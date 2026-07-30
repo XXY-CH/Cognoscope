@@ -40,6 +40,7 @@
 .nameCol {
   width: auto;
   min-width: var(--table-col-name-min);
+  vertical-align: top; /* 关键词/摘要增高时顶部对齐 */
 }
 
 .selectedLabel {
@@ -138,10 +139,21 @@
 }
 
 .row td {
-  height: var(--table-row-height);
-  padding: 0 var(--sp-4);
+  min-height: var(--table-row-height);
+  height: auto;
+  padding: var(--sp-3) var(--sp-4);
   border-bottom: var(--border-width) solid var(--border-subtle);
   vertical-align: middle;
+}
+
+.nameStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: var(--sp-1);
 }
 
 .checkbox {

@@ -113,15 +113,15 @@ export function analyzeFrames(frames: MonitorFrame[]): Omit<
       const yawNorm = Math.max(0, 1 - yawStd / 25);
       const pitchNorm = Math.max(0, 1 - (pitchStd ?? 0) / 20);
       poseScore = (0.5 * yawNorm + 0.5 * pitchNorm) * 100;
-      // 降低姿态权重、提高投入状态权重
-      wGaze = 0.4;
+      // 提高投入权重、适当降低注视权重（姿态权重不变）
+      wGaze = 0.3;
       wPose = 0.15;
-      wEng = 0.25;
+      wEng = 0.35;
     } else {
       poseScore = 50;
-      wGaze = 0.55;
+      wGaze = 0.45;
       wPose = 0.1;
-      wEng = 0.2;
+      wEng = 0.3;
     }
     // 手机 / 聊天 / 喝水出现时，engaged 状态视为无效，不加分
     const hardDistract =
