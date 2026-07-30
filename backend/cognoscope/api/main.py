@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from cognoscope.api.errors import error_body, install_exception_handlers
-from cognoscope.api.routes import annotations, graph, health, imports, jobs, knowledge, library, preferences
+from cognoscope.api.routes import ai, annotations, graph, health, imports, jobs, knowledge, library, preferences
 from cognoscope.api.schemas import ErrorEnvelope
 from cognoscope.application.job_service import JobService
 from cognoscope.application.preference_service import PreferenceService
@@ -86,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(knowledge.router, prefix="/api/v1")
     app.include_router(preferences.router, prefix="/api/v1")
     app.include_router(graph.router, prefix="/api/v1")
+    app.include_router(ai.router, prefix="/api/v1")
     return app
 
 

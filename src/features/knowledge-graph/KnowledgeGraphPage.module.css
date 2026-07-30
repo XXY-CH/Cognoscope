@@ -17,6 +17,7 @@
   padding: var(--sp-3);
   background: var(--bg-elevated);
   border-radius: var(--radius-md);
+  align-items: center;
 }
 
 .toolbar button {
@@ -36,6 +37,27 @@
 .toolbar button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.status {
+  margin-left: auto;
+  padding: var(--sp-2) var(--sp-3);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .graph {

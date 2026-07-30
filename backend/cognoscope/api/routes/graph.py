@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, status
 
-from cognoscope.api.dependencies import FixedUser, get_fixed_user, get_graph_service
+from cognoscope.api.dependencies import FixedUser, get_fixed_user, get_graph_service, get_ai_client
 from cognoscope.api.schemas import GraphNodeListResponse, GraphEdgeListResponse, GraphSyncResponse, GraphBuildResponse
 from cognoscope.application.graph_service import GraphService
+from cognoscope.infrastructure.ai import AIClient
 
 router = APIRouter(tags=["graph"])
 
@@ -59,9 +60,18 @@ async def build_edges(
     use_ai: bool = False,
     user: FixedUser = Depends(get_fixed_user),
     service: GraphService = Depends(get_graph_service),
+    ai_client: AIClient | None = Depends(get_ai_client),
 ) -> GraphBuildResponse:
     """Trigger edge generation (demo mode or AI-powered)."""
     if use_ai:
+        if ai_client is None:
+            return GraphBuildResponse(
+                task_id=None,
+                created_count=0,
+                status="failed",
+            )
+        # 临时注入最新的 AI 客户端
+        service._ai_client = ai_client
         try:
             result = await service.build_graph_with_ai(owner_account_id=user.account_id)
             return GraphBuildResponse(

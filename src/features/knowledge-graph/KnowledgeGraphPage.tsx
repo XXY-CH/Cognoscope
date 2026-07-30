@@ -2,7 +2,7 @@
  * KnowledgeGraphPage - 知识图谱页面（已接入后端 API + 力导向画布）
  * 规范参考：UI_spec.md §6；数据来源：后端 /api/v1/graph/*
  */
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGraphStore } from '../../stores/graphStore';
 import { fetchGraphNodes, fetchGraphEdges, syncGraphNodes, triggerGraphBuild } from '../../services/graphApi';
 import { GraphCanvas } from './GraphCanvas';
@@ -10,6 +10,7 @@ import styles from './KnowledgeGraphPage.module.css';
 
 export function KnowledgeGraphPage() {
   const { nodes, edges, loading, error, selectedNodeId, setNodes, setEdges, setLoading, setError, setSelectedNode } = useGraphStore();
+  const [buildStatus, setBuildStatus] = useState<string | null>(null);
 
   useEffect(() => {
     loadGraph();
@@ -35,12 +36,16 @@ export function KnowledgeGraphPage() {
   async function handleSync() {
     setLoading(true);
     setError(null);
+    setBuildStatus('同步节点中...');
     try {
       const count = await syncGraphNodes();
-      console.log(`同步了 ${count} 个节点`);
+      setBuildStatus(`✓ 同步了 ${count} 个节点`);
       await loadGraph();
+      setTimeout(() => setBuildStatus(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '同步失败');
+      const message = err instanceof Error ? err.message : '同步失败';
+      setError(message);
+      setBuildStatus(null);
     } finally {
       setLoading(false);
     }
@@ -49,12 +54,16 @@ export function KnowledgeGraphPage() {
   async function handleBuild(useAI: boolean = false) {
     setLoading(true);
     setError(null);
+    setBuildStatus(useAI ? 'AI 建边中...' : '快速建边中...');
     try {
       const result = await triggerGraphBuild(useAI);
-      console.log(`创建了 ${result.created_count} 条边`);
+      setBuildStatus(`✓ 创建了 ${result.created_count} 条边`);
       await loadGraph();
+      setTimeout(() => setBuildStatus(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '生成边失败');
+      const message = err instanceof Error ? err.message : '生成边失败';
+      setError(message);
+      setBuildStatus(null);
     } finally {
       setLoading(false);
     }
@@ -118,6 +127,9 @@ export function KnowledgeGraphPage() {
         <button onClick={loadGraph} disabled={loading}>
           刷新
         </button>
+        {buildStatus && (
+          <span className={styles.status}>{buildStatus}</span>
+        )}
       </div>
 
       <div className={styles.graph}>
