@@ -16,9 +16,11 @@ import { useFileDocMetaStore } from '../../stores/fileDocMetaStore';
 import { formatFileSize, formatFriendlyTime } from '../../utils/format';
 import { FRONT_MATTER_EXTRACTOR_VERSION } from '../../utils/pdfFrontMatter';
 import { FileDocMetaCell } from './FileDocMetaCell';
+import { FileGraphBadge } from './FileGraphBadge';
 import { FileRowActions } from './FileRowActions';
 import { FileTypeIcon } from './FileTypeIcon';
 import styles from './FileTable.module.css';
+import { useGraphStore } from '../../stores/graphStore';
 
 /**
  * FileTableProps
@@ -86,11 +88,19 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
   const metaById = useFileDocMetaStore(useShallow((s) => s.byId));
   const extractingIds = useFileDocMetaStore(useShallow((s) => s.extractingIds));
   const ensureForFiles = useFileDocMetaStore((s) => s.ensureForFiles);
+  const membersByFileId = useGraphStore(useShallow((s) => s.membersByFileId));
+  const joiningIds = useGraphStore(useShallow((s) => s.joiningIds));
+  const loadGraph = useGraphStore((s) => s.loadGraph);
 
   useEffect(() => {
     // 可见 PDF 按需抽取；版本号变化时强制全量重抽
     void ensureForFiles(rows);
   }, [rows, ensureForFiles, FRONT_MATTER_EXTRACTOR_VERSION]);
+
+  useEffect(() => {
+    // 目录页同步入图状态标签
+    void loadGraph();
+  }, [loadGraph]);
 
   useEffect(() => {
     // 选中变化时清空悬停，取消多选后按钮不会立刻因残留 :hover 出现
@@ -314,18 +324,28 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
                         <span className={styles.nameText}>{file.name}</span>
                       </button>
                       {file.type === 'pdf' ? (
-                        <FileDocMetaCell
-                          fileId={file.id}
-                          fileName={file.name}
-                          meta={metaById[file.id]}
-                          extracting={extractingIds.includes(file.id)}
-                          abstractOpen={openAbstractId === file.id}
-                          onToggleAbstract={() =>
-                            setOpenAbstractId((id) =>
-                              id === file.id ? null : file.id,
-                            )
-                          }
-                        />
+                        <>
+                          <div className={styles.graphBadgeRow}>
+                            <FileGraphBadge
+                              fileId={file.id}
+                              visible
+                              member={membersByFileId[file.id]}
+                              joining={joiningIds.includes(file.id)}
+                            />
+                          </div>
+                          <FileDocMetaCell
+                            fileId={file.id}
+                            fileName={file.name}
+                            meta={metaById[file.id]}
+                            extracting={extractingIds.includes(file.id)}
+                            abstractOpen={openAbstractId === file.id}
+                            onToggleAbstract={() =>
+                              setOpenAbstractId((id) =>
+                                id === file.id ? null : file.id,
+                              )
+                            }
+                          />
+                        </>
                       ) : null}
                     </div>
                   )}

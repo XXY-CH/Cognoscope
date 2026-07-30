@@ -1,29 +1,48 @@
 /**
  * GraphCanvas - 2D 力导向知识图谱画布
- * 使用 react-force-graph-2d 实现，符合 UI_spec.md §6.3 节点规格
+ * 使用 react-force-graph-2d；支持选中与联动高亮（dim 非高亮节点）
+ * 规范参考：UI_spec.md §6.3
  */
 import { useEffect, useRef } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
-import type { GraphNode, GraphEdge } from '../../stores/graphStore';
+import type { GraphNode, GraphEdge } from '../../types';
 
 interface GraphCanvasProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
   selectedNodeId: string | null;
+  /** 联动高亮；为空则不高亮过滤 */
+  highlightedNodeIds?: string[];
   onNodeClick: (node: GraphNode) => void;
+  onBackgroundClick?: () => void;
   onNodeDrag: (node: GraphNode, x: number, y: number) => void;
 }
 
+/**
+ * @param nodes - 图节点
+ * @param edges - 图边
+ * @param selectedNodeId - 当前选中
+ * @param highlightedNodeIds - 联动高亮集合
+ * @param onNodeClick - 点击节点
+ * @param onBackgroundClick - 点击空白取消选中
+ * @param onNodeDrag - 拖拽结束持久化坐标
+ */
 export function GraphCanvas({
   nodes,
   edges,
   selectedNodeId,
+  highlightedNodeIds = [],
   onNodeClick,
+  onBackgroundClick,
   onNodeDrag,
 }: GraphCanvasProps) {
-  const graphRef = useRef<any>();
+  // react-force-graph-2d 的 ref 类型与自定义字段不兼容，用宽松类型
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const graphRef = useRef<any>(null);
 
-  // Convert to force-graph format
+  const highlightSet = new Set(highlightedNodeIds);
+  const hasHighlight = highlightSet.size > 0;
+
   const graphData = {
     nodes: nodes.map((n) => ({
       id: n.id,
@@ -40,21 +59,23 @@ export function GraphCanvas({
   };
 
   useEffect(() => {
-    // 移除自动缩放，让用户自己控制视图
-    // 仅在首次加载时设置合理的初始缩放
     if (graphRef.current && nodes.length > 0) {
-      const hasInitialized = graphRef.current.__initialized;
-      if (!hasInitialized) {
+      if (!graphRef.current.__initialized) {
         graphRef.current.__initialized = true;
-        // 仅首次居中，不改变缩放级别
         graphRef.current.centerAt(0, 0, 0);
       }
     }
   }, [nodes.length]);
 
-  const getNodeColor = (node: any) => {
+  const isEmphasized = (id: string) =>
+    id === selectedNodeId || (hasHighlight && highlightSet.has(id));
+
+  const getNodeColor = (node: { id: string; kind: string }) => {
     const cssVars = getComputedStyle(document.documentElement);
     if (node.id === selectedNodeId) {
+      return cssVars.getPropertyValue('--accent').trim() || '#4A6CF7';
+    }
+    if (hasHighlight && highlightSet.has(node.id)) {
       return cssVars.getPropertyValue('--accent').trim() || '#4A6CF7';
     }
     switch (node.kind) {
@@ -65,13 +86,12 @@ export function GraphCanvas({
       case 'tag':
         return cssVars.getPropertyValue('--success').trim() || '#34C759';
       default:
-        return '#999';
+        return cssVars.getPropertyValue('--text-tertiary').trim() || '#999';
     }
   };
 
-  const getNodeSize = (node: any) => {
-    // 更小的节点尺寸
-    const baseSize = node.id === selectedNodeId ? 1.2 : 1.0;
+  const getNodeSize = (node: { id: string; kind: string }) => {
+    const baseSize = isEmphasized(node.id) ? 1.25 : 1.0;
     switch (node.kind) {
       case 'file':
         return 5 * baseSize;
@@ -88,51 +108,71 @@ export function GraphCanvas({
     <ForceGraph2D
       ref={graphRef}
       graphData={graphData}
-      nodeLabel={(node: any) => node.label}
+      nodeLabel={(node: any) => node.label ?? ''}
       nodeColor={getNodeColor}
       nodeVal={getNodeSize}
-      nodeCanvasObject={(node: any, ctx, globalScale) => {
-        const label = node.label;
+      nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        if (node.x == null || node.y == null || !node.id) return;
+        const dim =
+          hasHighlight &&
+          !highlightSet.has(node.id) &&
+          node.id !== selectedNodeId;
+        ctx.save();
+        if (dim) ctx.globalAlpha = 0.22;
+
+        const label = node.label ?? '';
         const fontSize = 12 / globalScale;
-        ctx.font = `${fontSize}px Inter, sans-serif`;
-        
-        // 绘制节点圆
+        ctx.font = `${fontSize}px sans-serif`;
+
+        const size = getNodeSize({
+          id: node.id,
+          kind: node.kind ?? 'file',
+        });
         ctx.beginPath();
-        ctx.arc(node.x, node.y, getNodeSize(node), 0, 2 * Math.PI);
-        ctx.fillStyle = getNodeColor(node);
+        ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+        ctx.fillStyle = getNodeColor({
+          id: node.id,
+          kind: node.kind ?? 'file',
+        });
         ctx.fill();
-        
-        // 绘制选中光环
-        if (node.id === selectedNodeId) {
-          ctx.strokeStyle = getNodeColor(node);
+
+        if (node.id === selectedNodeId || highlightSet.has(node.id)) {
+          ctx.strokeStyle = getNodeColor({
+            id: node.id,
+            kind: node.kind ?? 'file',
+          });
           ctx.lineWidth = 2 / globalScale;
           ctx.stroke();
         }
-        
-        // 绘制标签
+
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillStyle = getComputedStyle(document.documentElement)
-          .getPropertyValue('--text-primary')
-          .trim() || '#1A1A1E';
-        ctx.fillText(label, node.x, node.y + getNodeSize(node) + 2);
+        ctx.fillStyle =
+          getComputedStyle(document.documentElement)
+            .getPropertyValue('--text-primary')
+            .trim() || '#1A1A1E';
+        ctx.fillText(label, node.x, node.y + size + 2);
+        ctx.restore();
       }}
-      linkWidth={(link: any) => Math.max(1, link.weight * 1.5)}
+      linkWidth={(link: any) => Math.max(1, (link.weight ?? 0.5) * 1.5)}
       linkColor={() =>
         getComputedStyle(document.documentElement)
           .getPropertyValue('--border-default')
           .trim() || '#C8C8D2'
       }
       linkDirectionalParticles={2}
-      linkDirectionalParticleWidth={(link: any) => link.weight * 2}
+      linkDirectionalParticleWidth={(link: any) => (link.weight ?? 0.5) * 2}
       linkDirectionalParticleSpeed={0.005}
       onNodeClick={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
         if (original) onNodeClick(original);
       }}
+      onBackgroundClick={() => onBackgroundClick?.()}
       onNodeDragEnd={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
-        if (original) onNodeDrag(original, node.x, node.y);
+        if (original && node.x != null && node.y != null) {
+          onNodeDrag(original, node.x, node.y);
+        }
       }}
       cooldownTicks={100}
       d3AlphaDecay={0.02}

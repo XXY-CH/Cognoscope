@@ -1,0 +1,11 @@
+/**
+ * FileGraphBadge.module.css — 入图标签行
+ */
+
+.row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  max-width: 100%;
+}

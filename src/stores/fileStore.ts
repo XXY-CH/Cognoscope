@@ -14,6 +14,7 @@ import {
   mimeForType,
 } from '../utils/fileType';
 import { useFileDocMetaStore } from './fileDocMetaStore';
+import { useGraphStore } from './graphStore';
 
 export type FileSortKey = 'name' | 'updatedAt' | 'sizeBytes';
 export type SortDirection = 'asc' | 'desc';
@@ -149,7 +150,9 @@ export const useFileStore = create<FileState>((set, get) => ({
         return Number.isFinite(t) && t < cutoff;
       });
       if (expired.length > 0) {
-        await filesDb.deleteFiles(expired.map((f) => f.id));
+        const expiredIds = expired.map((f) => f.id);
+        await useGraphStore.getState().removeFilesFromGraph(expiredIds);
+        await filesDb.deleteFiles(expiredIds);
         files = files.filter((f) => !expired.some((e) => e.id === f.id));
       }
       set({ files, status: 'idle' });
@@ -364,6 +367,8 @@ export const useFileStore = create<FileState>((set, get) => ({
       selectedIds: [],
       deleteConfirmIds: [],
     });
+    // 移入回收站即从知识图谱摘除（还原后需重新入图）
+    await useGraphStore.getState().removeFilesFromGraph(idList);
     return idList;
   },
 
@@ -407,6 +412,8 @@ export const useFileStore = create<FileState>((set, get) => ({
   purgeFiles: async (ids) => {
     if (ids.length === 0) return;
     const idSet = new Set(ids);
+    // 先清图谱内存/关键词，再硬删（deleteFile 会再清一次论文图 IDB，幂等）
+    await useGraphStore.getState().removeFilesFromGraph(ids);
     await filesDb.deleteFiles(ids);
     set({
       files: get().files.filter((f) => !idSet.has(f.id)),
@@ -565,7 +572,13 @@ export const useFileStore = create<FileState>((set, get) => ({
       // 导入完成后立即抽取 PDF 文首摘要/关键词（不阻塞导入返回）
       const pdfCreated = created.filter((f) => f.type === 'pdf');
       if (pdfCreated.length > 0) {
-        void useFileDocMetaStore.getState().ensureForFiles(pdfCreated);
+        void (async () => {
+          // 先抽摘要/关键词，再尝试 AI 入图
+          await useFileDocMetaStore.getState().ensureForFiles(pdfCreated);
+          await useGraphStore
+            .getState()
+            .addFilesToGraph(pdfCreated.map((f) => f.id));
+        })();
       }
     }
     return successCount;

@@ -87,14 +87,23 @@ export async function softDeleteFile(
 }
 
 /**
- * 硬删除节点与二进制（彻底删除，不可恢复）；同步清除该文件批注
+ * 硬删除节点与二进制（彻底删除，不可恢复）；同步清除该文件批注与图谱残留
  */
 export async function deleteFile(id: string): Promise<void> {
   const db = await getDb();
-  const tx = db.transaction(
-    ['files', 'fileBlobs', 'annotations', 'bookmarks', 'fileDocMeta'],
-    'readwrite',
-  );
+  const storeNames = [
+    'files',
+    'fileBlobs',
+    'annotations',
+    'bookmarks',
+    'fileDocMeta',
+    'graphNodes',
+    'graphEdges',
+    'graphMembers',
+    'keywordNodes',
+    'keywordEdges',
+  ] as const;
+  const tx = db.transaction([...storeNames], 'readwrite');
   await tx.objectStore('files').delete(id);
   await tx.objectStore('fileBlobs').delete(id);
   // 级联删除该文件下批注与书签，避免孤儿数据
@@ -105,6 +114,45 @@ export async function deleteFile(id: string): Promise<void> {
   const bms = await bmStore.index('by-file').getAll(id);
   await Promise.all(bms.map((b) => bmStore.delete(b.id)));
   await tx.objectStore('fileDocMeta').delete(id);
+
+  // 级联移除论文图谱节点、相关边、入图状态
+  const nodeId = `file_${id}`;
+  await tx.objectStore('graphNodes').delete(nodeId);
+  await tx.objectStore('graphMembers').delete(id);
+  const edgeStore = tx.objectStore('graphEdges');
+  const allEdges = await edgeStore.getAll();
+  await Promise.all(
+    allEdges
+      .filter((e) => e.source === nodeId || e.target === nodeId)
+      .map((e) => edgeStore.delete(e.id)),
+  );
+
+  // 关键词：摘除挂接；无挂接则删词节点及边
+  const kwStore = tx.objectStore('keywordNodes');
+  const kwNodes = await kwStore.getAll();
+  const removedKwIds: string[] = [];
+  await Promise.all(
+    kwNodes.map((n) => {
+      if (!n.paperNodeIds.includes(nodeId)) return Promise.resolve();
+      const nextPapers = n.paperNodeIds.filter((p) => p !== nodeId);
+      if (nextPapers.length === 0) {
+        removedKwIds.push(n.id);
+        return kwStore.delete(n.id);
+      }
+      return kwStore.put({ ...n, paperNodeIds: nextPapers });
+    }),
+  );
+  if (removedKwIds.length > 0) {
+    const removedSet = new Set(removedKwIds);
+    const kwEdgeStore = tx.objectStore('keywordEdges');
+    const kwEdges = await kwEdgeStore.getAll();
+    await Promise.all(
+      kwEdges
+        .filter((e) => removedSet.has(e.source) || removedSet.has(e.target))
+        .map((e) => kwEdgeStore.delete(e.id)),
+    );
+  }
+
   await tx.done;
 }
 

@@ -9,6 +9,10 @@ import type {
   Bookmark,
   FileDocMeta,
   FileNode,
+  GraphEdge,
+  GraphMember,
+  GraphNode,
+  KeywordNode,
   ReadingSession,
 } from '../types';
 
@@ -18,6 +22,9 @@ export interface FileBlobRecord {
   blob: Blob;
   mimeType: string;
 }
+
+/** 图谱边持久化记录（复合 id） */
+export type GraphEdgeRecord = GraphEdge & { id: string };
 
 interface XuesenDB extends DBSchema {
   files: {
@@ -60,11 +67,36 @@ interface XuesenDB extends DBSchema {
     key: string;
     value: FileDocMeta;
   };
+  /** 知识图谱节点 */
+  graphNodes: {
+    key: string;
+    value: GraphNode;
+  };
+  /** 知识图谱边 */
+  graphEdges: {
+    key: string;
+    value: GraphEdgeRecord;
+  };
+  /** 文件入图谱状态 */
+  graphMembers: {
+    key: string;
+    value: GraphMember;
+  };
+  /** 关键词图谱节点（v7） */
+  keywordNodes: {
+    key: string;
+    value: KeywordNode;
+  };
+  /** 关键词图谱边（v7） */
+  keywordEdges: {
+    key: string;
+    value: GraphEdgeRecord;
+  };
 }
 
 const DB_NAME = 'xuesen';
-/** v5：新增 fileDocMeta（摘要 / 关键词） */
-const DB_VERSION = 5;
+/** v7：关键词图谱节点/边 */
+const DB_VERSION = 7;
 
 let dbPromise: Promise<IDBPDatabase<XuesenDB>> | null = null;
 
@@ -115,6 +147,25 @@ export function getDb(): Promise<IDBPDatabase<XuesenDB>> {
         // —— fileDocMeta（v5）——
         if (!db.objectStoreNames.contains('fileDocMeta')) {
           db.createObjectStore('fileDocMeta', { keyPath: 'fileId' });
+        }
+
+        // —— graph（v6）——
+        if (!db.objectStoreNames.contains('graphNodes')) {
+          db.createObjectStore('graphNodes', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('graphEdges')) {
+          db.createObjectStore('graphEdges', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('graphMembers')) {
+          db.createObjectStore('graphMembers', { keyPath: 'fileId' });
+        }
+
+        // —— keyword graph（v7）——
+        if (!db.objectStoreNames.contains('keywordNodes')) {
+          db.createObjectStore('keywordNodes', { keyPath: 'id' });
+        }
+        if (!db.objectStoreNames.contains('keywordEdges')) {
+          db.createObjectStore('keywordEdges', { keyPath: 'id' });
         }
       },
     });

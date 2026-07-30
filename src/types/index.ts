@@ -259,7 +259,7 @@ export interface GraphNode {
 }
 
 /**
- * GraphEdge - 知识图谱连线（由 AI/后端计算后传入，前端只读）
+ * GraphEdge - 知识图谱连线（由 AI 计算后写入，前端只读展示）
  * 所属：C · 知识图谱
  * 规范参考：UI_spec.md §9 / §13 决策4
  */
@@ -269,6 +269,55 @@ export interface GraphEdge {
   /** 终点节点 id（对应 GraphNode.id） */
   target: string;
   /** 关联强度，约束范围 0–1；映射连线粗细与不透明度 */
+  weight: number;
+}
+
+/**
+ * GraphMemberStatus - 文件入图谱状态（目录显式标签）
+ * 所属：A · 文件目录 / C · 知识图谱
+ */
+export type GraphMemberStatus = 'in' | 'pending' | 'failed' | 'out';
+
+/**
+ * GraphMember - 文件是否已加入知识图谱
+ * 独立于 FileNode，存 IndexedDB graphMembers
+ */
+export interface GraphMember {
+  /** 对应 FileNode.id */
+  fileId: string;
+  /** 入图状态 */
+  status: GraphMemberStatus;
+  /** 对应 GraphNode.id；未入图时为 null */
+  nodeId: string | null;
+  /** 失败原因（failed 时） */
+  errorMessage: string | null;
+  /** 最近更新时间，ISO 8601 */
+  updatedAt: string;
+}
+
+/**
+ * KeywordNode - 关键词图谱节点（与论文图并列）
+ * 所属：C · 知识图谱 > 关键词画布
+ */
+export interface KeywordNode {
+  /** 唯一 id（由 canonical label 派生） */
+  id: string;
+  /** 展示名（近义合并后；原文写法优先） */
+  label: string;
+  /** 近义别名 */
+  aliases: string[];
+  /** 挂接的论文节点 id（file_*） */
+  paperNodeIds: string[];
+  x: number | null;
+  y: number | null;
+}
+
+/**
+ * KeywordEdge - 关键词之间的关联边（共现 + 语义相似度综合）
+ */
+export interface KeywordEdge {
+  source: string;
+  target: string;
   weight: number;
 }
 
