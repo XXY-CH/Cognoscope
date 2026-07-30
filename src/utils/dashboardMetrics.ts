@@ -33,6 +33,12 @@ export interface HeatDay {
   minutes: number;
 }
 
+/** 热力图可汇总的时长条目（IndexedDB 会话或 monitor 元数据） */
+export interface HeatDurationEntry {
+  startedAt: string | null | undefined;
+  durationSec: number;
+}
+
 /** 本地日历日 YYYY-MM-DD（避免 toISOString 的 UTC 偏移导致错日） */
 export function toLocalDateKey(input: Date | string | number): string {
   const d = input instanceof Date ? input : new Date(input);
@@ -50,9 +56,12 @@ function startOfLocalDay(now = Date.now()): Date {
 /** 热力图默认窗口：近 1 年 */
 export const HEATMAP_DAYS = 365;
 
-/** 最近 N 天热力图：按本地日汇总阅读分钟（旧→新） */
+/**
+ * 最近 N 天热力图：按本地日汇总阅读分钟（旧→新）
+ * 可合并多路来源（IndexedDB 阅读会话 + monitor 检测会话）以保持与专注表同步
+ */
 export function buildHeatmap(
-  sessions: ReadingSession[],
+  entries: HeatDurationEntry[],
   days = HEATMAP_DAYS,
   now = Date.now(),
 ): HeatDay[] {
@@ -63,10 +72,11 @@ export function buildHeatmap(
     d.setDate(today.getDate() - i);
     map.set(toLocalDateKey(d), 0);
   }
-  for (const s of sessions) {
-    const key = toLocalDateKey(s.startedAt);
+  for (const e of entries) {
+    if (!e.startedAt || !(e.durationSec > 0)) continue;
+    const key = toLocalDateKey(e.startedAt);
     if (!map.has(key)) continue;
-    map.set(key, (map.get(key) ?? 0) + Math.round(s.durationSec / 60));
+    map.set(key, (map.get(key) ?? 0) + Math.round(e.durationSec / 60));
   }
   return [...map.entries()].map(([dateKey, minutes]) => ({ dateKey, minutes }));
 }

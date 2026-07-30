@@ -1,5 +1,5 @@
 /**
- * ReadingHeatmap - 近 1 年阅读热力图（周历对齐 · 无卡片内滚动）
+ * ReadingHeatmap - 近 1 年阅读热力图（周历对齐 · 与 monitor 专注会话同步）
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.7
  */
@@ -26,7 +26,13 @@ interface HeatCell {
 }
 
 interface ReadingHeatmapProps {
+  /** IndexedDB 阅读会话 */
   sessions: ReadingSession[];
+  /** monitor 检测会话元数据（与专注表同源，保证热力点同步点亮） */
+  monitorMetas?: Array<{
+    startedAt: string | null;
+    durationSec: number;
+  }>;
 }
 
 /**
@@ -83,12 +89,25 @@ function monthLabelForWeeks(weeks: HeatCell[][]): (string | null)[] {
   });
 }
 
-/** ReadingHeatmap - 由 DashboardPage 注入全量会话，近一年周历 */
-export function ReadingHeatmap({ sessions }: ReadingHeatmapProps) {
-  const days = useMemo(
-    () => buildHeatmap(sessions, HEATMAP_DAYS),
-    [sessions],
-  );
+/** ReadingHeatmap - 合并阅读会话与 monitor 时长，近一年周历 */
+export function ReadingHeatmap({
+  sessions,
+  monitorMetas = [],
+}: ReadingHeatmapProps) {
+  const days = useMemo(() => {
+    // 两路时长按日累加：专注表有数据的日期，热力图同步着色
+    const entries = [
+      ...sessions.map((s) => ({
+        startedAt: s.startedAt,
+        durationSec: s.durationSec,
+      })),
+      ...monitorMetas.map((m) => ({
+        startedAt: m.startedAt,
+        durationSec: m.durationSec,
+      })),
+    ];
+    return buildHeatmap(entries, HEATMAP_DAYS);
+  }, [sessions, monitorMetas]);
   const weeks = useMemo(() => buildWeekGrid(days), [days]);
   const monthLabels = useMemo(() => monthLabelForWeeks(weeks), [weeks]);
   const max = useMemo(

@@ -3,8 +3,8 @@
  * 所属页面：B · 个人仪表盘
  * 规范参考：HANDOFF.md §1.3；算法对齐 monitor/analyze.py
  */
+
 import {
-  ENG_STATE_LABELS,
   formatPerMin,
   formatPercent,
   formatPoseStd,
@@ -105,9 +105,9 @@ export function FocusSessionList({
                   <td>{formatPerMin(a.eventsPerMin)}</td>
                   <td>{formatPoseStd(a.yawStd, a.pitchStd)}</td>
                   <td>{formatPercent(a.distractRatio)}</td>
-                  <td>
-                    {a.engDominant
-                      ? (ENG_STATE_LABELS[a.engDominant] ?? a.engDominant)
+                  <td className={styles.engCell}>
+                    {a.focusScore !== null
+                      ? (a.focusScore > 30 ? '投入' : '待改进')
                       : '—'}
                   </td>
                   <td className={styles.scoreCell}>

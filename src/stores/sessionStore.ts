@@ -18,6 +18,7 @@ import {
 import {
   getSessionAnalysis,
   listSessionsWithTimeout,
+  type SessionMeta,
 } from '../utils/monitorApi';
 import { fromApiAnalysis } from '../utils/sessionAnalyze';
 import {
@@ -31,6 +32,8 @@ type MonitorStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
 
 interface SessionState {
   sessions: ReadingSession[];
+  /** monitor 会话元数据（轻量，供热力图与列表时间对齐） */
+  monitorMetas: SessionMeta[];
   /** monitor/analyze.py 产出的专注分析（按时间新→旧） */
   analyses: SessionFocusAnalysis[];
   status: LoadStatus;
@@ -52,6 +55,7 @@ const ANALYZE_LIMIT = 30;
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: [],
+  monitorMetas: [],
   analyses: [],
   status: 'idle',
   monitorStatus: 'idle',
@@ -96,6 +100,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ monitorStatus: 'loading' });
     try {
       const metas = await listSessionsWithTimeout(4000);
+      // 元数据全量保留：热力图与专注表共用同一时间轴
+      set({ monitorMetas: metas });
       if (metas.length === 0) {
         set({ analyses: [], monitorStatus: 'ready' });
         return;
@@ -119,10 +125,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         );
       set({
         analyses,
-        monitorStatus: analyses.length > 0 ? 'ready' : 'ready',
+        monitorStatus: 'ready',
       });
     } catch {
-      // monitor 未启动或超时：保留旧 analyses，标记 offline
+      // monitor 未启动或超时：保留旧 analyses / metas，标记 offline
       set({ monitorStatus: 'offline' });
     }
   },

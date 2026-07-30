@@ -30,6 +30,7 @@ export function DashboardPage() {
     useShallow((s) => selectFilteredSessions(s)),
   );
   const allSessions = useSessionStore(useShallow((s) => s.sessions));
+  const monitorMetas = useSessionStore(useShallow((s) => s.monitorMetas));
   const analyses = useSessionStore(
     useShallow((s) => selectFilteredAnalyses(s)),
   );
@@ -62,7 +63,7 @@ export function DashboardPage() {
   return (
     <div className={styles.root}>
       <MetricCards sessions={sessions} />
-      <ReadingHeatmap sessions={allSessions} />
+      <ReadingHeatmap sessions={allSessions} monitorMetas={monitorMetas} />
       <FocusSessionList
         analyses={analyses}
         range={range}

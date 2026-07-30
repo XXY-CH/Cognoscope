@@ -132,3 +132,7 @@
   font-weight: 600;
   color: var(--chart-focus); /* 综合评分用专注色强调 */
 }
+
+.engCell {
+  font-weight: 600;
+}
