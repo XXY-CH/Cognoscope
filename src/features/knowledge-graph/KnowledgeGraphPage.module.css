@@ -1,13 +1,112 @@
 /**
- * KnowledgeGraphPage.module.css — 知识图谱占位页布局
- * 规范参考：UI_spec.md §6.1；完整画布布局待后继按规范重做
+ * KnowledgeGraphPage.module.css — 知识图谱页面样式
+ * 规范参考：UI_spec.md §6；当前版本：工具栏 + 占位画布
  */
 
-.root {
-  /* 占位阶段：居中 EmptyState，不抵消 Content padding */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: var(--sp-6);
+  gap: var(--sp-4);
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+}
+
+.toolbar button {
+  padding: var(--sp-2) var(--sp-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-standard);
+}
+
+.toolbar button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.graph {
+  flex: 1;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100%;
-  background: var(--bg-base); /* 页面底色，来自 §1.1 */
+  min-height: 400px;
+}
+
+.placeholder {
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.placeholder p {
+  margin: var(--sp-2) 0;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  gap: var(--sp-3);
+}
+
+.emptyState h2 {
+  font-size: var(--text-h2);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.emptyState p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.hint {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.actions {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+.actions button {
+  padding: var(--sp-3) var(--sp-5);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+
+.actions button:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

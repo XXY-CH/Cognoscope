@@ -1,0 +1,1 @@
+# Xuesen Backend - Beat integration without auth
