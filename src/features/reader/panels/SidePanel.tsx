@@ -13,6 +13,7 @@ import {
   useVerticalResize,
 } from '../../../hooks/usePanelResize';
 import { useReaderStore } from '../../../stores/readerStore';
+import { generateContentGraph } from '../../../services/aiApi';
 import { AnnotationPanel } from './AnnotationPanel';
 import { QAPanel } from './QAPanel';
 import styles from './SidePanel.module.css';
@@ -24,12 +25,14 @@ export function SidePanel() {
   const open = useReaderStore((s) => s.sideOpen);
   const width = useReaderStore((s) => s.sideWidth);
   const qaRatio = useReaderStore((s) => s.qaRatio);
+  const fileId = useReaderStore((s) => s.fileId);
   const setSideWidth = useReaderStore((s) => s.setSideWidth);
   const setQaRatio = useReaderStore((s) => s.setQaRatio);
   const cycleSideSplit = useReaderStore((s) => s.cycleSideSplit);
   const bodyRef = useRef<HTMLDivElement>(null);
   /** 拖拽中关闭 width 过渡，保证右缘贴窗 */
   const [dragging, setDragging] = useState(false);
+  const [organizing, setOrganizing] = useState(false);
 
   const hResize = useHorizontalResize((dx) => {
     // 手柄在左侧：向右拖应减小宽度
@@ -41,6 +44,32 @@ export function SidePanel() {
     const delta = dy / height;
     setQaRatio(useReaderStore.getState().qaRatio + delta);
   });
+
+  const handleOrganizeKnowledge = async () => {
+    if (!fileId) {
+      toast.error('未打开文档');
+      return;
+    }
+
+    setOrganizing(true);
+    try {
+      // TODO: 从 PDF.js 获取文档文本内容
+      // 目前使用占位文本
+      const documentText = '这是文档的占位文本内容。实际应从 PDF.js textLayer 提取。';
+      
+      const result = await generateContentGraph(fileId, documentText, 20);
+      
+      toast.show(`✓ 提取了 ${result.nodes.length} 个概念节点和 ${result.edges.length} 条关系`);
+      
+      // TODO: 将提取的节点和边添加到知识图谱
+      console.log('提取的内容节点：', result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '整理失败';
+      toast.error(message);
+    } finally {
+      setOrganizing(false);
+    }
+  };
 
   const qaCollapsed = qaRatio < 0.08;
   const annoCollapsed = qaRatio > 0.92;
@@ -81,9 +110,10 @@ export function SidePanel() {
             variant="secondary"
             size="sm"
             leftIcon={<Sparkles size={16} strokeWidth={1.5} />}
-            onClick={() => toast.show('整理习得将在后续步骤接入')}
+            disabled={organizing || !fileId}
+            onClick={() => void handleOrganizeKnowledge()}
           >
-            整理习得
+            {organizing ? '整理中...' : '整理习得'}
           </Button>
         </header>
 
