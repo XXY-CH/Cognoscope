@@ -10,7 +10,7 @@
 import type { MonitorFrame } from './monitorAdapter';
 
 export const MONITOR_API_BASE = 'http://127.0.0.1:8765';
-interface StartResult {
+export interface StartResult {
   status: 'started' | 'already_running' | 'error' | 'unreachable';
   sessionId?: string;
   fileId?: string;

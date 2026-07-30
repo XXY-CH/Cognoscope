@@ -71,7 +71,11 @@ export function useCamera(): UseCameraResult {
     ensurePrivacyHint();
 
     try {
-      // 仅 video、无 audio；流留在本机内存供预览与本地推理
+      // 守卫：仅阅读路由允许打开摄像头
+      if (!window.location.pathname.startsWith('/read/')) {
+        patch({ status: 'unavailable', stream: null, deviceId: null });
+        return;
+      }
       const next = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'user' },
         audio: false,

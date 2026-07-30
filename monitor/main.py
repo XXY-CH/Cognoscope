@@ -95,18 +95,22 @@ class ReadingMonitor:
         if _ONNX_AVAILABLE and os.path.exists(ENGAGEMENT_MODEL):
             self._eng_session = ort.InferenceSession(ENGAGEMENT_MODEL)
 
-        # ── Open camera ─────────────────────────────────────────────
-        self._cap = cv2.VideoCapture(0)
-        if not self._cap.isOpened():
-            raise RuntimeError("Cannot open webcam.")
-
         # ── Internal state ──────────────────────────────────────────
         self._tracker = BehaviorTracker()
         self._eng_boredom = self._eng_confusion = None
         self._eng_engagement = self._eng_frustration = None
         self._eng_state = None
+        # ── Output file (opened in start()) ──────────────────────────
+        self._out = None
+        self._cap = None
 
-        # ── Output file ─────────────────────────────────────────────
+    def _open_camera_and_file(self):
+        """Open webcam and session file. Called once in start()."""
+        if self._cap is not None:
+            return
+        self._cap = cv2.VideoCapture(0)
+        if not self._cap.isOpened():
+            raise RuntimeError("Cannot open webcam.")
         os.makedirs(os.path.join(os.path.dirname(__file__), "sessions"), exist_ok=True)
         self._session_path = os.path.join(
             os.path.dirname(__file__), "sessions",
@@ -137,6 +141,7 @@ class ReadingMonitor:
         """
         if self._running:
             return
+        self._open_camera_and_file()
         self._stop_event.clear()
         self._running = True
 
@@ -156,6 +161,9 @@ class ReadingMonitor:
     # ── Internal loop ───────────────────────────────────────────────
 
     def _loop(self):
+        if self._cap is None:
+            self._running = False
+            return
         if not self._headless:
             cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
             cv2.waitKey(1)
@@ -165,11 +173,12 @@ class ReadingMonitor:
                             cv2.FONT_HERSHEY_SIMPLEX, 0.85, GREEN, 2)
                 cv2.imshow(WINDOW_NAME, init_frame)
                 cv2.waitKey(1)
-
         ENG_INTERVAL = 5
 
         try:
             while not self._stop_event.is_set():
+                if self._cap is None:
+                    break
                 ret, frame = self._cap.read()
                 if not ret:
                     break
@@ -304,7 +313,8 @@ class ReadingMonitor:
                         "eng_frustration": self._eng_frustration,
                     },
                 }
-                self._out.write(json.dumps(event) + "\n")
+                if self._out is not None:
+                    self._out.write(json.dumps(event) + "\n")
 
                 # ── Overlay / status ────────────────────────────────
                 if not self._headless:
@@ -348,12 +358,12 @@ class ReadingMonitor:
             pass
         finally:
             self._running = False
-            self._out.close()
-            self._cap.release()
+            if self._out is not None:
+                self._out.close()
+            if self._cap is not None:
+                self._cap.release()
             if not self._headless:
                 cv2.destroyAllWindows()
-
-
 def run(headless=False):
     """Convenience: blocking run (legacy API)."""
     m = ReadingMonitor(headless=headless)

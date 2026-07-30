@@ -30,6 +30,16 @@ from analyze import load_session, analyze as analyze_session
 app = Flask(__name__)
 CORS(app)
 
+
+# ── Request logging ────────────────────────────────────────────────
+@app.before_request
+def log_request():
+    from datetime import datetime
+    ua = request.headers.get("User-Agent", "?")
+    ref = request.headers.get("Referer", "?")
+    origin = request.headers.get("Origin", "?")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] {request.method} {request.path} "
+          f"UA={ua[:60]} Ref={ref[:40]} Orig={origin}")
 _monitor: ReadingMonitor | None = None
 _current_file_id: str | None = None
 _sessions_dir: str = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions")
@@ -50,15 +60,17 @@ def start_detection():
 
     body = request.get_json(silent=True) or {}
     _current_file_id = body.get("fileId")
+    if not _current_file_id:
+        return jsonify({"status": "error", "message": "fileId is required"}), 400
 
     try:
-        _monitor = ReadingMonitor(headless=True)
-        _monitor.start()
-        return jsonify({
-            "status": "started",
-            "sessionId": os.path.basename(_monitor.session_path).replace(".jsonl", ""),
-            "fileId": _current_file_id,
-        })
+      _monitor = ReadingMonitor(headless=True)
+      _monitor.start()
+      return jsonify({
+        "status": "started",
+        "sessionId": os.path.basename(_monitor.session_path).replace(".jsonl", ""),
+        "fileId": _current_file_id,
+      })
     except Exception as exc:
         _monitor = None
         return jsonify({"status": "error", "message": str(exc)}), 500

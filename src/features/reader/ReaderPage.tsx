@@ -9,7 +9,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
-import { useCamera } from '../../hooks/useCamera';
 import { useLinesReadSync } from '../../hooks/useLinesReadSync';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useReadingSession } from '../../hooks/useReadingSession';
@@ -23,6 +22,7 @@ import {
   MONITOR_API_BASE,
   startDetection,
   stopDetection,
+  type StartResult,
 } from '../../utils/monitorApi';
 import { ReaderCanvas } from './canvas/ReaderCanvas';
 import { ReaderBottomBar } from './ReaderBottomBar';
@@ -86,23 +86,27 @@ export function ReaderPage() {
 
   useReadingSession(activeFileId, mergeMonitorData);
 
-  // 打开论文 → 自动启动行为检测（Python 优先，不可用回退浏览器摄像头）
-  const {
-    startDetection: startCamera,
-    stopDetection: stopCamera,
-  } = useCamera();
-
+  // 打开论文 → 自动启动/停止 Python 行为检测
   useEffect(() => {
     if (!activeFileId) return;
 
-    void (async () => {
-      const result = await startDetection(activeFileId);
-      if (result.status === 'unreachable') {
-        await startCamera();
-      } else if (result.sessionId) {
-        pySessionIdRef.current = result.sessionId;
-      }
-    })();
+    // 先确保之前的检测已停止
+    void stopDetection();
+
+    // 启动检测
+    const timer = setTimeout(() => {
+      void (async () => {
+        const result = await Promise.race([
+          startDetection(activeFileId),
+          new Promise<StartResult>((r) =>
+            setTimeout(() => r({ status: 'unreachable' }), 2000),
+          ),
+        ]);
+        if (result.sessionId) {
+          pySessionIdRef.current = result.sessionId;
+        }
+      })();
+    }, 500);
 
     const handleUnload = () => {
       navigator.sendBeacon(`${MONITOR_API_BASE}/api/detect/stop`);
@@ -110,16 +114,11 @@ export function ReaderPage() {
     window.addEventListener('beforeunload', handleUnload);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener('beforeunload', handleUnload);
-      void (async () => {
-        const stopResult = await stopDetection();
-        if (stopResult.sessionId) {
-          pySessionIdRef.current = stopResult.sessionId;
-        }
-      })();
-      stopCamera();
+      void stopDetection();
     };
-  }, [activeFileId, startCamera, stopCamera]);
+  }, [activeFileId]);
   const tocOpen = useReaderStore((s) => s.tocOpen);
   const sideOpen = useReaderStore((s) => s.sideOpen);
   const tocWidth = useReaderStore((s) => s.tocWidth);
