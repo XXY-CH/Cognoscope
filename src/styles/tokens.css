@@ -169,6 +169,7 @@
   --table-row-height: 52px; /* 表体行高 */
   --dialog-width-confirm: 440px; /* 确认类 Dialog 宽度 */
   --dialog-width-form: 600px; /* 表单类 Dialog 宽度 */
+  --dialog-width-digest: 760px; /* 整理习得 Dialog 宽度（§8.9） */
   --toast-width: 320px; /* Toast 宽度 */
   --tooltip-max-width: 240px; /* Tooltip 最大宽度 */
   --empty-icon-size: 64px; /* EmptyState 图标尺寸 */

@@ -1,7 +1,7 @@
 /**
- * Dialog - 模态对话框（确认 440 / 表单 600）
+ * Dialog - 模态对话框（确认 440 / 表单 600 / 整理习得 760）
  * 所属：通用组件库
- * 规范参考：UI_spec.md §3 Dialog / §11 focus trap
+ * 规范参考：UI_spec.md §3 Dialog / §11 focus trap / §8.9
  */
 import { useId, useRef } from 'react';
 import type { ReactNode } from 'react';
@@ -10,7 +10,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { Button } from './Button';
 import styles from './Dialog.module.css';
 
-export type DialogSize = 'confirm' | 'form';
+export type DialogSize = 'confirm' | 'form' | 'digest';
 
 /**
  * DialogProps
@@ -18,7 +18,7 @@ export type DialogSize = 'confirm' | 'form';
  * @param onClose - 关闭回调（遮罩 / Esc / 关闭按钮）
  * @param title - 标题文案
  * @param aria-label - 对话框无障碍名称（必填；可与 title 相同）
- * @param size - confirm 440 / form 600
+ * @param size - confirm 440 / form 600 / digest 760（§8.9）
  * @param children - 内容区
  * @param footer - 底部按钮组；不传则不渲染 footer
  */
@@ -60,8 +60,15 @@ export function Dialog({
         ref={panelRef}
         className={[
           styles.panel,
-          size === 'form' ? styles.sizeForm : styles.sizeConfirm,
-        ].join(' ')}
+          size === 'digest'
+            ? styles.sizeDigest
+            : size === 'form'
+              ? styles.sizeForm
+              : styles.sizeConfirm,
+          size === 'digest' ? styles.panelDigest : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
@@ -82,7 +89,16 @@ export function Dialog({
           </Button>
         </header>
 
-        <div className={styles.body}>{children}</div>
+        <div
+          className={[
+            styles.body,
+            size === 'digest' ? styles.bodyDigest : '',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {children}
+        </div>
 
         {footer ? <footer className={styles.footer}>{footer}</footer> : null}
       </div>

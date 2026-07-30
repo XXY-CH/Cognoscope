@@ -1,0 +1,15 @@
+/**
+ * DigestDialog.module.css — 整理习得结果正文
+ * 规范参考：UI_spec.md §8.9
+ */
+
+.markdown {
+  margin: 0;
+  padding: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  color: var(--text-primary);
+}

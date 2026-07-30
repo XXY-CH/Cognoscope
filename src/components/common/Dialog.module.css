@@ -42,6 +42,21 @@
   width: var(--dialog-width-form); /* 600px */
 }
 
+.sizeDigest {
+  width: var(--dialog-width-digest); /* 760px · §8.9 */
+}
+
+/* 整理习得：固定视口高度比例，内容区滚动 */
+.panelDigest {
+  height: 80vh;
+  max-height: 80vh;
+}
+
+.bodyDigest {
+  flex: 1;
+  min-height: 0;
+}
+
 .header {
   display: flex;
   align-items: center;
