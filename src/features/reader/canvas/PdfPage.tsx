@@ -8,7 +8,7 @@ import {
   TextLayer,
   setLayerDimensions,
   type PDFDocumentProxy,
-} from 'pdfjs-dist';
+} from '../../../utils/pdfjs';
 import { buildPdfLineKeys } from '../../../utils/pdfTextLines';
 import { PdfPageBookmarks } from './PdfPageBookmarks';
 import styles from './PdfRenderer.module.css';

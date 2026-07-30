@@ -4,9 +4,11 @@
  * 规范参考：UI_spec.md §8.3 / §14
  */
 import { useEffect, useState } from 'react';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { getFileBlob } from '../db/files';
-import { loadPdfDocument } from '../utils/pdfjs';
+import {
+  loadPdfDocument,
+  type PDFDocumentProxy,
+} from '../utils/pdfjs';
 
 export type PdfLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 

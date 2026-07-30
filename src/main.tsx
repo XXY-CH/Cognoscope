@@ -4,6 +4,11 @@
  */
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+// PDF.js 5.x 垫片须先于任何 pdfjs-dist 导入（Chrome < 145 缺 getOrInsertComputed）
+import { ensurePdfjsPolyfills } from './utils/pdfjsPolyfills';
+
+ensurePdfjsPolyfills();
+
 import './styles/tokens.css'; /* 设计令牌须最先加载，来自 UI_spec.md §1 */
 import './index.css';
 import App from './App.tsx';
