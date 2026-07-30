@@ -1,0 +1,76 @@
+/**
+ * SearchInput.module.css — 搜索输入框
+ * 规范参考：UI_spec.md §3 SearchInput / §4.2（目录搜索默认 320）
+ */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: var(--search-input-width); /* 220px */
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--sp-3);
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--btn-height-md); /* 36px */
+  margin: 0;
+  padding: 0 var(--sp-8) 0 var(--sp-8); /* 左右留给图标 */
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.input::-webkit-search-cancel-button {
+  display: none; /* 使用自定义清空按钮 */
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.clear {
+  position: absolute;
+  right: var(--sp-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.clear:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}

@@ -1,0 +1,94 @@
+/**
+ * Badge.module.css — 徽章样式
+ */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  min-height: var(--sp-5); /* 20px */
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-full); /* 胶囊形 */
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  font-weight: 600;
+  white-space: nowrap;
+  border: var(--border-width) solid transparent;
+}
+
+.icon {
+  display: inline-flex;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+.label {
+  font-variant-numeric: tabular-nums;
+}
+
+.soft {
+  background: var(--accent-subtle);
+}
+
+.tone_neutral {
+  background: var(--bg-active);
+  color: var(--text-secondary);
+}
+
+.tone_accent {
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.tone_success {
+  background: color-mix(in srgb, var(--success) 16%, transparent);
+  color: var(--success);
+}
+
+.tone_warning {
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  color: var(--warning);
+}
+
+.tone_danger {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+
+.tone_drink {
+  background: color-mix(in srgb, var(--event-drink) 16%, transparent);
+  color: var(--event-drink);
+}
+
+.tone_talk {
+  background: color-mix(in srgb, var(--event-talk) 16%, transparent);
+  color: var(--event-talk);
+}
+
+.tone_away {
+  background: color-mix(in srgb, var(--event-away) 16%, transparent);
+  color: var(--event-away);
+}
+
+.tone_phone {
+  background: color-mix(in srgb, var(--event-phone) 16%, transparent);
+  color: var(--event-phone);
+}
+
+.tone_yawn {
+  background: color-mix(in srgb, var(--event-yawn) 16%, transparent);
+  color: var(--event-yawn);
+}
+
+.tone_gaze_off {
+  background: color-mix(in srgb, var(--event-gaze-off) 16%, transparent);
+  color: var(--event-gaze-off);
+}

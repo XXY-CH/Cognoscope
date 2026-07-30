@@ -1,0 +1,18 @@
+/**
+ * TrashTable.module.css — 回收站特有列（原路径始终可见）
+ */
+
+.pathCol {
+  width: auto;
+  min-width: calc(var(--sp-12) * 2);
+}
+
+.pathText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 100%;
+}

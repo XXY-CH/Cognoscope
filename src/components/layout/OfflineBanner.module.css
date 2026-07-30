@@ -1,0 +1,39 @@
+/**
+ * OfflineBanner.module.css — 顶部离线状态条
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: var(--sp-1) var(--sp-4);
+  background: var(--bg-active); /* 离线提示底 */
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  border-bottom: 1px solid var(--border-subtle);
+  animation: offline-in var(--dur-base) var(--ease-standard);
+}
+
+.text {
+  line-height: var(--text-sm-lh, 20px);
+}
+
+@keyframes offline-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation: none;
+  }
+}

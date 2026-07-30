@@ -1,0 +1,30 @@
+/**
+ * Tooltip.module.css — 悬浮提示气泡
+ * 规范参考：UI_spec.md §3 Tooltip；对比度柔化以降低刺眼感
+ */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.tip {
+  position: fixed;
+  z-index: var(--z-tooltip); /* Tooltip 层级 */
+  max-width: var(--tooltip-max-width); /* 240px */
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border: var(--border-width) solid var(--tooltip-border);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  /* 横排单行，避免窄容器把中文拆成竖排感 */
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+  text-orientation: mixed;
+  text-align: center;
+}

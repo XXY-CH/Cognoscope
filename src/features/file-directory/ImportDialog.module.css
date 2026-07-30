@@ -1,0 +1,139 @@
+/**
+ * ImportDialog.module.css — 导入对话框
+ */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  height: var(--import-dropzone-height); /* 160px */
+  border: var(--border-width) dashed var(--border-default);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+.dropzoneActive {
+  border-color: var(--accent); /* 拖入后强调边框 */
+  background: var(--accent-subtle);
+  color: var(--accent);
+}
+
+.dropTitle {
+  margin: 0;
+  font-size: var(--text-body);
+  color: inherit;
+}
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.hint {
+  margin: var(--sp-4) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.list {
+  list-style: none;
+  margin: var(--sp-5) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  max-height: calc(var(--sp-12) * 4);
+  overflow: auto;
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.itemHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.itemName {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cancel {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.status {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.progressTrack {
+  height: var(--sp-1);
+  border-radius: var(--radius-full);
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: var(--accent);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.p0 {
+  transform: scaleX(0);
+}
+.p20 {
+  transform: scaleX(0.2);
+}
+.p40 {
+  transform: scaleX(0.4);
+}
+.p60 {
+  transform: scaleX(0.6);
+}
+.p80 {
+  transform: scaleX(0.8);
+}
+.p100 {
+  transform: scaleX(1);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--danger);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone,
+  .progressBar {
+    transition: none;
+  }
+}

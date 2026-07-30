@@ -1,0 +1,52 @@
+/**
+ * ReadingHeatmap.module.css — 阅读热力图（仅格子）
+ */
+
+.root {
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  margin: 0 0 var(--sp-4);
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  font-weight: var(--text-h2-weight);
+  color: var(--text-primary);
+}
+
+.heat {
+  display: grid;
+  grid-template-columns: repeat(15, var(--heat-cell));
+  gap: var(--sp-1);
+  justify-content: start;
+}
+
+.cell {
+  width: var(--heat-cell);
+  height: var(--heat-cell);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  display: inline-block;
+}
+
+.cell[data-level='1'] {
+  background: color-mix(in srgb, var(--chart-reading) 25%, transparent);
+}
+.cell[data-level='2'] {
+  background: color-mix(in srgb, var(--chart-reading) 45%, transparent);
+}
+.cell[data-level='3'] {
+  background: color-mix(in srgb, var(--chart-reading) 70%, transparent);
+}
+.cell[data-level='4'] {
+  background: var(--chart-reading);
+}
+
+.hint {
+  margin: var(--sp-3) 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}

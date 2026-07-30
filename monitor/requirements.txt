@@ -1,0 +1,9 @@
+ultralytics
+mediapipe
+opencv-contrib-python
+numpy
+torch
+torchvision
+onnxruntime
+flask
+flask-cors

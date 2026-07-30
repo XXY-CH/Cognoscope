@@ -1,0 +1,54 @@
+/**
+ * Input.module.css — 文本输入框样式
+ * 规范参考：UI_spec.md §3 Input
+ */
+
+.root {
+  box-sizing: border-box;
+  height: var(--btn-height-md); /* 36px */
+  width: 100%;
+  margin: 0;
+  padding: 0 var(--sp-3);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.root::placeholder {
+  color: var(--text-tertiary); /* 占位符 */
+}
+
+.root:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-strong);
+}
+
+.root:focus {
+  outline: none;
+  border-color: var(--accent); /* focus 边框强调色 */
+  box-shadow: 0 0 0 2px var(--accent-glow); /* 2px 同色 20% 外发光 */
+}
+
+.root:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.root:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+  background: var(--bg-elevated);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
+}

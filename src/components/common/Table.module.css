@@ -1,0 +1,90 @@
+/**
+ * Table.module.css — 数据表格样式
+ * 规范参考：UI_spec.md §3 Table
+ */
+
+.wrap {
+  width: 100%;
+  overflow: auto;
+}
+
+.root {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky); /* 表头 sticky */
+}
+
+.th {
+  height: var(--table-header-height); /* 40px */
+  padding: 0 var(--sp-4);
+  text-align: left;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.td {
+  height: var(--table-row-height); /* 52px */
+  padding: 0 var(--sp-4);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  color: var(--text-primary);
+  border-bottom: var(--border-width) solid var(--border-subtle); /* 行分隔 */
+  vertical-align: middle;
+}
+
+.row {
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.row:hover {
+  background: var(--bg-hover); /* 行 hover */
+}
+
+.rowClickable {
+  cursor: pointer;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+.alignCenter {
+  text-align: center;
+}
+
+.emptyCell {
+  padding: var(--sp-8) var(--sp-4);
+  text-align: center;
+  color: var(--text-secondary);
+  border-bottom: none;
+}
+
+/* 预置列宽类（对应 §4.3，避免调用方内联 style） */
+.colName {
+  min-width: var(--table-col-name-min); /* 240px */
+}
+
+.colTime {
+  width: var(--table-col-time); /* 160px */
+}
+
+.colSize {
+  width: var(--table-col-size); /* 100px */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
+}

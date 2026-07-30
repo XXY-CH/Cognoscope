@@ -1,0 +1,45 @@
+/**
+ * EpubRenderer.module.css — EPUB 阅读区布局
+ * 规范参考：UI_spec.md §8.3
+ */
+
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+}
+
+.host {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  background: var(--bg-base);
+}
+
+.host :global(iframe) {
+  border: none;
+  width: 100%;
+  height: 100%;
+}
+
+.loading,
+.error {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: var(--sp-8);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.error {
+  color: var(--danger);
+  pointer-events: auto;
+}

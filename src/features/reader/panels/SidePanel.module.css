@@ -1,0 +1,138 @@
+/**
+ * SidePanel.module.css — 右侧侧边栏
+ * 规范参考：UI_spec.md §8.6
+ */
+
+.root {
+  position: relative;
+  flex-shrink: 0;
+  width: var(--side-width, var(--side-panel-width));
+  height: 100%;
+  background: var(--bg-elevated);
+  border-left: var(--border-width) solid var(--border-subtle);
+  overflow: hidden;
+  /* 仅折叠开合过渡；拖拽时 .dragging 关闭，避免右缘与内容脱节 */
+  transition: width var(--dur-base) var(--ease-standard);
+}
+
+.dragging {
+  transition: none;
+}
+
+.collapsed {
+  width: 0;
+  border-left-width: 0;
+}
+
+.open {
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  /* 跟随 root 当前宽度，避免 --side-width 瞬变导致右缘空档 */
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: var(--side-panel-toolbar-height); /* 40px */
+  padding: 0 var(--sp-3);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 问答区按比例占高；批注用 flex:1 吃掉剩余 */
+.qa {
+  flex: none;
+  height: calc((100% - var(--row-resizer-size)) * var(--qa-ratio, 0.5));
+  min-height: 0;
+  overflow: hidden;
+}
+
+.qaFill {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.anno {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rowResizer {
+  flex-shrink: 0;
+  height: var(--row-resizer-size); /* 6px */
+  cursor: row-resize;
+  z-index: var(--z-resizer);
+  position: relative;
+}
+
+.rowResizer::after {
+  content: '';
+  position: absolute;
+  left: var(--sp-4);
+  right: var(--sp-4);
+  top: 50%;
+  height: var(--border-width);
+  background: var(--border-subtle);
+  transform: translateY(-50%);
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+
+.rowResizer:hover::after,
+.rowResizer:active::after {
+  /* 柔和高亮，避免整条刺眼色块 */
+  background: color-mix(in srgb, var(--accent) 55%, var(--border-subtle));
+}
+
+.bothCollapsed {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+
+.resizer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--resizer-size);
+  height: 100%;
+  cursor: col-resize;
+  z-index: var(--z-resizer);
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+
+.resizer:hover,
+.resizer:active {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
+
+  .rowResizer::after,
+  .resizer {
+    transition: none;
+  }
+}

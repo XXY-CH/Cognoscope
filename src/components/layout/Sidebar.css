@@ -1,0 +1,266 @@
+/**
+ * Sidebar.css — 全局导航侧栏样式
+ * 规范参考：UI_spec.md §2.1；尺寸/颜色仅取自 tokens.css
+ */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: var(--sidebar-width); /* Sidebar 展开宽度，来自 §2 */
+  height: 100%;
+  background: var(--bg-elevated); /* 侧栏背景，来自 §1.1 */
+  border-right: var(--border-width) solid var(--border-subtle); /* 右侧分隔线 */
+  transition: width var(--dur-slow) var(--ease-standard); /* 折叠动画用慢速时长 */
+}
+
+.sidebar--collapsed {
+  width: var(--sidebar-width-collapsed); /* 折叠宽度 64px */
+}
+
+.sidebar__user {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3); /* 小间距 */
+  height: var(--sidebar-user-height); /* 用户区高 64px */
+  padding: 0 var(--sp-4); /* 标准内边距 */
+  box-sizing: border-box;
+  border-radius: var(--radius-md);
+  margin: var(--sp-2);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.sidebar__user:hover {
+  background: var(--bg-hover); /* 悬停背景 */
+}
+
+.sidebar--collapsed .sidebar__user {
+  flex-direction: column;
+  justify-content: center;
+  height: auto;
+  min-height: var(--sidebar-user-height);
+  padding: var(--sp-2) 0;
+  gap: var(--sp-1);
+}
+
+.sidebar__avatar {
+  flex-shrink: 0;
+  width: var(--avatar-size); /* 头像 32px */
+  height: var(--avatar-size);
+  border-radius: var(--radius-full); /* 圆形 */
+  display: grid;
+  place-items: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent); /* 强调色文字 */
+  background: var(--accent-alpha-12); /* 强调色 12% 浅底 */
+}
+
+.sidebar__user-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar__user-name {
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__user-role {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  color: var(--text-tertiary); /* 次要说明色 */
+}
+
+.sidebar__icon-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--nav-item-height); /* 与导航项同高的点击热区 */
+  height: var(--nav-item-height);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.sidebar__icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.sidebar__icon-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.sidebar--collapsed .sidebar__icon-btn {
+  width: var(--nav-item-height);
+  height: var(--nav-item-height);
+}
+
+.sidebar__nav {
+  padding: var(--sp-2);
+}
+
+.sidebar__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1); /* 项间距 */
+}
+
+.sidebar__nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3); /* 图标与文字间隔 */
+  height: var(--nav-item-height); /* 导航项高 40px */
+  padding: 0 var(--sp-3); /* 左内边距 */
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.sidebar--collapsed .sidebar__nav-item {
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+
+.sidebar__nav-item:hover {
+  background: var(--bg-hover);
+}
+
+.sidebar__nav-item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.sidebar__nav-item--active {
+  background: var(--bg-active); /* 选中行背景 */
+  color: var(--accent);
+}
+
+.sidebar__nav-item--active::before {
+  /* 左侧 3px 强调竖条（圆角右端） */
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: var(--sp-5); /* 约 20px 可视高度 */
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--accent);
+}
+
+.sidebar__nav-item--muted {
+  color: var(--text-secondary); /* 回收站等低权重入口 */
+}
+
+.sidebar__nav-item--muted.sidebar__nav-item--active {
+  color: var(--accent);
+}
+
+.sidebar__nav-icon {
+  flex-shrink: 0;
+}
+
+.sidebar__nav-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar__spacer {
+  flex: 1;
+}
+
+.sidebar__footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  padding-bottom: var(--sp-4);
+}
+
+.sidebar__footer-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.sidebar__theme-btn {
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar__offline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--bg-active);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.sidebar__offline--icon {
+  width: 28px;
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar--collapsed .sidebar__footer-row {
+  flex-direction: column;
+}
+
+.sidebar__chevron {
+  transition: transform var(--dur-base) var(--ease-standard);
+}
+
+.sidebar__chevron--collapsed {
+  transform: rotate(180deg); /* 折叠后箭头朝右，提示可展开 */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar__user,
+  .sidebar__icon-btn,
+  .sidebar__nav-item,
+  .sidebar__chevron {
+    transition: none;
+  }
+}

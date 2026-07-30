@@ -1,0 +1,13 @@
+/**
+ * KnowledgeGraphPage.module.css — 知识图谱占位页布局
+ * 规范参考：UI_spec.md §6.1；完整画布布局待后继按规范重做
+ */
+
+.root {
+  /* 占位阶段：居中 EmptyState，不抵消 Content padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  background: var(--bg-base); /* 页面底色，来自 §1.1 */
+}

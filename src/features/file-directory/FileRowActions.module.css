@@ -1,0 +1,17 @@
+/**
+ * FileRowActions.module.css
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.danger {
+  color: var(--danger); /* 删除按钮危险色 */
+}
+
+.danger:hover:not(:disabled) {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}

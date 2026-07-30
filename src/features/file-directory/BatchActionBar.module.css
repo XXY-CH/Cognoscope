@@ -1,0 +1,33 @@
+/**
+ * BatchActionBar.module.css — 批量操作条
+ */
+
+.root {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--batch-bar-height); /* 48px */
+  padding: 0 var(--sp-4);
+  margin: calc(var(--sp-5) * -1) calc(var(--sp-6) * -1) var(--sp-4); /* 抵消 Content padding，贴齐顶栏下沿 */
+  background: var(--accent-subtle); /* 强调色浅背景 */
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.count {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.danger {
+  color: var(--danger);
+}

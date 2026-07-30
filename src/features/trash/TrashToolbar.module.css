@@ -1,0 +1,10 @@
+/**
+ * TrashToolbar.module.css — 回收站操作栏
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}

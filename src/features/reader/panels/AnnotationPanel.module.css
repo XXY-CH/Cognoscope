@@ -1,0 +1,92 @@
+/**
+ * AnnotationPanel.module.css
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: calc(var(--sp-8) + var(--sp-1)); /* 约 36px */
+  padding: 0 var(--sp-3);
+  flex-shrink: 0;
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.empty {
+  margin: var(--sp-5);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.quote {
+  margin: 0;
+  padding-left: var(--sp-2);
+  border-left: 2px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--text-tertiary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.body {
+  width: 100%;
+  resize: vertical;
+  min-height: calc(var(--sp-6) + var(--sp-2)); /* 约一行 */
+  padding: var(--sp-2);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh, 20px);
+}
+
+.body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+}
+
+.meta {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}

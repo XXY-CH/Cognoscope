@@ -1,0 +1,182 @@
+/**
+ * ReaderPage - 阅读界面全屏外壳（无全局 Sidebar）
+ * 所属页面：E · 阅读界面
+ * 规范参考：UI_spec.md §8.1 / §14
+ *
+ * 真全屏用 Fullscreen API；退出仅依赖 Esc（无自定义圆形叉）
+ */
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from '../../components/common';
+import { OfflineBanner } from '../../components/layout/OfflineBanner';
+import { useCamera } from '../../hooks/useCamera';
+import { useLinesReadSync } from '../../hooks/useLinesReadSync';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
+import { useReadingSession } from '../../hooks/useReadingSession';
+import { useSystemThemeListener } from '../../hooks/useSystemThemeListener';
+import { useFileStore } from '../../stores/fileStore';
+import { useReaderStore } from '../../stores/readerStore';
+import { MONITOR_API_BASE, startDetection, stopDetection } from '../../utils/monitorApi';
+import { ReaderCanvas } from './canvas/ReaderCanvas';
+import { ReaderBottomBar } from './ReaderBottomBar';
+import { ReaderTopBar } from './ReaderTopBar';
+import { SidePanel } from './panels/SidePanel';
+import { TocPanel } from './panels/TocPanel';
+import styles from './ReaderPage.module.css';
+
+/**
+ * ReaderPage - 根据路由 fileId 打开文件；布局：TopBar / Toc+Canvas+Side / BottomBar
+ */
+export function ReaderPage() {
+  useSystemThemeListener();
+  // 阅读路由无 AppShell，需单独挂载网络监听
+  useNetworkStatus();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const zoomBeforeFsRef = useRef(100);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { fileId } = useParams<{ fileId: string }>();
+  const navigate = useNavigate();
+  const files = useFileStore((s) => s.files);
+  const loadFiles = useFileStore((s) => s.loadFiles);
+  const openFile = useReaderStore((s) => s.openFile);
+  const clearFile = useReaderStore((s) => s.clearFile);
+  // 已读行数同步 + 会话写入仪表盘（§8.5）；用 store.fileId 避免路由未解析完就开会话
+  const activeFileId = useReaderStore((s) => s.fileId);
+  useLinesReadSync(activeFileId);
+  useReadingSession(activeFileId);
+
+  // 打开论文 → 自动启动行为检测（Python 服务优先，不可用时回退浏览器摄像头）
+  const {
+    startDetection: startCamera,
+    stopDetection: stopCamera,
+  } = useCamera();
+
+  useEffect(() => {
+    if (!activeFileId) return;
+
+    void (async () => {
+      const result = await startDetection(activeFileId);
+      if (result.status === 'unreachable') {
+        // Python 服务未运行 → 回退到浏览器内置摄像头
+        await startCamera();
+      }
+    })();
+
+    // 页面刷新/关闭时用 sendBeacon 确保 Python stop 到达
+    const handleUnload = () => {
+      navigator.sendBeacon(`${MONITOR_API_BASE}/api/detect/stop`);
+    };
+    window.addEventListener('beforeunload', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      void stopDetection(); // Python 服务 stop
+      stopCamera();         // 浏览器摄像头 stop
+    };
+  }, [activeFileId, startCamera, stopCamera]);
+  const tocOpen = useReaderStore((s) => s.tocOpen);
+  const sideOpen = useReaderStore((s) => s.sideOpen);
+  const tocWidth = useReaderStore((s) => s.tocWidth);
+  const sideWidth = useReaderStore((s) => s.sideWidth);
+  const toggleToc = useReaderStore((s) => s.toggleToc);
+
+  useEffect(() => {
+    if (files.length === 0) void loadFiles();
+  }, [files.length, loadFiles]);
+
+  useEffect(() => {
+    if (!fileId) return;
+    const node = files.find((f) => f.id === fileId && f.deletedAt === null);
+    if (!node) {
+      // 文件尚未加载完时先等；已加载仍找不到则回目录
+      if (files.length > 0) navigate('/', { replace: true });
+      return;
+    }
+    if (node.type === 'folder') {
+      navigate('/', { replace: true });
+      return;
+    }
+    openFile({
+      id: node.id,
+      name: node.name,
+      type: node.type,
+    });
+    return () => clearFile();
+  }, [fileId, files, navigate, openFile, clearFile]);
+
+  // 与 files 更新解耦：仅在成功打开的文件 id 变化时写入最后阅读
+  useEffect(() => {
+    if (!activeFileId) return;
+    void useFileStore.getState().recordLastRead(activeFileId);
+  }, [activeFileId]);
+
+  // Canvas 最小 480：两侧展开导致过窄时优先收起 Toc（§8.1）
+  useEffect(() => {
+    const check = () => {
+      const toc = tocOpen ? tocWidth : 0;
+      const side = sideOpen ? sideWidth : 0;
+      const available = window.innerWidth - toc - side;
+      if (available < 480 && tocOpen) {
+        toggleToc();
+      }
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, [tocOpen, sideOpen, tocWidth, sideWidth, toggleToc]);
+
+  // 同步浏览器全屏；Esc 退出时恢复缩放
+  useEffect(() => {
+    const onChange = () => {
+      const fs = document.fullscreenElement === rootRef.current;
+      setIsFullscreen(fs);
+      if (!fs) {
+        useReaderStore.getState().setZoomPercent(zoomBeforeFsRef.current);
+      }
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const enterFullscreen = useCallback(async () => {
+    const el = rootRef.current;
+    if (!el) return;
+    const reader = useReaderStore.getState();
+    zoomBeforeFsRef.current = reader.zoomPercent;
+    try {
+      // navigationUI: hide 尽量隐藏浏览器导航 UI；退出仅用 Esc
+      const req = el.requestFullscreen.bind(el) as (
+        options?: FullscreenOptions,
+      ) => Promise<void>;
+      try {
+        await req({ navigationUI: 'hide' });
+      } catch {
+        await el.requestFullscreen();
+      }
+      reader.setZoomPercent(
+        Math.min(200, Math.round(zoomBeforeFsRef.current * 1.2)),
+      );
+      toast.show('按 Esc 退出全屏');
+    } catch {
+      toast.error('无法进入全屏');
+    }
+  }, []);
+
+  return (
+    <div
+      ref={rootRef}
+      className={[styles.root, isFullscreen ? styles.fullscreen : ''].join(' ')}
+    >
+      {!isFullscreen ? <OfflineBanner /> : null}
+      {!isFullscreen ? (
+        <ReaderTopBar onEnterFullscreen={() => void enterFullscreen()} />
+      ) : null}
+      <div className={styles.body}>
+        {!isFullscreen ? <TocPanel /> : null}
+        <ReaderCanvas />
+        {!isFullscreen ? <SidePanel /> : null}
+      </div>
+      {!isFullscreen ? <ReaderBottomBar /> : null}
+    </div>
+  );
+}

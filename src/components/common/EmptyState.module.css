@@ -1,0 +1,45 @@
+/**
+ * EmptyState.module.css — 空状态样式
+ * 规范参考：UI_spec.md §3 EmptyState
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--sp-3);
+  padding: var(--sp-10) var(--sp-6);
+  width: 100%;
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--empty-icon-size); /* 64px */
+  height: var(--empty-icon-size);
+  color: var(--text-tertiary);
+}
+
+.icon svg {
+  width: var(--empty-icon-size);
+  height: var(--empty-icon-size);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: var(--text-h3-weight);
+  color: var(--text-primary);
+}
+
+.description {
+  margin: 0;
+  max-width: calc(var(--empty-icon-size) * 5); /* 约 320px 可读宽度 */
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  color: var(--text-secondary);
+}

@@ -1,0 +1,59 @@
+/**
+ * MoveDialog.module.css — 根目录/回收站不缩进；下级文件夹逐级缩进
+ */
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  max-height: calc(var(--sp-12) * 6);
+  overflow: auto;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  width: 100%;
+  height: var(--nav-item-height);
+  /* 文件夹：depth≥1，相对根目录多缩进 depth 格 */
+  padding-left: calc(var(--sp-3) + var(--folder-depth, 0) * var(--sp-4));
+  padding-right: var(--sp-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 根目录 / 回收站：不缩进 */
+.itemTop {
+  padding-left: var(--sp-3);
+  font-weight: 600;
+}
+
+.folderName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item:hover {
+  background: var(--bg-hover);
+}
+
+.itemActive {
+  background: var(--bg-active);
+  color: var(--accent);
+}
+
+.item:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}

@@ -1,0 +1,105 @@
+/**
+ * PdfRenderer.module.css — PDF 渲染器布局与纸面样式
+ * 规范参考：UI_spec.md §8.3
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 100%;
+  outline: none;
+}
+
+.root:focus-visible {
+  /* 键盘焦点可见：2px 强调色描边（§11） */
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.single,
+.double {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: var(--sp-5); /* 双页列间距 */
+  width: 100%;
+}
+
+.scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-5); /* 连续滚动页间间距 §8.3 */
+  width: 100%;
+}
+
+.page {
+  position: relative;
+  background: var(--reader-paper-bg); /* PDF 纸面，浅/深主题令牌 */
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.canvas {
+  display: block;
+  max-width: 100%;
+}
+
+.status,
+.error {
+  margin: auto;
+  padding: var(--sp-8);
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: auto;
+  padding: var(--sp-8);
+}
+
+.progressBar {
+  width: min(240px, 60vw);
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.progressFill {
+  width: 0%;
+  height: 100%;
+  background: var(--accent); /* 主强调色 */
+  border-radius: var(--radius-full);
+  transition: width var(--dur-fast) var(--ease-standard);
+}
+
+.progressLabel {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* 文内搜索命中：半透明强调底，文字层本身仍透明可选 */
+.root :global(.findHit) {
+  background: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progressFill {
+    transition: none;
+  }
+}

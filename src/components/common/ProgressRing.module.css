@@ -1,0 +1,73 @@
+/**
+ * ProgressRing.module.css — 环形进度样式
+ * 规范参考：UI_spec.md §3 ProgressRing（尺寸 88、环宽 8）
+ */
+
+.root {
+  position: relative;
+  width: var(--progress-ring-size); /* 88px */
+  height: var(--progress-ring-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* 让进度从 12 点钟方向起算 */
+}
+
+.track {
+  stroke: var(--bg-hover); /* 轨道底色 */
+}
+
+.indicator {
+  transition: stroke-dashoffset var(--dur-slow) var(--ease-standard);
+}
+
+.tone_focus {
+  stroke: var(--chart-focus); /* 专注度 */
+}
+
+.tone_fatigue {
+  stroke: var(--chart-fatigue); /* 疲劳度 */
+}
+
+.tone_accent {
+  stroke: var(--accent);
+}
+
+.tone_success {
+  stroke: var(--success);
+}
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.value {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  font-weight: var(--text-h2-weight);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator {
+    transition: none;
+  }
+}

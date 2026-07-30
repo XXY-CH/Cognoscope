@@ -1,0 +1,96 @@
+/**
+ * MetricCards.module.css — 两列指标卡
+ * 规范参考：UI_spec.md §5.3（布局改产品迭代：仅专注时长 / 阅读行数）
+ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-4); /* 卡片间距 */
+}
+
+.card {
+  position: relative;
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated); /* 卡片层 */
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.icon {
+  position: absolute;
+  top: var(--sp-5);
+  right: var(--sp-5);
+  width: var(--metric-icon-size);
+  height: var(--metric-icon-size);
+}
+
+.sparkFocus.icon {
+  color: var(--chart-focus); /* 专注色 */
+}
+.sparkReading.icon {
+  color: var(--chart-reading); /* 阅读色 */
+}
+
+.caption {
+  margin: 0 0 var(--sp-2);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.value {
+  margin: 0;
+  font-size: var(--text-display);
+  line-height: var(--text-display-lh);
+  font-weight: var(--text-display-weight);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub {
+  margin: var(--sp-2) 0 var(--sp-3);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.spark {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-1);
+  height: var(--spark-height);
+}
+
+.sparkBar {
+  flex: 1;
+  min-width: var(--sp-1);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: var(--chart-focus);
+  height: 20%;
+}
+
+.sparkBar[data-level='1'] {
+  height: 25%;
+}
+.sparkBar[data-level='2'] {
+  height: 50%;
+}
+.sparkBar[data-level='3'] {
+  height: 75%;
+}
+.sparkBar[data-level='4'] {
+  height: 100%;
+}
+
+.sparkFocus .sparkBar {
+  background: var(--chart-focus);
+}
+.sparkReading .sparkBar {
+  background: var(--chart-reading);
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

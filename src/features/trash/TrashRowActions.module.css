@@ -1,0 +1,18 @@
+/**
+ * TrashRowActions.module.css
+ */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.danger:hover:not(:disabled) {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}

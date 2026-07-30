@@ -1,0 +1,38 @@
+/**
+ * ReaderCanvas.module.css — 阅读画布
+ * 规范参考：UI_spec.md §8.3
+ */
+
+.root {
+  flex: 1;
+  min-width: var(--reader-canvas-min); /* 480px */
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-base); /* 浅色画布底；深色见下方 */
+  padding: var(--sp-5);
+}
+
+:global([data-theme='dark']) .root {
+  background: var(--reader-canvas-dark-bg); /* 深色模式画布底 #121216 */
+}
+
+.stage {
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  /* 缩放由 PDF.js viewport / EPUB 渲染器自行处理，避免 CSS transform 糊屏 */
+}
+
+.empty {
+  margin: auto;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+}
+
+.hint {
+  margin: var(--sp-2) 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+

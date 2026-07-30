@@ -1,0 +1,119 @@
+/**
+ * Button.module.css — 按钮样式
+ * 规范参考：UI_spec.md §3；尺寸/颜色仅取自 tokens
+ */
+
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2); /* 图标与文字间距 */
+  box-sizing: border-box;
+  margin: 0;
+  border-radius: var(--radius-md); /* 按钮圆角 */
+  font-family: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
+}
+
+.root:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.root:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+.size_sm {
+  height: var(--btn-height-sm); /* 32px */
+  padding: 0 var(--sp-3);
+}
+
+.size_md {
+  height: var(--btn-height-md); /* 36px */
+  padding: 0 var(--sp-4);
+}
+
+.size_lg {
+  height: var(--btn-height-lg); /* 40px */
+  padding: 0 var(--sp-5);
+}
+
+/* 主按钮：实心强调色 */
+.variant_primary {
+  border: var(--border-width) solid transparent;
+  background: var(--accent);
+  color: var(--text-on-accent);
+}
+
+.variant_primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+/* 次按钮：描边 */
+.variant_secondary {
+  border: var(--border-width) solid var(--border-default);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.variant_secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+/* 文字按钮：无边框 */
+.variant_ghost {
+  border: var(--border-width) solid transparent;
+  background: transparent;
+  color: var(--accent);
+}
+
+.variant_ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+/* 危险按钮：删除等破坏性操作 */
+.variant_danger {
+  border: var(--border-width) solid transparent;
+  background: var(--danger);
+  color: var(--text-on-accent);
+}
+
+.variant_danger:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  align-items: center;
+  justify-content: center;
+}
+
+.icon svg {
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+.label {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    transition: none;
+  }
+}

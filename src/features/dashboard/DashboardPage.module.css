@@ -1,0 +1,10 @@
+/**
+ * DashboardPage.module.css — 仪表盘纵向分区间距
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5); /* 区块间距 */
+  min-height: 100%;
+}

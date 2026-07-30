@@ -1,0 +1,105 @@
+/**
+ * Toast.module.css — 右下角堆叠提示
+ * 规范参考：UI_spec.md §3 Toast
+ */
+
+.viewport {
+  position: fixed;
+  right: var(--sp-6);
+  bottom: var(--sp-6);
+  z-index: var(--z-toast); /* Toast 层级 */
+  display: flex;
+  flex-direction: column-reverse; /* 新项靠近底部 */
+  gap: var(--sp-2);
+  width: var(--toast-width); /* 320px */
+  pointer-events: none;
+}
+
+.item {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-md);
+  border: var(--border-width) solid var(--border-subtle);
+  border-left-width: var(--sp-1); /* 左侧色条提示类型 */
+}
+
+.tone_info {
+  border-left-color: var(--accent);
+}
+
+.tone_success {
+  border-left-color: var(--success);
+}
+
+.tone_warning {
+  border-left-color: var(--warning);
+}
+
+.tone_error {
+  border-left-color: var(--danger);
+}
+
+.message {
+  margin: 0;
+  flex: 1;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+.actionBtn {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  cursor: pointer;
+  padding: var(--sp-1);
+  border-radius: var(--radius-sm);
+}
+
+.actionBtn:hover {
+  background: var(--bg-hover);
+}
+
+.actionBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.closeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.closeBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}

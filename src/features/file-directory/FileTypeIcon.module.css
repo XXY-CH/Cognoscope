@@ -1,0 +1,6 @@
+/**
+ * FileTypeIcon.module.css
+ */
+.folder {
+  color: var(--accent); /* 文件夹填充强调色 §4.3 */
+}

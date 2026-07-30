@@ -1,0 +1,30 @@
+/**
+ * AppShell.css — 全局布局骨架
+ * 规范参考：UI_spec.md §2 / §2.3；滚动仅发生在 Content 内部
+ */
+
+.app-shell {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* 禁止整页滚动，交给 Content */
+  background: var(--bg-base); /* 页面主背景 */
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.app-shell__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.app-shell__content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto; /* 纵向滚动条仅出现在 Content */
+  padding: var(--sp-5) var(--sp-6); /* 顶 sp-5、左右 sp-6，§2.3 */
+}

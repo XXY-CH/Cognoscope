@@ -1,0 +1,68 @@
+/**
+ * SelectionToolbar.module.css — 划词浮动工具条（§8.7）
+ */
+
+.bar {
+  position: fixed;
+  top: var(--toolbar-top);
+  left: var(--toolbar-left);
+  z-index: var(--z-selection-toolbar); /* 划词浮动工具条 */
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  height: 36px;
+  padding: 0 var(--sp-2);
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.highlightWrap {
+  position: relative;
+}
+
+.colorMenu {
+  position: absolute;
+  bottom: calc(100% + var(--sp-2));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.colorDot {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-subtle);
+  cursor: pointer;
+  padding: 0;
+}
+
+.colorDot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.colorDot[data-color='yellow'] {
+  background: #ffd740; /* §8.8 黄 */
+}
+
+.colorDot[data-color='green'] {
+  background: #5bf070; /* §8.8 绿 */
+}
+
+.colorDot[data-color='blue'] {
+  background: #47b5ff; /* §8.8 蓝 */
+}
+
+.colorDot[data-color='pink'] {
+  background: #ff7ac6; /* §8.8 粉 */
+}

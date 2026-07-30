@@ -1,0 +1,158 @@
+/**
+ * ReaderBottomBar.module.css — 阅读底栏
+ * 规范参考：UI_spec.md §8.5
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  height: var(--reader-bottombar-height); /* 40px */
+  padding: 0 var(--sp-6);
+  background: var(--bg-base);
+  border-top: var(--border-width) solid var(--border-subtle);
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-sticky);
+}
+
+.left,
+.right,
+.center {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.center {
+  flex: 1;
+  justify-content: center;
+  max-width: calc(var(--sp-12) * 8);
+}
+
+.pageLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.pageInput {
+  width: var(--sp-10);
+  height: var(--btn-height-sm);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  text-align: center;
+}
+
+.pageInput:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.total {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.camChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-left: var(--sp-2);
+  height: var(--btn-height-sm);
+  padding: 0 var(--sp-2);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.camChip:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.camChip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.camDot {
+  width: var(--sp-2); /* 8px */
+  height: var(--sp-2);
+  border-radius: var(--radius-full);
+  background: var(--text-disabled);
+  flex-shrink: 0;
+}
+
+.camLive {
+  background: var(--success); /* 检测中 */
+  animation: cam-breathe 2s var(--ease-standard) infinite;
+}
+
+.camPaused {
+  background: var(--text-disabled);
+}
+
+.camBad {
+  background: var(--danger);
+}
+
+.camText {
+  white-space: nowrap;
+}
+
+@keyframes cam-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camLive {
+    animation: none;
+  }
+}
+
+.slider {
+  flex: 1;
+  accent-color: var(--accent);
+  min-width: var(--sp-12);
+}
+
+.lines {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.zoom {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.zoomSelect {
+  height: var(--btn-height-sm);
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}

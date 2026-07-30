@@ -1,0 +1,20 @@
+{
+  "errors": [],
+  "logs": [
+    "[debug] [vite] connecting...",
+    "[debug] [vite] connected.",
+    "[info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+    "[warn] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition."
+  ],
+  "info": {
+    "title": "学森 · 学术文献阅读助手",
+    "dataTheme": "dark",
+    "bodyBg": "rgb(26, 26, 30)",
+    "bodyColor": "rgb(232, 232, 240)",
+    "rootHTML": "<div class=\"app-shell\"><aside class=\"sidebar\" aria-label=\"全局导航\"><div class=\"sidebar__user\"><div class=\"sidebar__avatar\" aria-hidden=\"true\">学</div><div class=\"sidebar__user-meta\"><span class=\"sidebar__user-name\">学森用户</span><span class=\"sidebar__user-role\">本地账户</span></div><button type=\"button\" class=\"sidebar__icon-btn\" aria-label=\"打开设置\" title=\"设置\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-settings\" aria-hidden=\"true\"><path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg></button></div><nav class=\"sidebar__nav\" aria-label=\"主导航\"><ul class=\"sidebar__nav-list\"><li><a aria-label=\"文件目录\" aria-current=\"page\" class=\"sidebar__nav-item sidebar__nav-item--active\" href=\"/\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-folder sidebar__nav-icon\" aria-hidden=\"true\"><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"></path></svg><span class=\"sidebar__nav-label\">文件目录</span></a></li><li><a aria-label=\"个人仪表盘\" class=\"sidebar__nav-item\" href=\"/dashboard\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\"",
+    "rootChildCount": 2,
+    "hasAppShell": true,
+    "hasSidebar": true,
+    "textSample": "学\n学森用户\n本地账户\n文件目录\n个人仪表盘\n知识图谱\n回收站\n折叠侧栏\n跟随系统\n文件目录\n全部类型\nPDF\nEPUB\nMarkdown\nTXT\n文件夹\n导入\n暂无文件\n\n拖拽文件到此处，或点击导入\n\n导入文件\n设置\n外观\n阅读\n检测与隐私\nAI\n快捷键\n账户\n\n「外观」设置项将在后续步骤补充。\n\n取消\n保存"
+  }
+}

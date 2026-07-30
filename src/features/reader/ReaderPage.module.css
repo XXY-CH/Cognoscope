@@ -1,0 +1,33 @@
+/**
+ * ReaderPage.module.css — 阅读全屏布局
+ * 规范参考：UI_spec.md §8.1
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  /* 相对 #root 填满，避免 100vh 在部分浏览器略高于可视区 */
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+}
+
+.fullscreen {
+  background: var(--bg-base);
+}
+
+.fullscreen .body {
+  /* 全屏时画布占满 */
+  flex: 1;
+}

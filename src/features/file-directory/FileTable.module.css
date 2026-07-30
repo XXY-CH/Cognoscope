@@ -1,0 +1,240 @@
+/**
+ * FileTable.module.css — 文件列表表格
+ * 规范参考：UI_spec.md §4.3 hover 操作 / §4.4 排序
+ */
+
+.wrap {
+  width: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.head {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+}
+
+.head th {
+  height: var(--table-header-height);
+  padding: 0 var(--sp-4);
+  text-align: left;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.checkCol {
+  width: var(--sp-10); /* 40px 勾选列 */
+  padding-left: var(--sp-3) !important;
+}
+
+.nameCol {
+  width: auto;
+  min-width: var(--table-col-name-min);
+}
+
+.selectedLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent); /* 主强调色 */
+}
+
+.batchActionsCol {
+  width: calc(var(--table-col-time) * 2);
+  min-width: calc(var(--sp-12) * 3);
+}
+
+.batchActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--sp-1);
+}
+
+.batchDanger {
+  color: var(--danger);
+}
+
+.timeCol {
+  width: var(--table-col-time);
+  position: relative;
+}
+
+.sizeCol {
+  width: var(--table-col-size);
+  text-align: left;
+}
+
+.alignRight {
+  text-align: right;
+}
+
+/* 大小列表头与单元格统一左对齐 */
+.sizeCol .sortBtn {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.sizeText {
+  display: block;
+  width: 100%;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.sortBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.sortBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.sortIdle {
+  color: var(--text-disabled); /* 默认排序箭头 */
+}
+
+.sortActive {
+  color: var(--accent); /* 激活态排序箭头 */
+}
+
+.row {
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--bg-hover);
+}
+
+.rowSelected {
+  background: var(--bg-active);
+}
+
+.rowSelected:hover,
+.rowSelected:focus-within {
+  background: var(--bg-active);
+}
+
+.row td {
+  height: var(--table-row-height);
+  padding: 0 var(--sp-4);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.checkbox {
+  width: var(--sp-4);
+  height: var(--sp-4);
+  accent-color: var(--accent);
+  opacity: 0; /* 默认隐藏，hover / 选中时显示 */
+  cursor: pointer;
+}
+
+.row:hover .checkbox,
+.row:focus-within .checkbox,
+.rowSelected .checkbox,
+.head .checkbox {
+  opacity: 1;
+}
+
+.nameBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  max-width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.row:hover .nameText,
+.row:focus-within .nameText {
+  text-decoration: underline; /* 整行 hover 文件名下划线 */
+}
+
+.nameText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nameBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+.timeText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  transition: opacity var(--dur-fast) var(--ease-standard);
+}
+
+/* 覆盖两列时间：整行 hover 时只出现一组按钮，左缘对齐「更新时间」 */
+.actionsOverlay {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  /* 覆盖「更新时间」+「最后阅读」两列 */
+  width: calc(var(--table-col-time) * 2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  /* 与时间单元格内容左内边距一致 */
+  padding-left: var(--sp-4);
+  box-sizing: border-box;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-fast) var(--ease-standard);
+  background: var(--bg-hover);
+  z-index: 1;
+}
+
+.rowSelected .actionsOverlay {
+  background: var(--bg-active);
+}
+
+/* 由 JS 的 rowActionsVisible 控制，避免取消多选后 :hover 粘滞 */
+.rowActionsVisible .timeText {
+  opacity: 0;
+}
+
+.rowActionsVisible .actionsOverlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .timeText,
+  .actionsOverlay {
+    transition: none;
+  }
+}

@@ -1,0 +1,100 @@
+/**
+ * FocusSessionList.module.css — 专注会话六维指标表
+ */
+
+.root {
+  padding: var(--sp-5);
+  border-radius: var(--radius-lg);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+
+.header {
+  margin-bottom: var(--sp-4);
+}
+
+.rangeTabs {
+  display: flex;
+  gap: var(--sp-1);
+  margin-top: var(--sp-2);
+}
+
+.rangeTab,
+.rangeActive {
+  padding: var(--sp-1) var(--sp-3);
+  font-size: var(--text-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.rangeTab:hover {
+  background: var(--bg-hover);
+}
+
+.rangeActive {
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-color: var(--accent);
+}
+
+.title {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  font-weight: var(--text-h2-weight);
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  /* 窄屏横向滚动，避免挤压数字列 */
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th[scope='col'] {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  color: var(--text-secondary);
+  font-weight: var(--text-sm-weight);
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.table td,
+.table th[scope='row'] {
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child td,
+.table tbody tr:last-child th {
+  border-bottom: none;
+}
+
+.timeCell {
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.scoreCell {
+  font-weight: 600;
+  color: var(--chart-focus); /* 综合评分用专注色强调 */
+}

@@ -1,0 +1,95 @@
+/**
+ * PageHeader.css — 页面顶栏样式
+ * 规范参考：UI_spec.md §2.2；sticky 保证相对 Content 滚动固定
+ */
+
+.page-header {
+  position: sticky;
+  top: 0;
+  /* 高于表头 sticky(--z-sticky)，避免下方 tooltip 被文件列表表头挡住 */
+  z-index: var(--z-dropdown);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  height: var(--page-header-height); /* 56px */
+  padding: 0 var(--sp-6); /* 左右 padding */
+  box-sizing: border-box;
+  flex-shrink: 0;
+  background: var(--bg-base); /* 页面主背景 */
+  border-bottom: var(--border-width) solid var(--border-subtle); /* 底部分隔线 */
+}
+
+.page-header__left {
+  min-width: 0;
+  flex: 1;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: var(--text-h1); /* 页面标题字号 */
+  line-height: var(--text-h1-lh);
+  font-weight: var(--text-h1-weight);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.page-header__breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  font-size: var(--text-h1);
+  line-height: var(--text-h1-lh);
+  font-weight: var(--text-h1-weight);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page-header__breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.page-header__breadcrumb-sep {
+  color: var(--text-tertiary);
+  font-weight: 400;
+}
+
+.page-header__breadcrumb-current {
+  color: var(--text-primary);
+}
+
+.page-header__breadcrumb-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.page-header__breadcrumb-link:hover {
+  color: var(--accent);
+}
+
+.page-header__breadcrumb-link:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}

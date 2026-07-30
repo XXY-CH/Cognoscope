@@ -1,0 +1,85 @@
+/**
+ * Skeleton.module.css — 骨架屏微光动画
+ * 规范参考：UI_spec.md §3 Skeleton（1.4s 循环）
+ */
+
+.block {
+  display: block;
+  border-radius: var(--radius-md); /* 圆角矩形骨架 */
+  background: var(--bg-elevated);
+  min-height: var(--sp-4);
+}
+
+.circle {
+  border-radius: var(--radius-full);
+  width: var(--empty-icon-size);
+  height: var(--empty-icon-size);
+  min-height: 0;
+}
+
+.shimmer {
+  background-image: linear-gradient(
+    90deg,
+    var(--bg-elevated) 0%,
+    var(--bg-hover) 50%,
+    var(--bg-elevated) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite; /* 1.4s 循环微光 */
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.textLine {
+  height: var(--sp-4);
+  width: 100%;
+}
+
+.short {
+  width: 60%;
+}
+
+.tiny {
+  width: 40%;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: minmax(var(--table-col-name-min), 1fr) var(--table-col-time) var(--table-col-time) var(--table-col-size);
+  gap: var(--sp-4);
+  align-items: center;
+  height: var(--table-row-height);
+  padding: 0 var(--sp-4);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.tableRow .block {
+  height: var(--sp-4);
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+  }
+}

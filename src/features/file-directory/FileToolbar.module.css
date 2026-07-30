@@ -1,0 +1,21 @@
+/**
+ * FileToolbar.module.css — PageHeader 右侧操作区
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* 类型筛选基准宽；搜索为其两倍（此前 .root>div 误伤搜索框） */
+.typeFilter {
+  width: calc(var(--sp-12) + var(--sp-10) + var(--sp-4)); /* ≈104px */
+  flex-shrink: 0;
+}
+
+.root .search {
+  /* 提高优先级，覆盖 SearchInput 默认 --search-input-width */
+  width: calc((var(--sp-12) + var(--sp-10) + var(--sp-4)) * 2);
+  flex-shrink: 0;
+}

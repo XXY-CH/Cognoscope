@@ -1,0 +1,293 @@
+/**
+ * tokens.css — 设计令牌（Design Tokens）
+ * 严格对应 UI_spec.md §1；浅色由 :root 声明，深色由 [data-theme="dark"] 覆盖
+ * 所有颜色 / 间距 / 字号 / 圆角 / 阴影 / 层级 / 动效均只从此文件取值
+ */
+
+/* ============================================================
+   浅色主题（默认）
+   ============================================================ */
+:root {
+  /* ---------- §1.1 语义色彩 ---------- */
+  --bg-base: #ffffff; /* 页面主背景 */
+  --bg-elevated: #f5f5f7; /* 侧栏、卡片背景 */
+  --bg-hover: #efeff3; /* 悬停背景 */
+  --bg-active: #e6e9fb; /* 选中行 / 选中导航项背景 */
+  --bg-surface: #ffffff; /* 浮层、模态框、下拉菜单 */
+
+  --border-subtle: #e0e0e5; /* 分隔线、卡片描边 */
+  --border-default: #c8c8d2; /* 输入框边框 */
+  --border-strong: #a8a8b6; /* 强调边框、拖拽手柄 */
+
+  --text-primary: #1a1a1e; /* 正文 */
+  --text-secondary: #6b6b7a; /* 次要说明 */
+  --text-tertiary: #8e8e9c; /* 时间戳、脚注、占位符 */
+  --text-disabled: #adadba; /* 禁用状态 */
+
+  --accent: #4a6cf7; /* 主要强调色（按钮、链接、选中） */
+  --accent-hover: #3a5ce6; /* 强调色悬停 */
+  --accent-subtle: #eef1fe; /* 强调色浅背景（标签、徽章、批量条） */
+
+  --danger: #e54545; /* 删除、错误 */
+  --warning: #f5a623; /* 警告 */
+  --success: #34c759; /* 成功、专注度高 */
+
+  --overlay: rgba(0, 0, 0, 0.45); /* 模态遮罩 */
+  --text-on-accent: #ffffff; /* 强调色实心按钮上的文字（双主题同值，保证对比） */
+
+  /* ---------- §1.1 数据可视化专用色 ---------- */
+  --chart-focus: #4a6cf7; /* 专注度曲线 */
+  --chart-fatigue: #f5a623; /* 疲劳度曲线 */
+  --chart-distraction: #e54545; /* 分心事件标记 */
+  --chart-reading: #34c759; /* 阅读时长 */
+  --chart-bg-grid: #e8e8ef; /* 图表网格线 */
+  --chart-axis: #9090a0; /* 轴线与刻度标签 */
+
+  /* ---------- §1.1 分心事件类型配色 ---------- */
+  --event-drink: #22a7c2; /* 喝水 */
+  --event-talk: #b565d8; /* 聊天 */
+  --event-away: #e54545; /* 离开座位 */
+  --event-phone: #f5761a; /* 看手机 */
+  --event-yawn: #9a8c2e; /* 打哈欠 */
+  --event-gaze-off: #6b6b7a; /* 走神（视线离屏） */
+
+  /* ---------- §1.2 字体族 ---------- */
+  --font-sans: "Inter", "SF Pro Text", "PingFang SC", "Microsoft YaHei", system-ui,
+    sans-serif; /* 界面无衬线正文字体 */
+  --font-serif: "Source Serif 4", "Songti SC", Georgia, serif; /* EPUB 正文可选衬线字体 */
+  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace; /* 代码、数值等宽字体 */
+
+  /* ---------- §1.3 字号阶梯（尺寸 / 行高 / 字重） ---------- */
+  --text-display: 32px; /* 仪表盘大数字 · 字号 */
+  --text-display-lh: 40px; /* 仪表盘大数字 · 行高 */
+  --text-display-weight: 700; /* 仪表盘大数字 · 字重 */
+
+  --text-h1: 24px; /* 页面标题 · 字号 */
+  --text-h1-lh: 32px; /* 页面标题 · 行高 */
+  --text-h1-weight: 600; /* 页面标题 · 字重 */
+
+  --text-h2: 18px; /* 卡片标题、分区标题 · 字号 */
+  --text-h2-lh: 26px; /* 卡片标题、分区标题 · 行高 */
+  --text-h2-weight: 600; /* 卡片标题、分区标题 · 字重 */
+
+  --text-h3: 15px; /* 小节标题 · 字号 */
+  --text-h3-lh: 22px; /* 小节标题 · 行高 */
+  --text-h3-weight: 600; /* 小节标题 · 字重 */
+
+  --text-body: 14px; /* 正文、表格单元 · 字号 */
+  --text-body-lh: 22px; /* 正文、表格单元 · 行高 */
+  --text-body-weight: 400; /* 正文、表格单元 · 字重 */
+
+  --text-sm: 13px; /* 次要信息、表头 · 字号 */
+  --text-sm-lh: 20px; /* 次要信息、表头 · 行高 */
+  --text-sm-weight: 400; /* 次要信息、表头 · 字重 */
+
+  --text-xs: 12px; /* 标签、时间戳、脚注 · 字号 */
+  --text-xs-lh: 18px; /* 标签、时间戳、脚注 · 行高 */
+  --text-xs-weight: 400; /* 标签、时间戳、脚注 · 字重 */
+
+  --text-reader: 16px; /* 阅读器正文 · 字号（可调 14–24px） */
+  --text-reader-lh: 1.75; /* 阅读器正文 · 行高 */
+  --text-reader-weight: 400; /* 阅读器正文 · 字重 */
+
+  /* ---------- §1.4 间距（4px 基准） ---------- */
+  --sp-1: 4px; /* 极小间距 · 导航项间距等 */
+  --sp-2: 8px; /* 紧凑间距 · 图标与文字、按钮内图标间距 */
+  --sp-3: 12px; /* 小间距 · 导航项左内边距 */
+  --sp-4: 16px; /* 标准间距 · 卡片内边距基准 */
+  --sp-5: 20px; /* 中等间距 · Content 顶边距、卡片 padding */
+  --sp-6: 24px; /* 宽松间距 · 页面左右 padding */
+  --sp-8: 32px; /* 大间距 · 分区间隔 */
+  --sp-10: 40px; /* 更大间距 · 区块分隔 */
+  --sp-12: 48px; /* 超大间距 · 空状态等 */
+
+  /* ---------- §1.4 圆角 ---------- */
+  --radius-sm: 4px; /* 小圆角 · 细标签、小徽章 */
+  --radius-md: 8px; /* 中圆角 · 按钮、输入框、导航项 */
+  --radius-lg: 12px; /* 大圆角 · 对话框、卡片 */
+  --radius-xl: 16px; /* 更大圆角 · 大型面板 */
+  --radius-full: 9999px; /* 全圆角 · 胶囊标签、圆形头像遮罩 */
+
+  /* ---------- §1.4 边框宽度 ---------- */
+  --border-width: 1px; /* 统一边框线宽 */
+
+  /* ---------- §1.4 阴影（浅色） ---------- */
+  --shadow-sm: 0 1px 2px rgba(16, 16, 24, 0.06); /* 轻阴影 · 卡片、批注条 */
+  --shadow-md: 0 4px 12px rgba(16, 16, 24, 0.1); /* 中阴影 · 浮层、工具条 */
+  --shadow-lg: 0 12px 32px rgba(16, 16, 24, 0.14); /* 重阴影 · 抽屉、模态框 */
+
+  /* ---------- §1.5 动效时长 ---------- */
+  --dur-fast: 120ms; /* 快速 · hover、按钮按下、图标切换 */
+  --dur-base: 200ms; /* 标准 · 面板展开/收起、弹层进出 */
+  --dur-slow: 320ms; /* 缓慢 · 侧栏折叠、页面切换、图谱布局 */
+
+  /* ---------- §1.5 缓动曲线 ---------- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1); /* 通用缓动 */
+  --ease-out: cubic-bezier(0, 0, 0.2, 1); /* 元素进入 */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1); /* 元素退出 */
+
+  /* ---------- §1.6 层级（z-index） ---------- */
+  --z-base: 0; /* 常规内容 */
+  --z-sticky: 10; /* 表头、阅读器顶栏/底栏 */
+  --z-resizer: 20; /* 面板拖拽手柄 */
+  --z-dropdown: 100; /* 下拉菜单、右键菜单 */
+  --z-selection-toolbar: 200; /* 划词浮动工具条 */
+  --z-drawer: 300; /* 设置抽屉 */
+  --z-modal: 400; /* 对话框、导入弹窗 */
+  --z-toast: 500; /* 全局提示 */
+  --z-tooltip: 600; /* 悬浮提示 */
+
+  /* ---------- §1.7 图标尺寸与交互态辅助 ---------- */
+  --icon-sm: 16px; /* 图标小档 · 胶囊标签前置图标等 */
+  --icon-md: 20px; /* 图标中档 · 导航、IconButton 内图标 */
+  --icon-lg: 24px; /* 图标大档 */
+  --icon-stroke: 1.5px; /* 线性图标线宽 */
+
+  --focus-ring-width: 2px; /* focus-visible 外描边宽度 */
+  --focus-ring-offset: 2px; /* focus-visible 外描边偏移 */
+  --disabled-opacity: 0.4; /* 禁用态透明度 */
+  --tooltip-delay: 400ms; /* Tooltip 出现延迟 */
+
+  /* ---------- §2 全局布局尺寸 ---------- */
+  --sidebar-width: 240px; /* Sidebar 展开宽度 */
+  --sidebar-width-collapsed: 64px; /* Sidebar 折叠宽度 */
+  --sidebar-user-height: 64px; /* Sidebar 用户区高度 */
+  --nav-item-height: 40px; /* 导航项高度 */
+  --avatar-size: 32px; /* 用户头像直径 */
+  --page-header-height: 56px; /* PageHeader 高度 */
+  --settings-drawer-width: 420px; /* 设置抽屉宽度 */
+  --overlay-drawer: rgba(0, 0, 0, 0.32); /* 设置抽屉遮罩（§2.4） */
+  --accent-alpha-12: color-mix(in srgb, var(--accent) 12%, transparent); /* 头像无图时的强调色浅底 */
+  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent); /* Input focus 外发光 20% */
+
+  /* ---------- §3 通用组件尺寸 ---------- */
+  --btn-height-sm: 32px; /* Button 小尺寸高度 */
+  --btn-height-md: 36px; /* Button 中尺寸 / Input 高度 */
+  --btn-height-lg: 40px; /* Button 大尺寸高度 */
+  --icon-btn-size: 32px; /* IconButton 正方形边长 */
+  --table-header-height: 40px; /* 表头行高 */
+  --table-row-height: 52px; /* 表体行高 */
+  --dialog-width-confirm: 440px; /* 确认类 Dialog 宽度 */
+  --dialog-width-form: 600px; /* 表单类 Dialog 宽度 */
+  --toast-width: 320px; /* Toast 宽度 */
+  --tooltip-max-width: 240px; /* Tooltip 最大宽度 */
+  --empty-icon-size: 64px; /* EmptyState 图标尺寸 */
+  --progress-ring-size: 88px; /* ProgressRing 外径 */
+  --progress-ring-stroke: 8px; /* ProgressRing 环宽 */
+  --menu-min-width: 180px; /* Menu 最小宽度 */
+  --menu-item-height: 34px; /* Menu 项高 */
+  --search-input-width: 640px; /* 文件目录搜索框（相对初版 220 约两倍后再翻倍） */
+  --table-col-name-min: 240px; /* 文件名列最小宽 */
+  --table-col-time: 160px; /* 时间列宽 */
+  --table-col-size: 100px; /* 文件大小列宽 */
+  --batch-bar-height: 48px; /* 多选批量操作条高度 §4.3 */
+  --import-dropzone-height: 160px; /* 导入拖拽区高度 §4.2 */
+  --file-max-size-bytes: 209715200; /* 单文件最大 200MB（供 JS 读取对照） */
+  --camera-bar-height: 40px; /* 摄像头状态条高度 §5.2 */
+  --camera-preview-w: 60px; /* 摄像头缩略预览宽 */
+  --camera-preview-h: 45px; /* 摄像头缩略预览高 */
+  --camera-pip-w: 160px; /* 画中画预览宽 */
+  --camera-pip-h: 120px; /* 画中画预览高 */
+  --chart-panel-height: 200px; /* 专注/疲劳折线图高度 §5.4 */
+  --chart-y-gutter: 40px; /* 折线图 Y 轴刻度区 */
+  --chart-x-gutter: 24px; /* 折线图底部时间轴 */
+  --timeline-height: 64px; /* 分心事件时间轴高度 §5.5 */
+  --metric-icon-size: 32px; /* 指标卡右上角图标 */
+  --spark-height: 32px; /* 指标卡迷你趋势图高度 */
+  --heat-cell: 12px; /* 热力图单格边长 */
+
+  /* ---------- §8 阅读界面布局尺寸 ---------- */
+  --reader-topbar-height: 48px; /* TopBar 高度 */
+  --reader-bottombar-height: 40px; /* BottomBar 高度 */
+  --toc-panel-width: 260px; /* TocPanel 默认宽 */
+  --toc-panel-min: 180px; /* TocPanel 最小拖拽宽 */
+  --toc-panel-max: 400px; /* TocPanel 最大拖拽宽 */
+  --side-panel-width: 360px; /* SidePanel 默认宽 */
+  --side-panel-min: 280px; /* SidePanel 最小拖拽宽 */
+  --side-panel-max: 520px; /* SidePanel 最大拖拽宽 */
+  --reader-canvas-min: 480px; /* ReaderCanvas 最小宽 */
+  --resizer-size: 4px; /* 面板垂直拖拽手柄宽 */
+  --row-resizer-size: 6px; /* SidePanel 水平分隔条高 */
+  --side-panel-toolbar-height: 40px; /* SidePanel 顶栏高 */
+  --reader-paper-bg: #ffffff; /* PDF 纸面浅色 */
+  --reader-canvas-dark-bg: #121216; /* 深色模式画布底 */
+
+  /* Tooltip：柔和浮层，避免深/浅强反差刺眼 */
+  --tooltip-bg: var(--bg-surface); /* 与浮层同级，柔和 */
+  --tooltip-fg: var(--text-primary); /* 正文色，可读但不刺眼 */
+  --tooltip-border: var(--border-subtle); /* 轻描边区分背景 */
+}
+
+/* ============================================================
+   深色主题 — 仅覆盖随主题变化的色值与阴影
+   ============================================================ */
+[data-theme="dark"] {
+  /* ---------- §1.1 语义色彩（深色） ---------- */
+  --bg-base: #1a1a1e; /* 页面主背景 */
+  --bg-elevated: #242428; /* 侧栏、卡片背景 */
+  --bg-hover: #2a2a30; /* 悬停背景 */
+  --bg-active: #2e3350; /* 选中行 / 选中导航项背景 */
+  --bg-surface: #2c2c32; /* 浮层、模态框、下拉菜单 */
+
+  --border-subtle: #3a3a42; /* 分隔线、卡片描边 */
+  --border-default: #4a4a54; /* 输入框边框 */
+  --border-strong: #55555f; /* 强调边框、拖拽手柄 */
+
+  --text-primary: #e8e8f0; /* 正文 */
+  --text-secondary: #9090a0; /* 次要说明 */
+  --text-tertiary: #75758a; /* 时间戳、脚注、占位符 */
+  --text-disabled: #55555f; /* 禁用状态 */
+
+  --accent: #6b8cf9; /* 主要强调色（按钮、链接、选中） */
+  --accent-hover: #5a7be8; /* 强调色悬停 */
+  --accent-subtle: #1e2a5a; /* 强调色浅背景（标签、徽章、批量条） */
+
+  --danger: #ff6b6b; /* 删除、错误 */
+  --warning: #ffb830; /* 警告 */
+  --success: #4ade80; /* 成功、专注度高 */
+
+  --overlay: rgba(0, 0, 0, 0.65); /* 模态遮罩 */
+
+  /* ---------- §1.1 数据可视化专用色（深色） ---------- */
+  --chart-focus: #6b8cf9; /* 专注度曲线 */
+  --chart-fatigue: #ffb830; /* 疲劳度曲线 */
+  --chart-distraction: #ff6b6b; /* 分心事件标记 */
+  --chart-reading: #4ade80; /* 阅读时长 */
+  --chart-bg-grid: #2e2e38; /* 图表网格线 */
+  --chart-axis: #6a6a78; /* 轴线与刻度标签 */
+
+  /* ---------- §1.1 分心事件类型配色（深色） ---------- */
+  --event-drink: #38c7e0; /* 喝水 */
+  --event-talk: #c98ae8; /* 聊天 */
+  --event-away: #ff6b6b; /* 离开座位 */
+  --event-phone: #ff9448; /* 看手机 */
+  --event-yawn: #c4b441; /* 打哈欠 */
+  --event-gaze-off: #9090a0; /* 走神（视线离屏） */
+
+  /* ---------- §1.4 阴影（深色：加深 + 顶部内高光） ---------- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 轻阴影 · 卡片、批注条 */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 中阴影 · 浮层、工具条 */
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 重阴影 · 抽屉、模态框 */
+
+  /* Tooltip 深色主题：同为柔和表面色，不再反相高对比 */
+  --tooltip-bg: var(--bg-surface);
+  --tooltip-fg: var(--text-primary);
+  --tooltip-border: var(--border-subtle);
+  --reader-paper-bg: #2a2a2e; /* PDF 纸面深色/护眼底 */
+  --reader-canvas-dark-bg: #121216; /* 深色画布底 */
+}
+
+/* ============================================================
+   §1.5 prefers-reduced-motion：时长归零，仅保留透明度变化语义
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-theme="dark"] {
+    --dur-fast: 0ms; /* 减弱动效 · 快速过渡归零 */
+    --dur-base: 0ms; /* 减弱动效 · 标准过渡归零 */
+    --dur-slow: 0ms; /* 减弱动效 · 缓慢过渡归零 */
+  }
+}

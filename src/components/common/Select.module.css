@@ -1,0 +1,69 @@
+/**
+ * Select.module.css — 下拉选择样式
+ * 与 Input 对齐：高 36、圆角 md、focus 强调边框 + 外发光
+ */
+
+.wrap {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+}
+
+.wrapDisabled {
+  opacity: var(--disabled-opacity);
+}
+
+.select {
+  box-sizing: border-box;
+  height: var(--btn-height-md); /* 36px，与 Input 一致 */
+  width: 100%;
+  margin: 0;
+  padding: 0 var(--sp-8) 0 var(--sp-3); /* 右侧留空给箭头 */
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  cursor: pointer;
+  appearance: none;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+}
+
+.select:hover:not(:disabled):not(:focus) {
+  border-color: var(--border-strong);
+}
+
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.select:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+.select:disabled {
+  cursor: not-allowed;
+  background: var(--bg-elevated);
+}
+
+.chevron {
+  position: absolute;
+  right: var(--sp-3);
+  pointer-events: none;
+  color: var(--text-secondary); /* 箭头继承次要色，双主题自适应 */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .select {
+    transition: none;
+  }
+}
