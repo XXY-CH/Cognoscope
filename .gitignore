@@ -26,6 +26,11 @@ dist-ssr
 # Monitor model files (large binaries, download separately)
 monitor/models/*.task
 monitor/models/*.pt
-monitor/__pycache__/
-monitor/vision/__pycache__/
 monitor/sessions/
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.Python
