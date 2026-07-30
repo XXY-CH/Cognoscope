@@ -26,7 +26,7 @@ export function AiPanel({ draft, onChange }: AiPanelProps) {
   return (
     <div className={styles.section}>
       <p className={styles.hint}>
-        对接 OpenAI 兼容接口。连接参数与回答偏好均仅保存在本机。
+        对接 OpenAI 兼容接口。连接参数将保存到本机并同步至后端服务（动态生效）。
       </p>
 
       <div className={styles.field}>

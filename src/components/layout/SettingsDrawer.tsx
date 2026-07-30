@@ -76,7 +76,30 @@ export function SettingsDrawer() {
     };
   }, [open, closeSettings]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // 如果 AI 配置有变更，先同步到后端
+    const prevAi = useUiStore.getState().aiSettings;
+    const aiChanged = 
+      aiDraft.baseUrl !== prevAi.baseUrl ||
+      aiDraft.apiKey !== prevAi.apiKey ||
+      aiDraft.model !== prevAi.model;
+    
+    if (aiChanged && aiDraft.apiKey && aiDraft.baseUrl) {
+      try {
+        // 导入 AI 配置 API
+        const { updateAiConfig } = await import('../../services/aiConfigApi');
+        await updateAiConfig({
+          base_url: aiDraft.baseUrl,
+          api_key: aiDraft.apiKey,
+          model: aiDraft.model,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : '同步 AI 配置到后端失败';
+        toast.error(message);
+        return;
+      }
+    }
+    
     setAiSettings(aiDraft);
     toast.show('已保存');
     closeSettings();
