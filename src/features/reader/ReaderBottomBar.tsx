@@ -1,16 +1,16 @@
 /**
  * ReaderBottomBar - 阅读底栏
  * 所属页面：E · 阅读界面
- * 规范参考：UI_spec.md §8.5；摄像头指示经 useCamera（§5.2 / §13 决策7）
+ * 规范参考：UI_spec.md §8.5；检测状态来自 Python monitor（非浏览器摄像头）
  */
 import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { IconButton, Tooltip } from '../../components/common';
-import { useCamera } from '../../hooks/useCamera';
+import { useMonitorStatus } from '../../hooks/useMonitorStatus';
 import { useReaderStore } from '../../stores/readerStore';
 import styles from './ReaderBottomBar.module.css';
 
 /**
- * ReaderBottomBar - 页码、进度、已读行数、缩放、摄像头状态
+ * ReaderBottomBar - 页码、进度、已读行数、缩放、monitor 检测状态
  */
 export function ReaderBottomBar() {
   const currentPage = useReaderStore((s) => s.currentPage);
@@ -21,34 +21,17 @@ export function ReaderBottomBar() {
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const setZoomPercent = useReaderStore((s) => s.setZoomPercent);
   const bumpZoom = useReaderStore((s) => s.bumpZoom);
-
-  const {
-    status: cameraStatus,
-    deviceId,
-    previewVisible,
-    startDetection,
-    pauseDetection,
-    resumeDetection,
-  } = useCamera();
+  const monitorStatus = useMonitorStatus(true);
 
   const progress =
     totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
 
   const camLabel =
-    cameraStatus === 'active'
-      ? '摄像头检测中（本地）'
-      : cameraStatus === 'paused'
-        ? '检测已暂停'
-        : cameraStatus === 'denied'
-          ? '摄像头权限被拒绝'
-          : '摄像头不可用';
-
-  const onCameraClick = () => {
-    // 底栏迷你控件：点击切换启停，与仪表盘共用同一本地流
-    if (cameraStatus === 'active') pauseDetection();
-    else if (cameraStatus === 'paused') resumeDetection();
-    else void startDetection();
-  };
+    monitorStatus === 'running'
+      ? 'Python 检测中（本机摄像头）'
+      : monitorStatus === 'offline'
+        ? 'monitor 未连接'
+        : '检测未运行';
 
   return (
     <footer className={styles.root}>
@@ -71,41 +54,34 @@ export function ReaderBottomBar() {
             setCurrentPage(Math.min(max, Math.max(1, n)));
           }}
         />
-        <span className={styles.total}>
-          / {totalPages || '—'}
-        </span>
+        <span className={styles.total}>/ {totalPages || '—'}</span>
 
-        <Tooltip content={camLabel} aria-label="摄像头状态说明">
-          <button
-            type="button"
+        {/* 只读指示：摄像头由 Python 打开，前端不可点开浏览器流 */}
+        <Tooltip content={camLabel} aria-label="检测状态说明">
+          <span
             className={styles.camChip}
+            role="status"
             aria-label={camLabel}
-            aria-pressed={cameraStatus === 'active'}
-            data-device={deviceId ?? undefined}
-            data-preview={previewVisible ? '1' : '0'}
-            onClick={onCameraClick}
           >
             <span
               className={[
                 styles.camDot,
-                cameraStatus === 'active' ? styles.camLive : '',
-                cameraStatus === 'paused' ? styles.camPaused : '',
-                cameraStatus === 'denied' || cameraStatus === 'unavailable'
-                  ? styles.camBad
-                  : '',
+                monitorStatus === 'running' ? styles.camLive : '',
+                monitorStatus === 'offline' ? styles.camBad : '',
+                monitorStatus === 'idle' ? styles.camPaused : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
               aria-hidden="true"
             />
             <span className={styles.camText}>
-              {cameraStatus === 'active'
+              {monitorStatus === 'running'
                 ? '检测中'
-                : cameraStatus === 'paused'
-                  ? '已暂停'
-                  : '摄像头'}
+                : monitorStatus === 'offline'
+                  ? '未连接'
+                  : '空闲'}
             </span>
-          </button>
+          </span>
         </Tooltip>
       </div>
 
@@ -152,10 +128,7 @@ export function ReaderBottomBar() {
           已读 {linesRead.toLocaleString('zh-CN')} 行
         </span>
         <div className={styles.zoom}>
-          <IconButton
-            aria-label="缩小"
-            onClick={() => bumpZoom(-10)}
-          >
+          <IconButton aria-label="缩小" onClick={() => bumpZoom(-10)}>
             <Minus strokeWidth={1.5} />
           </IconButton>
           <select
@@ -170,10 +143,7 @@ export function ReaderBottomBar() {
               </option>
             ))}
           </select>
-          <IconButton
-            aria-label="放大"
-            onClick={() => bumpZoom(10)}
-          >
+          <IconButton aria-label="放大" onClick={() => bumpZoom(10)}>
             <Plus strokeWidth={1.5} />
           </IconButton>
         </div>

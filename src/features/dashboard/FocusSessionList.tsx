@@ -5,6 +5,7 @@
  */
 
 import {
+  formatDistractionEvents,
   formatPerMin,
   formatPercent,
   formatPoseStd,
@@ -107,7 +108,11 @@ export function FocusSessionList({
                   <td>{formatPercent(a.distractRatio)}</td>
                   <td className={styles.engCell}>
                     {a.focusScore !== null
-                      ? (a.focusScore > 30 ? '投入' : '待改进')
+                      ? (() => {
+                          const state = a.focusScore > 30 ? '投入' : '待改进';
+                          const dist = formatDistractionEvents(a.events);
+                          return dist ? `${state} (${dist})` : state;
+                        })()
                       : '—'}
                   </td>
                   <td className={styles.scoreCell}>

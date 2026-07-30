@@ -1,7 +1,7 @@
 /**
  * ReaderTopBar - 阅读顶栏
  * 所属页面：E · 阅读界面
- * 规范参考：UI_spec.md §8.2
+ * 规范参考：UI_spec.md §8.2；检测指示来自 Python monitor
  */
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,7 +13,7 @@ import {
   StretchHorizontal,
 } from 'lucide-react';
 import { IconButton, Tooltip, toast } from '../../components/common';
-import { useCamera } from '../../hooks/useCamera';
+import { useMonitorStatus } from '../../hooks/useMonitorStatus';
 import { useBookmarkStore } from '../../stores/bookmarkStore';
 import { useReaderStore, type PageMode } from '../../stores/readerStore';
 import { ReaderFindBox } from './ReaderFindBox';
@@ -52,14 +52,14 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
   const requestFitWidth = useReaderStore((s) => s.requestFitWidth);
   const fitWidthActive = useReaderStore((s) => s.fitWidthActive);
   const addBookmark = useBookmarkStore((s) => s.add);
-  const { status: cameraStatus } = useCamera();
+  const monitorStatus = useMonitorStatus(true);
 
   const camLabel =
-    cameraStatus === 'active'
-      ? '摄像头检测中（本地）'
-      : cameraStatus === 'paused'
-        ? '检测已暂停'
-        : '摄像头不可用';
+    monitorStatus === 'running'
+      ? 'Python 检测中（本机摄像头）'
+      : monitorStatus === 'offline'
+        ? 'monitor 未连接'
+        : '检测未运行';
 
   const onAddBookmark = async () => {
     if (!fileId) return;
@@ -152,18 +152,17 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
           </IconButton>
         </Tooltip>
 
-        <Tooltip content={camLabel} aria-label="摄像头状态提示">
+        <Tooltip content={camLabel} aria-label="检测状态提示">
           <span
             className={[
               styles.camDot,
-              cameraStatus === 'active' ? styles.camLive : '',
-              cameraStatus === 'paused' ? styles.camPaused : '',
-              cameraStatus === 'denied' || cameraStatus === 'unavailable'
-                ? styles.camBad
-                : '',
+              monitorStatus === 'running' ? styles.camLive : '',
+              monitorStatus === 'idle' ? styles.camPaused : '',
+              monitorStatus === 'offline' ? styles.camBad : '',
             ]
               .filter(Boolean)
               .join(' ')}
+            role="status"
             aria-label={camLabel}
           />
         </Tooltip>

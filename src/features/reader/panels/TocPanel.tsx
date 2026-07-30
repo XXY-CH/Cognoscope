@@ -33,6 +33,7 @@ export function TocPanel() {
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const tocTabRequest = useReaderStore((s) => s.tocTabRequest);
   const clearTocTabRequest = useReaderStore((s) => s.clearTocTabRequest);
+  const pdfOutline = useReaderStore((s) => s.pdfOutline);
   const [tab, setTab] = useState<TocTab>('toc');
   /** 拖拽调宽时关闭过渡 */
   const [dragging, setDragging] = useState(false);
@@ -119,12 +120,31 @@ export function TocPanel() {
 
         <div className={styles.body} role="tabpanel">
           {tab === 'toc' ? (
-            <EmptyState
-              aria-label="目录空状态"
-              icon={<List strokeWidth={1.5} />}
-              title="无目录"
-              description="当前文档没有可用的目录大纲。"
-            />
+            pdfOutline.length === 0 ? (
+              <EmptyState
+                aria-label="目录空状态"
+                icon={<List strokeWidth={1.5} />}
+                title="无目录"
+                description="当前文档没有可用的目录大纲。"
+              />
+            ) : (
+              <ul className={styles.outlineList} aria-label="目录大纲">
+                {pdfOutline.map((item, i) => (
+                  <li key={`${item.page}-${i}`}>
+                    <button
+                      type="button"
+                      className={styles.outlineItem}
+                      data-level={item.level}
+                      aria-label={`跳转到 ${item.title}`}
+                      onClick={() => setCurrentPage(item.page)}
+                    >
+                      <span className={styles.outlinePage}>{item.page}</span>
+                      <span className={styles.outlineTitle}>{item.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )
           ) : items.length === 0 ? (
             <EmptyState
               aria-label="书签空状态"

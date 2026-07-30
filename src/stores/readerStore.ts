@@ -4,6 +4,7 @@
  * 规范参考：UI_spec.md §8
  */
 import { create } from 'zustand';
+import type { PdfOutlineItem } from '../types';
 
 export type PageMode = 'single' | 'double' | 'scroll';
 export type SideSplitPreset = 'half' | 'qa-only' | 'anno-only';
@@ -91,6 +92,8 @@ interface ReaderState {
   zoomBeforeFit: number | null;
   /** 新打开文档时是否自动适应宽度（设置 · 阅读） */
   defaultFitWidth: boolean;
+  /** 文本推断的 PDF 大纲；TocPanel 消费 */
+  pdfOutline: PdfOutlineItem[];
 
   openFile: (input: {
     id: string;
@@ -138,6 +141,7 @@ interface ReaderState {
   seedFindFromSelection: (text: string) => void;
   /** 使当前页适配画布宽度 */
   requestFitWidth: () => void;
+  setPdfOutline: (items: PdfOutlineItem[]) => void;
 }
 
 export const useReaderStore = create<ReaderState>((set, get) => ({
@@ -167,6 +171,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   zoomBeforeFit: null,
   // 缺省开启：多数论文 PDF 更适合适应页宽起步
   defaultFitWidth: readBool(DEFAULT_FIT_WIDTH_KEY, true),
+  pdfOutline: [],
 
   openFile: ({ id, name, type }) =>
     set({
@@ -184,6 +189,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       findDirection: 'next',
       fitWidthActive: false,
       zoomBeforeFit: null,
+      pdfOutline: [],
     }),
 
   // 不重置 linesRead：离开页时 clearFile 可能先于会话 cleanup，清零会覆盖 IndexedDB
@@ -200,6 +206,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       findQuery: '',
       findNonce: 0,
       findDirection: 'next',
+      pdfOutline: [],
     }),
 
   toggleToc: () => {
@@ -394,4 +401,6 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       fitWidthNonce: s.fitWidthNonce + 1,
     });
   },
+
+  setPdfOutline: (pdfOutline) => set({ pdfOutline }),
 }));

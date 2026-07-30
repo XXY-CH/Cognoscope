@@ -74,12 +74,9 @@
   background: var(--bg-elevated);
   color: var(--text-secondary);
   font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.camChip:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+  /* 只读：摄像头由 Python 打开，前端不可点开浏览器流 */
+  cursor: default;
+  user-select: none;
 }
 
 .camChip:focus-visible {
