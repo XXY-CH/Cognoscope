@@ -478,3 +478,37 @@ class AssetAdmissionResponse(BaseModel):
     tier: Literal["first_class", "structured_secondary", "extraction_only"]
     media_type: str
     generation: int
+
+
+class GraphNodeResponse(BaseModel):
+    id: str
+    fileId: str | None
+    label: str
+    kind: Literal["file", "folder", "tag"]
+    fileType: str | None
+    x: float | None
+    y: float | None
+
+
+class GraphEdgeResponse(BaseModel):
+    source: str
+    target: str
+    weight: float
+
+
+class GraphNodeListResponse(BaseModel):
+    nodes: list[GraphNodeResponse]
+
+
+class GraphEdgeListResponse(BaseModel):
+    edges: list[GraphEdgeResponse]
+
+
+class GraphSyncResponse(BaseModel):
+    synced_count: int
+
+
+class GraphBuildResponse(BaseModel):
+    task_id: str | None
+    created_count: int
+    status: Literal["queued", "running", "completed", "failed"]

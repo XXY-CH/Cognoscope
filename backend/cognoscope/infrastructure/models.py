@@ -611,3 +611,40 @@ class ResearchPreference(Base):
     highlight: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class GraphNode(Base):
+    __tablename__ = "graph_nodes"
+    __table_args__ = (
+        UniqueConstraint("owner_account_id", "node_id", name="uq_graph_node_owner_id"),
+        CheckConstraint("kind IN ('file', 'folder', 'tag')", name="ck_graph_node_kind"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_account_id: Mapped[str] = mapped_column(String(36), default="default-user", index=True)
+    node_id: Mapped[str] = mapped_column(String(256), index=True)
+    label: Mapped[str] = mapped_column(String(512))
+    kind: Mapped[str] = mapped_column(String(32))
+    file_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("library_documents.id"), nullable=True, index=True)
+    file_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    x: Mapped[float | None] = mapped_column(Float, nullable=True)
+    y: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class GraphEdge(Base):
+    __tablename__ = "graph_edges"
+    __table_args__ = (
+        UniqueConstraint("owner_account_id", "source_node_id", "target_node_id", name="uq_graph_edge_pair"),
+        CheckConstraint("weight >= 0 AND weight <= 1", name="ck_graph_edge_weight"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    owner_account_id: Mapped[str] = mapped_column(String(36), default="default-user", index=True)
+    source_node_id: Mapped[str] = mapped_column(String(256), index=True)
+    target_node_id: Mapped[str] = mapped_column(String(256), index=True)
+    weight: Mapped[float] = mapped_column(Float, default=0.5)
+    producer_kind: Mapped[str] = mapped_column(String(16), default="agent")
+    task_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

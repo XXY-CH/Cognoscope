@@ -7,6 +7,7 @@ from fastapi import Request
 from cognoscope.application.job_service import JobService
 from cognoscope.application.library_service import LibraryService
 from cognoscope.application.preference_service import PreferenceService
+from cognoscope.application.graph_service import GraphService
 from cognoscope.infrastructure.postgres.authority_repository import AuthorityRepository
 from cognoscope.infrastructure.postgres.extraction_repository import ExtractionRepository
 from cognoscope.infrastructure.storage import PrivateBlobStore
@@ -38,6 +39,10 @@ def get_library_service(request: Request) -> LibraryService:
 
 def get_preference_service(request: Request) -> PreferenceService:
     return request.app.state.preference_service
+
+
+def get_graph_service(request: Request) -> GraphService:
+    return request.app.state.graph_service
 
 
 def get_fixed_user() -> FixedUser:

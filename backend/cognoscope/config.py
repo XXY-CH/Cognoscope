@@ -25,8 +25,13 @@ class Settings(BaseSettings):
     
     # Auto create schema on startup
     auto_create_schema: bool = True
+    
+    # AI / LLM configuration
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = ""
+    llm_model: str = "gpt-4o-mini"
+    llm_timeout_seconds: int = 60
 
     @property
     def origin_set(self) -> frozenset[str]:
-        return frozenset(origin.rstrip("/") for origin in self.allowed_origins)
         return frozenset(origin.rstrip("/") for origin in self.allowed_origins)

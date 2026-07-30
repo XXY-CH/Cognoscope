@@ -10,14 +10,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from cognoscope.api.errors import error_body, install_exception_handlers
-from cognoscope.api.routes import annotations, health, imports, jobs, knowledge, library, preferences
+from cognoscope.api.routes import annotations, graph, health, imports, jobs, knowledge, library, preferences
 from cognoscope.api.schemas import ErrorEnvelope
 from cognoscope.application.job_service import JobService
 from cognoscope.application.preference_service import PreferenceService
+from cognoscope.application.graph_service import GraphService
 from cognoscope.config import Settings
 from cognoscope.infrastructure.database import Database
 from cognoscope.infrastructure.postgres.extraction_repository import ExtractionRepository
 from cognoscope.infrastructure.postgres.authority_repository import AuthorityRepository
+from cognoscope.infrastructure.ai import AIClient
 
 ERROR_RESPONSES = {
     "default": {
@@ -42,6 +44,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         app.state.extraction_repository = ExtractionRepository(database.session_factory)
         app.state.authority_repository = AuthorityRepository(database.session_factory)
         app.state.preference_service = PreferenceService(app.state.authority_repository)
+        ai_client = AIClient(settings.llm_base_url, settings.llm_api_key, settings.llm_model, settings.llm_timeout_seconds) if settings.llm_api_key else None
+        app.state.graph_service = GraphService(database.session_factory, ai_client)
         if settings.auto_create_schema:
             await database.create_schema()
         try:
@@ -81,6 +85,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(annotations.router, prefix="/api/v1")
     app.include_router(knowledge.router, prefix="/api/v1")
     app.include_router(preferences.router, prefix="/api/v1")
+    app.include_router(graph.router, prefix="/api/v1")
     return app
 
 
