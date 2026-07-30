@@ -23,6 +23,24 @@ class EdgeSuggestion:
     reason: str
 
 
+@dataclass(frozen=True)
+class ContentNode:
+    """文档内容节点（概念、实体等）"""
+    label: str
+    node_type: str  # concept, entity, topic
+    description: str
+    page_number: int | None = None
+
+
+@dataclass(frozen=True)
+class ContentEdge:
+    """内容节点之间的关系"""
+    source_label: str
+    target_label: str
+    relation_type: str  # relates_to, part_of, prerequisite, etc.
+    weight: float
+
+
 class AIGraphService:
     """AI-powered services for document analysis and graph construction."""
 
@@ -114,3 +132,91 @@ class AIGraphService:
                     ))
         
         return suggestions
+
+    async def extract_content_nodes(
+        self,
+        document_text: str,
+        max_nodes: int = 20,
+    ) -> tuple[list[ContentNode], list[ContentEdge]]:
+        """从文档内容中提取概念节点和关系边。
+        
+        Args:
+            document_text: 文档文本内容
+            max_nodes: 最多提取的节点数量
+            
+        Returns:
+            (节点列表, 边列表)
+        """
+        # 限制文本长度，避免 token 超限
+        max_chars = 8000
+        text = document_text[:max_chars] if len(document_text) > max_chars else document_text
+        
+        prompt = f"""分析以下文档内容，提取核心概念、实体和它们之间的关系。
+
+文档内容：
+{text}
+
+请提取不超过 {max_nodes} 个重要节点，并识别它们之间的关系。
+以 JSON 格式返回：
+{{
+  "nodes": [
+    {{
+      "label": "节点名称",
+      "type": "concept/entity/topic",
+      "description": "简短描述（20字以内）"
+    }}
+  ],
+  "edges": [
+    {{
+      "source": "源节点名称",
+      "target": "目标节点名称",
+      "relation": "relates_to/part_of/prerequisite/causes",
+      "weight": 0.8
+    }}
+  ]
+}}
+
+注意：
+- 节点名称要简洁（2-6个字）
+- type: concept(抽象概念), entity(具体实体), topic(主题)
+- relation: relates_to(相关), part_of(包含), prerequisite(前置), causes(导致)
+- weight: 关系强度 0-1"""
+
+        response = await self._ai.chat_completion(
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=2000,
+        )
+        
+        data = self._ai.parse_json_response(response)
+        
+        nodes: list[ContentNode] = []
+        edges: list[ContentEdge] = []
+        
+        # 解析节点
+        if isinstance(data, dict) and "nodes" in data:
+            for node_data in data["nodes"][:max_nodes]:
+                if isinstance(node_data, dict) and "label" in node_data:
+                    nodes.append(ContentNode(
+                        label=node_data["label"],
+                        node_type=node_data.get("type", "concept"),
+                        description=node_data.get("description", ""),
+                    ))
+        
+        # 解析边
+        if isinstance(data, dict) and "edges" in data:
+            node_labels = {n.label for n in nodes}
+            for edge_data in data["edges"]:
+                if isinstance(edge_data, dict) and "source" in edge_data and "target" in edge_data:
+                    source = edge_data["source"]
+                    target = edge_data["target"]
+                    # 只保留两端节点都存在的边
+                    if source in node_labels and target in node_labels:
+                        edges.append(ContentEdge(
+                            source_label=source,
+                            target_label=target,
+                            relation_type=edge_data.get("relation", "relates_to"),
+                            weight=float(edge_data.get("weight", 0.5)),
+                        ))
+        
+        return nodes, edges

@@ -40,9 +40,15 @@ export function GraphCanvas({
   };
 
   useEffect(() => {
-    // 初始化后居中缩放
+    // 移除自动缩放，让用户自己控制视图
+    // 仅在首次加载时设置合理的初始缩放
     if (graphRef.current && nodes.length > 0) {
-      graphRef.current.zoomToFit(400);
+      const hasInitialized = graphRef.current.__initialized;
+      if (!hasInitialized) {
+        graphRef.current.__initialized = true;
+        // 仅首次居中，不改变缩放级别
+        graphRef.current.centerAt(0, 0, 0);
+      }
     }
   }, [nodes.length]);
 
@@ -64,15 +70,17 @@ export function GraphCanvas({
   };
 
   const getNodeSize = (node: any) => {
+    // 更小的节点尺寸
+    const baseSize = node.id === selectedNodeId ? 1.2 : 1.0;
     switch (node.kind) {
       case 'file':
-        return 8;
+        return 5 * baseSize;
       case 'folder':
-        return 10;
+        return 7 * baseSize;
       case 'tag':
-        return 6;
+        return 4 * baseSize;
       default:
-        return 6;
+        return 4 * baseSize;
     }
   };
 
@@ -109,14 +117,15 @@ export function GraphCanvas({
           .trim() || '#1A1A1E';
         ctx.fillText(label, node.x, node.y + getNodeSize(node) + 2);
       }}
-      linkWidth={(link: any) => link.weight * 2}
+      linkWidth={(link: any) => Math.max(1, link.weight * 1.5)}
       linkColor={() =>
         getComputedStyle(document.documentElement)
           .getPropertyValue('--border-default')
           .trim() || '#C8C8D2'
       }
       linkDirectionalParticles={2}
-      linkDirectionalParticleWidth={(link: any) => link.weight * 3}
+      linkDirectionalParticleWidth={(link: any) => link.weight * 2}
+      linkDirectionalParticleSpeed={0.005}
       onNodeClick={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
         if (original) onNodeClick(original);
@@ -126,7 +135,8 @@ export function GraphCanvas({
         if (original) onNodeDrag(original, node.x, node.y);
       }}
       cooldownTicks={100}
-      onEngineStop={() => graphRef.current?.zoomToFit(400)}
+      d3AlphaDecay={0.02}
+      d3VelocityDecay={0.3}
     />
   );
 }

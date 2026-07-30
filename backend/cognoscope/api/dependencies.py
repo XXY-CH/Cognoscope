@@ -11,6 +11,10 @@ from cognoscope.application.graph_service import GraphService
 from cognoscope.infrastructure.postgres.authority_repository import AuthorityRepository
 from cognoscope.infrastructure.postgres.extraction_repository import ExtractionRepository
 from cognoscope.infrastructure.storage import PrivateBlobStore
+from cognoscope.infrastructure.ai import AIClient
+
+# AI 客户端缓存（支持动态重新创建）
+_ai_client_cache: dict[str, AIClient | None] = {}
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,32 @@ def get_preference_service(request: Request) -> PreferenceService:
 
 def get_graph_service(request: Request) -> GraphService:
     return request.app.state.graph_service
+
+
+def get_ai_client(request: Request) -> AIClient | None:
+    """获取 AI 客户端（支持动态配置更新）"""
+    settings = request.app.state.settings
+    
+    # 生成缓存键
+    cache_key = f"{settings.llm_base_url}:{settings.llm_api_key}:{settings.llm_model}"
+    
+    # 检查缓存
+    if cache_key in _ai_client_cache:
+        return _ai_client_cache[cache_key]
+    
+    # 创建新客户端
+    if settings.llm_api_key:
+        client = AIClient(
+            settings.llm_base_url,
+            settings.llm_api_key,
+            settings.llm_model,
+            settings.llm_timeout_seconds
+        )
+        _ai_client_cache[cache_key] = client
+        return client
+    
+    _ai_client_cache[cache_key] = None
+    return None
 
 
 def get_fixed_user() -> FixedUser:
