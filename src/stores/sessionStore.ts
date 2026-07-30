@@ -21,11 +21,8 @@ import {
   type SessionMeta,
 } from '../utils/monitorApi';
 import { fromApiAnalysis } from '../utils/sessionAnalyze';
-import {
-  appendOlderDemoHistoryIfNeeded,
-  buildDemoSessions,
-  DEMO_HEATMAP_YEAR_KEY,
-} from '../utils/seedSessions';
+
+const DEMO_CLEANUP_KEY = 'xuesen.demoCleanup';
 
 type LoadStatus = 'idle' | 'loading' | 'error';
 type MonitorStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
@@ -65,26 +62,22 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   loadSessions: async () => {
     set({ status: 'loading' });
     try {
-      let sessions = await sessionsDb.listSessions();
-      // 本地无数据时写入近一年演示会话，便于开箱查看热力图
-      if (sessions.length === 0) {
-        sessions = buildDemoSessions();
-        await sessionsDb.putSessions(sessions);
-        // 全年已写入，标记一次性补种完成，避免后续再追加
-        try {
-          localStorage.setItem(DEMO_HEATMAP_YEAR_KEY, '1');
-        } catch {
-          /* ignore */
+      // 一次性清理此前种子生成的演示数据
+      const needsCleanup = (() => {
+        try { return localStorage.getItem(DEMO_CLEANUP_KEY) !== '1'; } catch { return false; }
+      })();
+      if (needsCleanup) {
+        const hadDemoMark = (() => {
+          try { return localStorage.getItem('xuesen.demoHeatmapYear') === '1'; } catch { return false; }
+        })();
+        if (hadDemoMark) {
+          await sessionsDb.clearSessions();
+          try { localStorage.removeItem('xuesen.demoHeatmapYear'); } catch { /* ignore */ }
         }
-      } else {
-        // 已有近月数据时：仅一次补「一个月以前」演示历史
-        const { sessions: next, appended } =
-          appendOlderDemoHistoryIfNeeded(sessions);
-        if (appended.length > 0) {
-          await sessionsDb.putSessions(appended);
-          sessions = next;
-        }
+        try { localStorage.setItem(DEMO_CLEANUP_KEY, '1'); } catch { /* ignore */ }
       }
+
+      const sessions = await sessionsDb.listSessions();
       const filtered = filterSessionsByRange(sessions, get().range);
       set({
         sessions,

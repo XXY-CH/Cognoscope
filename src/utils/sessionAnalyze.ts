@@ -113,16 +113,23 @@ export function analyzeFrames(frames: MonitorFrame[]): Omit<
       const yawNorm = Math.max(0, 1 - yawStd / 25);
       const pitchNorm = Math.max(0, 1 - (pitchStd ?? 0) / 20);
       poseScore = (0.5 * yawNorm + 0.5 * pitchNorm) * 100;
+      // 降低姿态权重、提高投入状态权重
       wGaze = 0.4;
-      wPose = 0.25;
-      wEng = 0.15;
+      wPose = 0.15;
+      wEng = 0.25;
     } else {
       poseScore = 50;
       wGaze = 0.55;
-      wPose = 0.15;
-      wEng = 0.1;
+      wPose = 0.1;
+      wEng = 0.2;
     }
-    const engBonus = engEngagedPct * wEng;
+    // 手机 / 聊天 / 喝水出现时，engaged 状态视为无效，不加分
+    const hardDistract =
+      (episodes.playing_phone ?? 0) > 0 ||
+      (episodes.chatting ?? 0) > 0 ||
+      (episodes.drinking ?? 0) > 0;
+    const effectiveEngPct = hardDistract ? 0 : engEngagedPct;
+    const engBonus = effectiveEngPct * wEng;
     const distractPenalty = Math.min(30, episodeTotal * 5);
     focusScore = Math.round(
       wGaze * gazeScore + wPose * poseScore + engBonus - distractPenalty * 0.2,
@@ -140,6 +147,7 @@ export function analyzeFrames(frames: MonitorFrame[]): Omit<
     pitchStd,
     engDominant,
     focusScore,
+    events: episodes,
   };
 }
 
@@ -161,6 +169,7 @@ export function fromApiAnalysis(
     pitchStd: analysis.pitchStd ?? null,
     engDominant: analysis.engDominant ?? null,
     focusScore: analysis.focusScore ?? null,
+    events: analysis.events ?? {},
   };
 }
 
@@ -171,6 +180,23 @@ export const ENG_STATE_LABELS: Record<string, string> = {
   confusion: '困惑',
   frustration: '挫败',
 };
+
+/** 分心标签中文映射 */
+const DIST_LABEL_CN: Record<string, string> = {
+  playing_phone: '手机',
+  head_down: '低头',
+  drinking: '喝水',
+  chatting: '说话',
+};
+
+/** 格式化分心片段摘要，如 "手机 3, 喝水 1"；无事件时返回空串 */
+export function formatDistractionEvents(events: Record<string, number>): string {
+  const parts = Object.entries(events)
+    .filter(([, count]) => count > 0)
+    .sort(([, a], [, b]) => b - a)
+    .map(([label, count]) => `${DIST_LABEL_CN[label] ?? label} ${count}`);
+  return parts.join(', ');
+}
 
 export function formatPercent(ratio: number): string {
   return `${(ratio * 100).toFixed(1)}%`;

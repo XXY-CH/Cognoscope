@@ -10,7 +10,6 @@ import { useUiStore } from '../../../stores/uiStore';
 import * as sessionsDb from '../../../db/sessions';
 import * as annotationsDb from '../../../db/annotations';
 import * as bookmarksDb from '../../../db/bookmarks';
-import { DEMO_HEATMAP_YEAR_KEY } from '../../../utils/seedSessions';
 import styles from './SettingsForm.module.css';
 
 type ClearKind = 'sessions' | 'notes' | 'ai' | null;
@@ -30,7 +29,7 @@ export function DataPanel() {
 
   const bodies: Record<Exclude<ClearKind, null>, string> = {
     sessions:
-      '将删除仪表盘用的阅读会话与专注统计。文献文件、批注与书签会保留。清空后可重新生成演示数据。',
+      '将删除仪表盘用的阅读会话与专注统计。文献文件、批注与书签会保留。',
     notes:
       '将删除全部划词批注与书签。阅读会话与文献文件会保留。',
     ai: '将清除本机保存的 API Key、接口地址与模型名。问答记录目前未持久化，无历史可删。',
@@ -42,11 +41,6 @@ export function DataPanel() {
     try {
       if (kind === 'sessions') {
         await sessionsDb.clearSessions();
-        try {
-          localStorage.removeItem(DEMO_HEATMAP_YEAR_KEY);
-        } catch {
-          /* ignore */
-        }
         await loadSessions();
         toast.show('已清除阅读会话');
       } else if (kind === 'notes') {

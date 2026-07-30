@@ -17,6 +17,7 @@ import {
   registerLineKeys,
 } from '../../../utils/linesReadStore';
 import { PdfPage } from './PdfPage';
+import { extractPdfOutline } from '../../../utils/pdfOutline';
 import styles from './PdfRenderer.module.css';
 
 /**
@@ -51,6 +52,7 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
   const findQuery = useReaderStore((s) => s.findQuery);
   const findNonce = useReaderStore((s) => s.findNonce);
   const findDirection = useReaderStore((s) => s.findDirection);
+  const setPdfOutline = useReaderStore((s) => s.setPdfOutline);
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
   const lastFindPageRef = useRef(0);
   /** 每个 fileId 只自动适应一次，避免设置变更反复触发 */
@@ -70,6 +72,18 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
     setTotalPages(pdf.numPages);
   }, [pdf, setTotalPages]);
 
+
+  // 文档就绪后提取基于字体大小的文本大纲
+  useEffect(() => {
+    if (!pdf || status !== 'ready') return;
+    let cancelled = false;
+    (async () => {
+      const items = await extractPdfOutline(pdf, pdf.numPages);
+      if (cancelled) return;
+      setPdfOutline(items);
+    })();
+    return () => { cancelled = true; };
+  }, [pdf, status, setPdfOutline]);
   // 设置「默认适应宽度」：文档首次就绪时触发一次
   useEffect(() => {
     if (!pdf || status !== 'ready' || !defaultFitWidth) return;

@@ -19,7 +19,7 @@
 | 样式 | 纯 CSS + Design Tokens（`src/styles/tokens.css`），双主题 `data-theme` |
 | 存储 | IndexedDB（`idb`）v4：文件 / blob / 会话 / 批注 / **书签** |
 | 阅读 | PDF.js（`pdfjs-dist`，worker 经 Vite `?url` 本地化）；epub.js |
-| 摄像头 | WebRTC `getUserMedia`（阅读器底栏/顶栏）；画面与推理仅本地（§13 决策7） |
+| 摄像头 | Python `monitor/` 本机开摄像头并推理；阅读页经 HTTP 启停（无浏览器 getUserMedia） |
 | 图谱（重做时） | 安装 **`react-force-graph-2d`**；禁止伞包 `react-force-graph`（会拉 aframe） |
 
 > `recharts` 仍在依赖中，但精简后的仪表盘已不再引用折线组件。

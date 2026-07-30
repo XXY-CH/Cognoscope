@@ -114,6 +114,63 @@
   gap: var(--sp-1);
 }
 
+/* ── 文本推断大纲 ── */
+.outlineList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.outlineItem {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-1) var(--sp-2);
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.outlineItem:hover {
+  background: var(--bg-hover);
+}
+
+.outlineItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.outlineItem[data-level='1'] {
+  padding-left: calc(var(--sp-2) + var(--sp-3));
+  font-size: 12.5px;
+}
+
+.outlineItem[data-level='2'] {
+  padding-left: calc(var(--sp-2) + var(--sp-5));
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.outlinePage {
+  flex-shrink: 0;
+  min-width: 2em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+
+.outlineTitle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .bookmarkItem {
   position: relative;
   display: flex;

@@ -135,6 +135,8 @@ export interface SessionFocusAnalysis {
   engDominant: string | null;
   /** 综合专注分 0–100；无人脸时为 null */
   focusScore: number | null;
+  /** 分心标签 → 片段次数（如 { playing_phone: 3, chatting: 1 }） */
+  events: Record<string, number>;
 }
 
 /** 批注高亮颜色；与阅读器划词色板对应 */
@@ -160,6 +162,19 @@ export interface Bookmark {
   quotedText: string | null;
   /** 创建时间，ISO 8601 */
   createdAt: string;
+}
+
+/**
+ * PdfOutlineItem - 文本字体大小推断的 PDF 大纲条目
+ * 所属：E · 阅读界面 > TocPanel
+ */
+export interface PdfOutlineItem {
+  /** 标题文本 */
+  title: string;
+  /** 所在页码（1-based） */
+  page: number;
+  /** 层级 0=顶级标题，1=二级，… */
+  level: number;
 }
 
 /**
@@ -255,27 +270,4 @@ export interface GraphEdge {
   target: string;
   /** 关联强度，约束范围 0–1；映射连线粗细与不透明度 */
   weight: number;
-}
-
-/** 摄像头检测运行状态 */
-export type CameraStatus = 'active' | 'paused' | 'denied' | 'unavailable';
-
-/**
- * CameraState - 摄像头检测全局状态
- * 所属：B · 个人仪表盘 / 全局 cameraStore
- * 规范参考：UI_spec.md §9 / §5.2 / §13 决策7（推理仅在本地）
- */
-export interface CameraState {
-  /**
-   * 检测状态：
-   * - `active`：正在检测
-   * - `paused`：用户暂停
-   * - `denied`：权限被拒绝
-   * - `unavailable`：设备不可用或无摄像头
-   */
-  status: CameraStatus;
-  /** 当前选用的媒体设备 id；未选择或不可用时为 `null` */
-  deviceId: string | null;
-  /** 是否显示摄像头预览画面（画面不出设备） */
-  previewVisible: boolean;
 }

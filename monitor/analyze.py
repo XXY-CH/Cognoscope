@@ -129,13 +129,17 @@ def analyze(frames, window_sec=30):
             yaw_norm = max(0.0, 1.0 - yaw_std / 25.0)
             pitch_norm = max(0.0, 1.0 - (pitch_std or 0) / 20.0)
             pose_score = (0.5 * yaw_norm + 0.5 * pitch_norm) * 100
-            w_gaze, w_pose, w_eng = 0.40, 0.25, 0.15
+            # 降低姿态权重、提高投入状态权重
+            w_gaze, w_pose, w_eng = 0.40, 0.15, 0.25
         else:
             pose_score = 50
-            w_gaze, w_pose, w_eng = 0.55, 0.15, 0.10
+            w_gaze, w_pose, w_eng = 0.55, 0.10, 0.20
 
-        # Engagement bonus: % time in "engaged" state × weight
-        eng_bonus = (eng_engaged_pct or 0) * w_eng
+        # 手机 / 聊天 / 喝水出现时，engaged 状态视为无效，不加分
+        hard_distract_labels = ("playing_phone", "chatting", "drinking")
+        has_hard_distract = any(episodes.get(l, 0) > 0 for l in hard_distract_labels)
+        effective_eng_pct = 0.0 if has_hard_distract else (eng_engaged_pct or 0)
+        eng_bonus = effective_eng_pct * w_eng
         distract_penalty = min(30, sum(episodes.values()) * 5)
         focus_score = int(
             w_gaze * gaze_score
@@ -269,7 +273,8 @@ def report(result):
         print(f"  {bar}  {fs}/100  Grade: {grade}")
     else:
         print("  N/A — no face detected in session")
-    print(f"  Formula: 0.40×Gaze + 0.25×Pose + 0.15×Engaged% − DistractPenalty")
+    print(f"  Formula: 0.40×Gaze + 0.15×Pose + 0.25×Engaged% − DistractPenalty"
+          f"  (no pose: 0.55 / 0.10 / 0.20; phone/chat/drink → Engaged%=0)")
     print()
 
     # Timeline

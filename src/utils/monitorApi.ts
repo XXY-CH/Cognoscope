@@ -31,6 +31,8 @@ export interface StatusResult {
   sessionId?: string;
   frameCount?: number;
   fileId?: string;
+  /** fetch 成功即为 true；网络失败为 false */
+  reachable?: boolean;
 }
 
 export interface SessionMeta {
@@ -89,6 +91,18 @@ export async function stopDetection(): Promise<StopResult> {
     return res.json();
   } catch {
     return { status: 'unreachable' };
+  }
+}
+
+/** 查询 Python 端检测是否在跑（摄像头由后端持有） */
+export async function getDetectionStatus(): Promise<StatusResult> {
+  try {
+    const res = await fetch(`${MONITOR_API_BASE}/api/detect/status`);
+    if (!res.ok) return { running: false, reachable: false };
+    const data = (await res.json()) as StatusResult;
+    return { ...data, reachable: true };
+  } catch {
+    return { running: false, reachable: false };
   }
 }
 
