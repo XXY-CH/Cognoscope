@@ -26,7 +26,6 @@ dist-ssr
 # Monitor model files (large binaries, download separately)
 monitor/models/*.task
 monitor/models/*.pt
-monitor/model.onnx
 monitor/__pycache__/
 monitor/vision/__pycache__/
 monitor/sessions/
