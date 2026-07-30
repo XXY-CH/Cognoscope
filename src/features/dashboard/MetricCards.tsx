@@ -3,7 +3,7 @@
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.3
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { BookOpen, Timer } from 'lucide-react';
 import { useSessionStore } from '../../stores/sessionStore';
 import {
@@ -45,16 +45,16 @@ function MiniSpark({
   );
 }
 
-/** MetricCards - 从 sessionStore 聚合真实专注数据 */
 export function MetricCards() {
   const sessions = useSessionStore((s) => s.sessions);
   const loadSessions = useSessionStore((s) => s.loadSessions);
-  const status = useSessionStore((s) => s.status);
 
-  // 首次挂载加载数据
+  const loadedRef = useRef(false);
   useEffect(() => {
-    if (status === 'idle') void loadSessions();
-  }, [status, loadSessions]);
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    void loadSessions();
+  }, [loadSessions]);
 
   const metrics = summarizeMetrics(sessions);
   const focusDeltaSign = metrics.focusDeltaMin >= 0 ? '+' : '';

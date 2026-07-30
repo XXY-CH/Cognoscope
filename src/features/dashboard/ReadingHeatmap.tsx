@@ -3,7 +3,7 @@
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.7
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Tooltip } from '../../components/common';
 import { useSessionStore } from '../../stores/sessionStore';
 import { buildHeatmap, type HeatDay } from '../../utils/dashboardMetrics';
@@ -23,11 +23,13 @@ function levelFor(minutes: number, max: number): number {
 export function ReadingHeatmap() {
   const sessions = useSessionStore((s) => s.sessions);
   const loadSessions = useSessionStore((s) => s.loadSessions);
-  const status = useSessionStore((s) => s.status);
 
+  const loadedRef = useRef(false);
   useEffect(() => {
-    if (status === 'idle') void loadSessions();
-  }, [status, loadSessions]);
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    void loadSessions();
+  }, [loadSessions]);
 
   const days: HeatDay[] = buildHeatmap(sessions);
   const max = Math.max(...days.map((d) => d.minutes), 0);

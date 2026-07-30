@@ -1,16 +1,15 @@
 /**
  * monitorApi — 浏览器端调用 monitor/ Python HTTP API 的客户端
  *
- * Python 服务默认监听 http://127.0.0.1:8765，可通过 MONITOR_API_BASE 环境变量覆盖。
+ * Python 服务默认监听 http://127.0.0.1:8765。
  *
  * 使用方式：
- *   import { startDetection, stopDetection, getStatus, getSessions } from '../utils/monitorApi';
- *   const { sessionId } = await startDetection(fileId);
- *   const result = await stopDetection();
+ *   import { startDetection, stopDetection, getSessionFrames, getSessionAnalysis } from '../utils/monitorApi';
  */
 
-export const MONITOR_API_BASE = 'http://127.0.0.1:8765';
+import type { MonitorFrame } from './monitorAdapter';
 
+export const MONITOR_API_BASE = 'http://127.0.0.1:8765';
 interface StartResult {
   status: 'started' | 'already_running' | 'error' | 'unreachable';
   sessionId?: string;
@@ -102,7 +101,7 @@ export async function listSessions(): Promise<SessionMeta[]> {
 /** 获取单次会话的逐帧数据 */
 export async function getSessionFrames(
   sessionId: string,
-): Promise<{ sessionId: string; frames: unknown[] }> {
+): Promise<{ sessionId: string; frames: MonitorFrame[] }> {
   const res = await fetch(`${MONITOR_API_BASE}/api/sessions/${sessionId}`);
   return res.json();
 }

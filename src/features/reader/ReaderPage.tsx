@@ -14,9 +14,16 @@ import { useLinesReadSync } from '../../hooks/useLinesReadSync';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useReadingSession } from '../../hooks/useReadingSession';
 import { useSystemThemeListener } from '../../hooks/useSystemThemeListener';
+import * as sessionsDb from '../../db/sessions';
 import { useFileStore } from '../../stores/fileStore';
 import { useReaderStore } from '../../stores/readerStore';
-import { MONITOR_API_BASE, startDetection, stopDetection } from '../../utils/monitorApi';
+import { convertToReadingSession } from '../../utils/monitorAdapter';
+import {
+  getSessionFrames,
+  MONITOR_API_BASE,
+  startDetection,
+  stopDetection,
+} from '../../utils/monitorApi';
 import { ReaderCanvas } from './canvas/ReaderCanvas';
 import { ReaderBottomBar } from './ReaderBottomBar';
 import { ReaderTopBar } from './ReaderTopBar';
@@ -29,7 +36,6 @@ import styles from './ReaderPage.module.css';
  */
 export function ReaderPage() {
   useSystemThemeListener();
-  // 阅读路由无 AppShell，需单独挂载网络监听
   useNetworkStatus();
   const rootRef = useRef<HTMLDivElement>(null);
   const zoomBeforeFsRef = useRef(100);
@@ -40,12 +46,47 @@ export function ReaderPage() {
   const loadFiles = useFileStore((s) => s.loadFiles);
   const openFile = useReaderStore((s) => s.openFile);
   const clearFile = useReaderStore((s) => s.clearFile);
-  // 已读行数同步 + 会话写入仪表盘（§8.5）；用 store.fileId 避免路由未解析完就开会话
   const activeFileId = useReaderStore((s) => s.fileId);
   useLinesReadSync(activeFileId);
-  useReadingSession(activeFileId);
 
-  // 打开论文 → 自动启动行为检测（Python 服务优先，不可用时回退浏览器摄像头）
+  // Python monitor 会话 ID（由 startDetection 返回，stop 后用于拉取数据）
+  const pySessionIdRef = useRef<string | null>(null);
+
+  // 会话结束时合并 monitor 检测数据到 IndexedDB 会话
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
+
+  const mergeMonitorData = useCallback(
+    async (dbSessionId: string) => {
+      const pySid = pySessionIdRef.current;
+      if (!pySid || !mountedRef.current) return;
+      try {
+        const { frames } = await getSessionFrames(pySid);
+        if (!frames || frames.length === 0 || !mountedRef.current) return;
+        // 大量帧同步处理会阻塞主线程 → yield 后再转换，并限制帧数
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        if (!mountedRef.current) return;
+        const capped = frames.length > 6000 ? frames.slice(-6000) : frames;
+        const monitorSession = convertToReadingSession(capped, activeFileId!);
+        if (!monitorSession || !mountedRef.current) return;
+        const cur = await sessionsDb.getSession(dbSessionId);
+        if (!cur) return;
+        await sessionsDb.putSession({
+          ...cur,
+          focusSamples: monitorSession.focusSamples,
+          fatigueSamples: monitorSession.fatigueSamples,
+          distractions: monitorSession.distractions,
+        });
+      } catch {
+        /* monitor 不可用时静默 */
+      }
+    },
+    [activeFileId],
+  );
+
+  useReadingSession(activeFileId, mergeMonitorData);
+
+  // 打开论文 → 自动启动行为检测（Python 优先，不可用回退浏览器摄像头）
   const {
     startDetection: startCamera,
     stopDetection: stopCamera,
@@ -57,12 +98,12 @@ export function ReaderPage() {
     void (async () => {
       const result = await startDetection(activeFileId);
       if (result.status === 'unreachable') {
-        // Python 服务未运行 → 回退到浏览器内置摄像头
         await startCamera();
+      } else if (result.sessionId) {
+        pySessionIdRef.current = result.sessionId;
       }
     })();
 
-    // 页面刷新/关闭时用 sendBeacon 确保 Python stop 到达
     const handleUnload = () => {
       navigator.sendBeacon(`${MONITOR_API_BASE}/api/detect/stop`);
     };
@@ -70,8 +111,13 @@ export function ReaderPage() {
 
     return () => {
       window.removeEventListener('beforeunload', handleUnload);
-      void stopDetection(); // Python 服务 stop
-      stopCamera();         // 浏览器摄像头 stop
+      void (async () => {
+        const stopResult = await stopDetection();
+        if (stopResult.sessionId) {
+          pySessionIdRef.current = stopResult.sessionId;
+        }
+      })();
+      stopCamera();
     };
   }, [activeFileId, startCamera, stopCamera]);
   const tocOpen = useReaderStore((s) => s.tocOpen);

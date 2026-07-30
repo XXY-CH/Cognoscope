@@ -12,8 +12,15 @@ import { createId } from '../utils/id';
 
 /**
  * 为当前 fileId 开启一条 ReadingSession；周期性同步 linesRead；卸载时 endSession
+ *
+ * @param fileId - 当前阅读的文件 ID
+ * @param onBeforeEnd - 会话结束前的回调，可在此时合并 monitor 检测数据
+ * @returns sessionId — 可用于外部（如 ReaderPage）在结束时合并额外数据
  */
-export function useReadingSession(fileId: string | null): void {
+export function useReadingSession(
+  fileId: string | null,
+  onBeforeEnd?: (sessionId: string) => Promise<void>,
+): string | null {
   const sessionIdRef = useRef<string | null>(null);
   const linesRead = useReaderStore((s) => s.linesRead);
   const loadSessions = useSessionStore((s) => s.loadSessions);
@@ -41,7 +48,6 @@ export function useReadingSession(fileId: string | null): void {
     void (async () => {
       await sessionsDb.putSession(session);
       if (cancelled) return;
-      // 刷新仪表盘列表（若用户随后切过去能看到进行中会话）
       void loadSessions();
     })();
 
@@ -50,8 +56,11 @@ export function useReadingSession(fileId: string | null): void {
       const sid = sessionIdRef.current;
       sessionIdRef.current = null;
       if (!sid) return;
-      // 结束前把最新行数写入再 end
       void (async () => {
+        // 允许外部在 end 前合并 monitor 检测数据
+        if (onBeforeEnd) {
+          try { await onBeforeEnd(sid); } catch { /* monitor 不可用时静默 */ }
+        }
         const cur = await sessionsDb.getSession(sid);
         if (cur && !cur.endedAt) {
           await sessionsDb.putSession({
@@ -63,7 +72,7 @@ export function useReadingSession(fileId: string | null): void {
         void useSessionStore.getState().loadSessions();
       })();
     };
-  }, [fileId, loadSessions]);
+  }, [fileId, loadSessions, onBeforeEnd]);
 
   // 节流同步已读行数到进行中会话
   useEffect(() => {
@@ -79,4 +88,6 @@ export function useReadingSession(fileId: string | null): void {
     }, 800);
     return () => window.clearTimeout(t);
   }, [linesRead, fileId]);
+
+  return sessionIdRef.current;
 }
