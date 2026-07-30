@@ -33,13 +33,14 @@ export function filterSessionsByRange(
   range: SessionRange,
   now = Date.now(),
 ): ReadingSession[] {
-  if (range === 'all') return sessions;
   const sorted = [...sessions].sort((a, b) =>
     b.startedAt.localeCompare(a.startedAt),
   );
-  if (range === 'recent7') return sorted.slice(0, 7);
-  const monthAgo = now - 30 * 24 * 60 * 60 * 1000;
-  return sorted.filter((s) => new Date(s.startedAt).getTime() >= monthAgo);
+  if (range === 'all') return sorted;
+  // 「近 7 天 / 近 30 天」按日历窗口过滤，而非「最近 N 条」
+  const days = range === 'recent7' ? 7 : 30;
+  const cutoff = now - days * 24 * 60 * 60 * 1000;
+  return sorted.filter((s) => new Date(s.startedAt).getTime() >= cutoff);
 }
 
 function avg(samples: { value: number }[]): number {

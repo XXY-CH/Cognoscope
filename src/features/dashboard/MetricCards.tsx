@@ -1,11 +1,10 @@
 /**
- * MetricCards - 专注时长 / 阅读行数指标卡（实时数据）
+ * MetricCards - 专注时长 / 阅读行数指标卡
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.3
  */
-import { useEffect, useRef } from 'react';
 import { BookOpen, Timer } from 'lucide-react';
-import { useSessionStore } from '../../stores/sessionStore';
+import type { ReadingSession } from '../../types';
 import {
   formatDurationHms,
   formatLines,
@@ -24,7 +23,9 @@ function MiniSpark({
   tone: SparkTone;
   label: string;
 }) {
-  const max = Math.max(...values, 1);
+  // 无数据时给默认高度，避免 Math.max 空数组与空白条
+  const series = values.length > 0 ? values : [0];
+  const max = Math.max(...series, 1);
   const toneClass =
     tone === 'focus' ? styles.sparkFocus : styles.sparkReading;
 
@@ -34,7 +35,7 @@ function MiniSpark({
       role="img"
       aria-label={label}
     >
-      {values.map((v, i) => (
+      {series.map((v, i) => (
         <span
           key={i}
           className={styles.sparkBar}
@@ -45,17 +46,12 @@ function MiniSpark({
   );
 }
 
-export function MetricCards() {
-  const sessions = useSessionStore((s) => s.sessions);
-  const loadSessions = useSessionStore((s) => s.loadSessions);
+interface MetricCardsProps {
+  sessions: ReadingSession[];
+}
 
-  const loadedRef = useRef(false);
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-    void loadSessions();
-  }, [loadSessions]);
-
+/** MetricCards - 由 DashboardPage 注入已按范围过滤的会话 */
+export function MetricCards({ sessions }: MetricCardsProps) {
   const metrics = summarizeMetrics(sessions);
   const focusDeltaSign = metrics.focusDeltaMin >= 0 ? '+' : '';
   const linesDeltaSign = metrics.linesDelta >= 0 ? '+' : '';
@@ -70,8 +66,13 @@ export function MetricCards() {
           aria-hidden="true"
         />
         <p className={styles.caption}>专注时长</p>
-        <p className={styles.value}>{formatDurationHms(metrics.focusDurationSec)}</p>
-        <p className={styles.sub}>较上次 {focusDeltaSign}{metrics.focusDeltaMin} 分钟</p>
+        <p className={styles.value}>
+          {formatDurationHms(metrics.focusDurationSec)}
+        </p>
+        <p className={styles.sub}>
+          较上次 {focusDeltaSign}
+          {metrics.focusDeltaMin} 分钟
+        </p>
         <MiniSpark
           values={metrics.sparkFocus}
           tone="focus"
@@ -87,8 +88,13 @@ export function MetricCards() {
           aria-hidden="true"
         />
         <p className={styles.caption}>阅读行数</p>
-        <p className={styles.value}>{formatLines(metrics.linesRead)} 行</p>
-        <p className={styles.sub}>较上次 {linesDeltaSign}{formatLines(Math.abs(metrics.linesDelta))} 行</p>
+        <p className={styles.value}>
+          {formatLines(metrics.linesRead)} 行
+        </p>
+        <p className={styles.sub}>
+          较上次 {linesDeltaSign}
+          {formatLines(Math.abs(metrics.linesDelta))} 行
+        </p>
         <MiniSpark
           values={metrics.sparkLines}
           tone="reading"

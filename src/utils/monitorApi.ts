@@ -47,15 +47,17 @@ export interface SessionAnalysis {
   frames: number;
   fps: number;
   gazeRatio: number;
-  yawStd: number;
-  pitchStd: number;
-  events: number;
-  episodes: number;
+  yawStd: number | null;
+  pitchStd: number | null;
+  /** 各分心标签的帧计数 */
+  events: Record<string, number>;
+  /** 各分心标签的片段计数 */
+  episodes: Record<string, number>;
   distractRatio: number;
   eventsPerMin: number;
   engDistribution: Record<string, number> | null;
   engDominant: string | null;
-  focusScore: number;
+  focusScore: number | null;
 }
 
 // ── Detection control ─────────────────────────────────────────────
@@ -106,12 +108,32 @@ export async function getSessionFrames(
   return res.json();
 }
 
-/** 获取单次会话的分析报告 */
+/** 获取单次会话的分析报告；服务不可达时抛错由调用方处理 */
 export async function getSessionAnalysis(
   sessionId: string,
 ): Promise<SessionAnalysis> {
-  const res = await fetch(`${MONITOR_API_BASE}/api/sessions/${sessionId}/analyze`);
+  const res = await fetch(
+    `${MONITOR_API_BASE}/api/sessions/${sessionId}/analyze`,
+  );
+  if (!res.ok) throw new Error(`analyze failed: ${res.status}`);
   return res.json();
+}
+
+/** 带超时的 listSessions，避免 monitor 阻塞仪表盘 */
+export async function listSessionsWithTimeout(
+  ms = 3000,
+): Promise<SessionMeta[]> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(`${MONITOR_API_BASE}/api/sessions`, {
+      signal: ctrl.signal,
+    });
+    if (!res.ok) throw new Error(`list failed: ${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ── Health ─────────────────────────────────────────────────────────

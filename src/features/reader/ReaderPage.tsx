@@ -89,6 +89,8 @@ export function ReaderPage() {
   // 打开论文 → 自动启动/停止 Python 行为检测
   useEffect(() => {
     if (!activeFileId) return;
+    // Puppeteer/omp 等无头页也会挂 /read/；webdriver 为 true 时跳过，避免误开摄像头
+    if (navigator.webdriver) return;
 
     // 先确保之前的检测已停止
     void stopDetection();
@@ -96,6 +98,8 @@ export function ReaderPage() {
     // 启动检测
     const timer = setTimeout(() => {
       void (async () => {
+        // 延迟后再次确认：HMR/自动化可能在等待期间注入 webdriver 标记
+        if (navigator.webdriver) return;
         const result = await Promise.race([
           startDetection(activeFileId),
           new Promise<StartResult>((r) =>
@@ -109,6 +113,7 @@ export function ReaderPage() {
     }, 500);
 
     const handleUnload = () => {
+      if (navigator.webdriver) return;
       navigator.sendBeacon(`${MONITOR_API_BASE}/api/detect/stop`);
     };
     window.addEventListener('beforeunload', handleUnload);
@@ -116,7 +121,7 @@ export function ReaderPage() {
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeunload', handleUnload);
-      void stopDetection();
+      if (!navigator.webdriver) void stopDetection();
     };
   }, [activeFileId]);
   const tocOpen = useReaderStore((s) => s.tocOpen);

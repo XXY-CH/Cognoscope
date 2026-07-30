@@ -105,6 +105,38 @@ export interface ReadingSession {
   distractions: DistractionEvent[];
 }
 
+/**
+ * SessionFocusAnalysis - 单次检测会话的专注分析报告
+ * 所属：B · 个人仪表盘（专注会话表）
+ * 算法对齐：monitor/analyze.py（Gaze / Pose / Distraction / Engagement / Focus Score）
+ */
+export interface SessionFocusAnalysis {
+  /** 对应 monitor JSONL 会话 id，如 session_20260730_120701 */
+  sessionId: string;
+  /** 会话开始时间，ISO 8601；缺失时为 null */
+  startedAt: string | null;
+  /** 会话结束时间，ISO 8601；缺失时为 null */
+  endedAt: string | null;
+  /** 时长（秒） */
+  durationSec: number;
+  /** 帧数 */
+  frames: number;
+  /** 注视中心占比 0–1（Rayner 1998） */
+  gazeRatio: number;
+  /** 分心事件密度（次/分钟） */
+  eventsPerMin: number;
+  /** 分心帧占比 0–1 */
+  distractRatio: number;
+  /** 头部 yaw 标准差（度）；无姿态数据时为 null */
+  yawStd: number | null;
+  /** 头部 pitch 标准差（度）；无姿态数据时为 null */
+  pitchStd: number | null;
+  /** 主导投入状态：engaged / boredom / confusion / frustration */
+  engDominant: string | null;
+  /** 综合专注分 0–100；无人脸时为 null */
+  focusScore: number | null;
+}
+
 /** 批注高亮颜色；与阅读器划词色板对应 */
 export type AnnotationColor = 'yellow' | 'green' | 'blue' | 'pink';
 

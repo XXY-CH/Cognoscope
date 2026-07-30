@@ -8,3 +8,10 @@
   gap: var(--sp-5); /* 区块间距 */
   min-height: 100%;
 }
+
+.status {
+  margin: var(--sp-6) 0;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  text-align: center;
+}
