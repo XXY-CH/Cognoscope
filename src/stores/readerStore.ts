@@ -13,6 +13,8 @@ const SIDE_KEY = 'xuesen-side-width';
 const TOC_COLLAPSED_KEY = 'xuesen-toc-collapsed';
 const SIDE_COLLAPSED_KEY = 'xuesen-side-collapsed';
 const SPLIT_KEY = 'xuesen-side-split';
+const PAGE_MODE_KEY = 'xuesen-page-mode';
+const DEFAULT_FIT_WIDTH_KEY = 'xuesen-default-fit-width';
 
 function readNumber(key: string, fallback: number): number {
   try {
@@ -33,6 +35,16 @@ function readBool(key: string, fallback: boolean): boolean {
   } catch {
     return fallback;
   }
+}
+
+function readPageMode(): PageMode {
+  try {
+    const raw = localStorage.getItem(PAGE_MODE_KEY);
+    if (raw === 'single' || raw === 'double' || raw === 'scroll') return raw;
+  } catch {
+    /* ignore */
+  }
+  return 'single';
 }
 
 function clamp(n: number, min: number, max: number): number {
@@ -77,6 +89,8 @@ interface ReaderState {
   fitWidthActive: boolean;
   /** 进入适应宽度前的缩放百分比 */
   zoomBeforeFit: number | null;
+  /** 新打开文档时是否自动适应宽度（设置 · 阅读） */
+  defaultFitWidth: boolean;
 
   openFile: (input: {
     id: string;
@@ -98,6 +112,12 @@ interface ReaderState {
   setQaRatio: (ratio: number) => void;
   cycleSideSplit: () => void;
   setPageMode: (mode: PageMode) => void;
+  /** 默认展开左栏（目录）并持久化 */
+  setDefaultTocOpen: (open: boolean) => void;
+  /** 默认展开右栏（侧栏）并持久化 */
+  setDefaultSideOpen: (open: boolean) => void;
+  /** 默认打开文档时适应宽度并持久化 */
+  setDefaultFitWidth: (fit: boolean) => void;
   setZoomPercent: (zoom: number) => void;
   /** 适应宽度计算结果写入，不退出 fit 切换态 */
   applyFitZoom: (zoom: number) => void;
@@ -130,7 +150,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   tocWidth: readNumber(TOC_KEY, 260),
   sideWidth: readNumber(SIDE_KEY, 360),
   qaRatio: readNumber(SPLIT_KEY, 0.5),
-  pageMode: 'single',
+  pageMode: readPageMode(),
   zoomPercent: 100,
   currentPage: 1,
   totalPages: 0,
@@ -145,6 +165,8 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   fitWidthNonce: 0,
   fitWidthActive: false,
   zoomBeforeFit: null,
+  // 缺省开启：多数论文 PDF 更适合适应页宽起步
+  defaultFitWidth: readBool(DEFAULT_FIT_WIDTH_KEY, true),
 
   openFile: ({ id, name, type }) =>
     set({
@@ -164,6 +186,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       zoomBeforeFit: null,
     }),
 
+  // 不重置 linesRead：离开页时 clearFile 可能先于会话 cleanup，清零会覆盖 IndexedDB
   clearFile: () =>
     set({
       fileId: null,
@@ -171,7 +194,6 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       fileType: null,
       currentPage: 1,
       totalPages: 0,
-      linesRead: 0,
       pendingQaQuote: null,
       focusAnnotationId: null,
       findDraft: '',
@@ -269,7 +291,40 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
     get().setQaRatio(next);
   },
 
-  setPageMode: (pageMode) => set({ pageMode }),
+  setPageMode: (pageMode) => {
+    try {
+      localStorage.setItem(PAGE_MODE_KEY, pageMode);
+    } catch {
+      /* ignore */
+    }
+    set({ pageMode });
+  },
+  /** 设置默认是否展开目录（左栏）并立即应用 */
+  setDefaultTocOpen: (open: boolean) => {
+    try {
+      localStorage.setItem(TOC_COLLAPSED_KEY, open ? '0' : '1');
+    } catch {
+      /* ignore */
+    }
+    set({ tocOpen: open });
+  },
+  /** 设置默认是否展开侧栏（右栏）并立即应用 */
+  setDefaultSideOpen: (open: boolean) => {
+    try {
+      localStorage.setItem(SIDE_COLLAPSED_KEY, open ? '0' : '1');
+    } catch {
+      /* ignore */
+    }
+    set({ sideOpen: open });
+  },
+  setDefaultFitWidth: (fit: boolean) => {
+    try {
+      localStorage.setItem(DEFAULT_FIT_WIDTH_KEY, fit ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+    set({ defaultFitWidth: fit });
+  },
   setZoomPercent: (zoomPercent) =>
     set({
       zoomPercent: clamp(Math.round(zoomPercent), 50, 200),

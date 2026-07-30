@@ -1,0 +1,262 @@
+/**
+ * SettingsForm.module.css — 设置抽屉表单字段共用样式
+ * 所属：AppShell > SettingsDrawer
+ */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.label {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  color: var(--text-tertiary);
+}
+
+.note {
+  margin: 0;
+  padding: var(--sp-4);
+  border-radius: var(--radius-md);
+  background: var(--accent-subtle);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+  color: var(--text-primary);
+}
+
+.segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.segment {
+  border: var(--border-width) solid var(--border-default);
+  border-radius: var(--radius-md);
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
+}
+
+.segment:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.segmentActive {
+  border-color: var(--accent);
+  background: var(--bg-active);
+  color: var(--accent);
+}
+
+.segment:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.toggle {
+  width: 44px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--border-default);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.toggleOn {
+  background: var(--accent);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(20px);
+}
+
+.toggle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.dangerBtn {
+  align-self: flex-start;
+  height: calc(var(--sp-8) + var(--sp-1));
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid var(--danger);
+  background: transparent;
+  color: var(--danger);
+  font-size: var(--text-body);
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.dangerBtn:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.dangerBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.accentRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+}
+
+.accentSwatch {
+  width: var(--sp-8);
+  height: var(--sp-8);
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid var(--border-default);
+  padding: 0;
+  cursor: pointer;
+  background: var(--accent);
+}
+
+.accentSwatch[data-accent-preview='blue'] {
+  background: #4a6cf7;
+}
+
+.accentSwatch[data-accent-preview='green'] {
+  background: #34c759;
+}
+
+.accentSwatch[data-accent-preview='yellow'] {
+  background: #e6a800;
+}
+
+.accentSwatch[data-accent-preview='pink'] {
+  background: #e85aad;
+}
+
+.accentSwatchActive {
+  outline: var(--focus-ring-width) solid var(--text-primary);
+  outline-offset: 2px;
+  border-color: transparent;
+}
+
+.accentSwatch:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: 2px;
+}
+
+.shortcutTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.shortcutTable th,
+.shortcutTable td {
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.shortcutTable th {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.shortcutTable kbd {
+  font-family: inherit;
+  font-size: var(--text-xs);
+  padding: 0 var(--sp-1);
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kbdBtn {
+  font-family: inherit;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  border: var(--border-width) solid var(--border-default);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    background-color var(--dur-fast) var(--ease-standard);
+}
+
+.kbdBtn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+.kbdBtn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.shortcutActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0;
+}
+
+.kbdListening {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg-active);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment,
+  .toggle,
+  .toggleKnob {
+    transition: none;
+  }
+}

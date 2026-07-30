@@ -89,9 +89,18 @@ export async function deleteAnnotationsByFile(fileId: string): Promise<void> {
 }
 
 /**
+ * 清空全部批注（数据管理）
+ */
+export async function clearAllAnnotations(): Promise<void> {
+  const db = await getDb();
+  await db.clear('annotations');
+}
+
+/**
  * 统计某文件批注数
  */
 export async function countAnnotationsByFile(fileId: string): Promise<number> {
   const db = await getDb();
   return db.countFromIndex('annotations', 'by-file', fileId);
 }
+

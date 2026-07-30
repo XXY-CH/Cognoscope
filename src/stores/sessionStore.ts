@@ -20,7 +20,11 @@ import {
   listSessionsWithTimeout,
 } from '../utils/monitorApi';
 import { fromApiAnalysis } from '../utils/sessionAnalyze';
-import { buildDemoSessions } from '../utils/seedSessions';
+import {
+  appendOlderDemoHistoryIfNeeded,
+  buildDemoSessions,
+  DEMO_HEATMAP_YEAR_KEY,
+} from '../utils/seedSessions';
 
 type LoadStatus = 'idle' | 'loading' | 'error';
 type MonitorStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
@@ -58,10 +62,24 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     set({ status: 'loading' });
     try {
       let sessions = await sessionsDb.listSessions();
-      // 本地无数据时写入演示会话，便于开箱查看图表
+      // 本地无数据时写入近一年演示会话，便于开箱查看热力图
       if (sessions.length === 0) {
         sessions = buildDemoSessions();
         await sessionsDb.putSessions(sessions);
+        // 全年已写入，标记一次性补种完成，避免后续再追加
+        try {
+          localStorage.setItem(DEMO_HEATMAP_YEAR_KEY, '1');
+        } catch {
+          /* ignore */
+        }
+      } else {
+        // 已有近月数据时：仅一次补「一个月以前」演示历史
+        const { sessions: next, appended } =
+          appendOlderDemoHistoryIfNeeded(sessions);
+        if (appended.length > 0) {
+          await sessionsDb.putSessions(appended);
+          sessions = next;
+        }
       }
       const filtered = filterSessionsByRange(sessions, get().range);
       set({
@@ -148,8 +166,12 @@ export function selectFilteredAnalyses(
   const { analyses, range } = state;
   if (range === 'all') return analyses;
   const now = Date.now();
-  const days = range === 'recent7' ? 7 : 30;
-  const cutoff = now - days * 24 * 60 * 60 * 1000;
+  const cutoffMs: Record<Exclude<SessionRange, 'all'>, number> = {
+    recent24h: 24 * 60 * 60 * 1000,
+    recent7: 7 * 24 * 60 * 60 * 1000,
+    month: 30 * 24 * 60 * 60 * 1000,
+  };
+  const cutoff = now - cutoffMs[range];
   return analyses.filter((a) => {
     // 无时间戳的会话仅在「全部」中展示（已在上方提前返回）
     if (!a.startedAt) return false;

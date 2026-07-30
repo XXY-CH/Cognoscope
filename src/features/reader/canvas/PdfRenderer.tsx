@@ -45,13 +45,16 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const setTotalPages = useReaderStore((s) => s.setTotalPages);
   const bumpZoom = useReaderStore((s) => s.bumpZoom);
-  const setZoomPercent = useReaderStore((s) => s.setZoomPercent);
   const applyFitZoom = useReaderStore((s) => s.applyFitZoom);
+  const requestFitWidth = useReaderStore((s) => s.requestFitWidth);
+  const defaultFitWidth = useReaderStore((s) => s.defaultFitWidth);
   const findQuery = useReaderStore((s) => s.findQuery);
   const findNonce = useReaderStore((s) => s.findNonce);
   const findDirection = useReaderStore((s) => s.findDirection);
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
   const lastFindPageRef = useRef(0);
+  /** 每个 fileId 只自动适应一次，避免设置变更反复触发 */
+  const autoFitAppliedRef = useRef<string | null>(null);
 
   currentPageRef.current = currentPage;
   const scale = zoomPercent / 100;
@@ -66,6 +69,14 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
     if (!pdf) return;
     setTotalPages(pdf.numPages);
   }, [pdf, setTotalPages]);
+
+  // 设置「默认适应宽度」：文档首次就绪时触发一次
+  useEffect(() => {
+    if (!pdf || status !== 'ready' || !defaultFitWidth) return;
+    if (autoFitAppliedRef.current === fileId) return;
+    autoFitAppliedRef.current = fileId;
+    requestFitWidth();
+  }, [pdf, status, defaultFitWidth, fileId, requestFitWidth]);
 
   // 加载进度条宽度用 DOM 写入，避免 React 内联 style（设计规范）
   useEffect(() => {

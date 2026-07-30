@@ -22,8 +22,15 @@ export function useReadingSession(
   onBeforeEnd?: (sessionId: string) => Promise<void>,
 ): string | null {
   const sessionIdRef = useRef<string | null>(null);
+  // 峰值行数：cleanup 时 clearFile 可能已把 store 清零，必须用 ref 兜底
+  const linesReadRef = useRef(0);
   const linesRead = useReaderStore((s) => s.linesRead);
   const loadSessions = useSessionStore((s) => s.loadSessions);
+
+  // 同步最新行数到 ref（含递增过程中的每一次更新）
+  useEffect(() => {
+    linesReadRef.current = Math.max(linesReadRef.current, linesRead);
+  }, [linesRead]);
 
   // 打开 / 切换文件：结束旧会话并开始新会话
   useEffect(() => {
@@ -31,6 +38,8 @@ export function useReadingSession(
     let cancelled = false;
     const id = createId('sess');
     sessionIdRef.current = id;
+    // 新会话从 0 起计，避免沿用上一文件的峰值
+    linesReadRef.current = 0;
     const startedAt = new Date().toISOString();
 
     const session: ReadingSession = {
@@ -56,16 +65,26 @@ export function useReadingSession(
       const sid = sessionIdRef.current;
       sessionIdRef.current = null;
       if (!sid) return;
+      // 同步捕获峰值；clearFile 不再清零 linesRead，store 可作为第二来源
+      const finalLines = Math.max(
+        linesReadRef.current,
+        useReaderStore.getState().linesRead,
+      );
       void (async () => {
         // 允许外部在 end 前合并 monitor 检测数据
         if (onBeforeEnd) {
-          try { await onBeforeEnd(sid); } catch { /* monitor 不可用时静默 */ }
+          try {
+            await onBeforeEnd(sid);
+          } catch {
+            /* monitor 不可用时静默 */
+          }
         }
         const cur = await sessionsDb.getSession(sid);
         if (cur && !cur.endedAt) {
+          // Math.max：避免用 0 覆盖节流已写入的更大值
           await sessionsDb.putSession({
             ...cur,
-            linesRead: useReaderStore.getState().linesRead,
+            linesRead: Math.max(cur.linesRead, finalLines),
           });
         }
         await sessionsDb.endSession(sid);
@@ -82,8 +101,9 @@ export function useReadingSession(
       void (async () => {
         const cur = await sessionsDb.getSession(sid);
         if (!cur || cur.endedAt) return;
-        if (cur.linesRead === linesRead) return;
-        await sessionsDb.putSession({ ...cur, linesRead });
+        const next = Math.max(cur.linesRead, linesReadRef.current, linesRead);
+        if (cur.linesRead === next) return;
+        await sessionsDb.putSession({ ...cur, linesRead: next });
       })();
     }, 800);
     return () => window.clearTimeout(t);

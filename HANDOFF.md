@@ -1,277 +1,361 @@
-# 学森 · 模块交接说明（个人仪表盘 / 知识图谱）
+# 学森 · 模块交接说明（AI 能力优先）
 
-> 更新时间：2026-07-29  
-> 读者：后继前端 / 全栈开发者  
-> 设计权威：[`UI_spec.md`](./UI_spec.md)  
-> 工程约束：[`.cursorrules`](./.cursorrules) · 进度：[`PROGRESS.md`](./PROGRESS.md)
+> 更新时间：2026-07-30  
+> 读者：**接入 AI 问答 / 整理习得 / 知识图谱建边** 的前后端开发者  
+> 设计权威：[`UI_spec.md`](./UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）  
+> 工程约束：[`.cursorrules`](./.cursorrules) · 进度：[`PROGRESS.md`](./PROGRESS.md) · 检测：[`monitor/README.md`](./monitor/README.md)
 
-本文档说明两个**当前为占位/精简态**的模块：如何接手、数据从哪来、类型怎么定、文件在哪、接真数据时该改什么。
+本文说明：**AI 相关能力已具备哪些 UI/配置、还缺什么、该改哪些文件、类型与产品约束是什么**。仪表盘与图谱占位的简要现状见文末附录。
 
 ---
 
 ## 目录
 
-1. [第一部分 · 个人仪表盘](#第一部分--个人仪表盘)
-2. [第二部分 · 知识图谱](#第二部分--知识图谱)
-3. [共用约定](#共用约定)
+1. [总览：现状与缺口](#1-总览现状与缺口)
+2. [AI 设置（已落地）](#2-ai-设置已落地)
+3. [AI 提问 / 问答（待接请求）](#3-ai-提问--问答待接请求)
+4. [批注与上下文（问答输入）](#4-批注与上下文问答输入)
+5. [整理习得 Digest（待接）](#5-整理习得-digest待接)
+6. [知识图谱 · 批注/文件联结（待重建 + AI 建边）](#6-知识图谱--批注文件联结待重建--ai-建边)
+7. [建议实现顺序与 API 约定](#7-建议实现顺序与-api-约定)
+8. [附录 A · 个人仪表盘（已接会话）](#附录-a--个人仪表盘已接会话)
+9. [附录 B · 知识图谱文件清单](#附录-b--知识图谱文件清单)
+10. [共用约定](#共用约定)
 
 ---
 
-# 第一部分 · 个人仪表盘
+## 1. 总览：现状与缺口
 
-## 1.1 现状简介
+| 能力 | UI | 配置/类型 | 网络请求 | 持久化 |
+|---|---|---|---|---|
+| AI 设置 | ✅ 设置抽屉 · AI Tab | ✅ `AiSettingsDraft` + localStorage | — | ✅ 本机 |
+| AI 提问 | ✅ QAPanel 壳（引用块/离线禁用） | ✅ `QaMessage` 类型已有 | ❌ 发送为空操作 | ❌ 无 QA store / IDB |
+| 划词「提问」 | ✅ 写入 `pendingQaQuote` | — | — | 仅内存草稿 |
+| 批注 CRUD | ✅ AnnotationPanel | ✅ `Annotation` + IDB | — | ✅ `annotations` |
+| 批注原文高亮层 | ❌（§8.8） | 有 `anchor` 字段 | — | 有数据无图层 |
+| 整理习得 | ✅ 按钮（toast 占位） | 无 Digest 类型 | ❌ | ❌ |
+| 知识图谱 | ⏸ EmptyState | ✅ `GraphNode` / `GraphEdge` | ❌ 建边 | ❌ 无 graph store |
+| 离线降级 | ✅ QA 输入禁用文案 | `uiStore.isOnline` | — | — |
 
-| 项 | 说明 |
+产品约束（务必遵守）：
+
+- **§13 决策5**：一文件一问答会话，无多会话切换器。  
+- **§13 决策4**：图谱边由 AI 产生，前端**只读**展示/过滤，禁止手动建边删边。  
+- **§14**：离线时 AI 问答 / 整理习得禁用；本地模型部署时可再放开。  
+- 配置已存 OpenAI **兼容** 接口字段；实现时用 `baseUrl` + `apiKey` + `model`，勿写死官方域名。
+
+---
+
+## 2. AI 设置（已落地）
+
+### 2.1 用户路径
+
+设置齿轮（侧栏 / `Ctrl+,`）→ Tab **「AI」** → 编辑草稿 → 抽屉底部 **保存**（写入 `uiStore`）。  
+数据管理 Tab 可 **清除 AI 连接配置**（不含问答历史——历史尚未落库）。
+
+### 2.2 文件
+
+| 路径 | 职责 |
 |---|---|
-| 路由 | `/dashboard`（`src/App.tsx` lazy 加载） |
-| 侧栏 | `Sidebar` →「个人仪表盘」 |
-| 状态 | **精简占位 UI 已落地**：两指标卡 + 热力图 + 专注会话六维表；**数值全部为假数据** |
-| 与规范 | 产品迭代已偏离 `UI_spec.md` §5 全文（已去掉摄像头条、折线、分心轴、四指标中的分心/疲劳卡等）；**以当前页面结构为准**，接真数据时再决定是否回补 §5 其余块 |
+| `src/stores/uiStore.ts` | `AiSettingsDraft`、`aiSettings`、`setAiSettings` / `clearAiSettings`；localStorage 键 |
+| `src/components/layout/settings/AiPanel.tsx` | 表单 UI（草稿由抽屉托管） |
+| `src/components/layout/SettingsDrawer.tsx` | Tab 切换；打开时同步草稿；保存调用 `setAiSettings` |
+| `src/components/layout/settings/DataPanel.tsx` | 「清除 AI 配置」 |
 
-页面自上而下：
-
-1. **专注时长** / **阅读行数**（两列指标卡）  
-2. **近 30 天阅读热力图**  
-3. **专注会话表**（时间升序）：注视中心占比、分心事件密度、头部姿态方差、眼睑闭合百分比、眨眼频率、综合评分  
-
-## 1.2 文件位置
-
-```
-src/features/dashboard/
-  DashboardPage.tsx              # 页面组装（仅三块）
-  DashboardPage.module.css
-  MetricCards.tsx                # 专注时长 / 阅读行数
-  MetricCards.module.css
-  ReadingHeatmap.tsx             # 热力图格子
-  ReadingHeatmap.module.css
-  FocusSessionList.tsx           # 六维会话表
-  FocusSessionList.module.css
-
-src/utils/dashboardPlaceholders.ts   # ★ 当前唯一数据源（固定占位）
-src/utils/dashboardMetrics.ts        # 旧聚合工具（会话筛选等）；仪表盘页暂未用
-src/utils/seedSessions.ts            # IndexedDB 演示会话种子（sessionStore 仍可能写入）
-
-src/stores/sessionStore.ts           # 阅读会话 Zustand（阅读器写会话；仪表盘暂未读）
-src/db/sessions.ts                   # sessions CRUD
-src/hooks/useCamera.ts               # 摄像头（阅读器底栏等仍用；仪表盘页已卸）
-src/types/index.ts                   # ReadingSession / MetricSample / …
-```
-
-已从仪表盘目录删除（勿误以为还在）：`CameraStatusBar`、`FocusFatigueChart`、`DistractionTimeline`、`DashboardToolbar`。
-
-## 1.3 当前数据接口（占位层）
-
-占位全部集中在 `src/utils/dashboardPlaceholders.ts`。接真数据时：**优先替换此文件的导出，或改为从 store/API 注入同名形状**，尽量少改展示组件。
-
-### 指标卡
-
-| 导出常量 | 类型 | 用途 | 当前示例 |
-|---|---|---|---|
-| `PLACEHOLDER_FOCUS_DURATION` | `string` | 专注时长主值 | `"01:24:36"` |
-| `PLACEHOLDER_FOCUS_DELTA` | `string` | 副文案 | `"较上次 +18 分钟 ↑"` |
-| `PLACEHOLDER_LINES_READ` | `string` | 阅读行数（已含千分位） | `"12,480"` |
-| `PLACEHOLDER_LINES_DELTA` | `string` | 副文案 | `"较上次 +1,260 行"` |
-| `PLACEHOLDER_SPARK_FOCUS` | `number[]` | 近 7 次趋势条高度 | 长度 7 |
-| `PLACEHOLDER_SPARK_LINES` | `number[]` | 同上 | 长度 7 |
-
-### 热力图
-
-| 导出 | 类型 | 约定 |
-|---|---|---|
-| `PLACEHOLDER_HEAT_MINUTES` | `number[]` | 长度 **30**；下标 0 = 最旧一天，末项 = 今天；单位「阅读分钟」；`0` = 无阅读 |
-
-`ReadingHeatmap` 用「今天」向前推算 `dateKey`（`YYYY-MM-DD`），再按分钟算 `data-level` 0–4。
-
-### 专注会话六维表
+### 2.3 配置形状（勿改字段名，可扩展需同步 UI_spec）
 
 ```ts
-/** 定义见 dashboardPlaceholders.ts */
-export interface FocusSessionPlaceholder {
-  timeRange: string;           // 展示用时间段，如 "2026-07-22 09:15 – 10:02"
-  dateKey: string;             // YYYY-MM-DD，排序/分组
-  gazeCenterRatio: string;     // 注视中心占比，如 "72.4%"
-  distractionDensity: string;  // 分心事件密度，如 "0.38 /min"
-  headPoseVariance: string;    // 头部姿态方差，如 "0.086"
-  eyelidClosure: string;       // 眼睑闭合百分比，如 "12.3%"
-  blinkRate: string;           // 眨眼频率，如 "16.2 /min"
-  overallScore: string;        // 综合评分 0–100 字符串，如 "78"
+// src/stores/uiStore.ts
+type AiAnswerLanguage = 'zh' | 'en' | 'auto';
+
+interface AiSettingsDraft {
+  apiKey: string;
+  baseUrl: string;          // 默认 https://api.openai.com/v1
+  model: string;            // 默认 gpt-4o-mini
+  temperature: number;      // 0–2，默认 0.7
+  maxTokens: number;        // 默认 2048
+  answerLanguage: AiAnswerLanguage;  // 默认 'zh'
+  autoCite: boolean;        // 默认 true：回答尽量带可跳转原文引用
 }
-
-export const PLACEHOLDER_FOCUS_SESSIONS: FocusSessionPlaceholder[];
-// 按时间升序（早 → 晚）
 ```
 
-> **注意**：六维字段目前是 **展示用字符串**，尚未写入 `src/types/index.ts` / `UI_spec.md §9`。接入推理管线时应新增正式类型（建议数值型 + 格式化层），并与产品确认字段语义与单位。
-
-## 1.4 规范中已有、可复用的会话模型（§9）
-
-阅读器已写入 IndexedDB 的会话结构（与六维占位**不同域**，勿混用字段名）：
+读取方式（任意模块）：
 
 ```ts
-// src/types/index.ts — 对齐 UI_spec §9
-interface ReadingSession {
+const { apiKey, baseUrl, model, temperature, maxTokens, answerLanguage, autoCite } =
+  useUiStore.getState().aiSettings;
+```
+
+实现请求层时建议：
+
+1. 新建 `src/utils/aiClient.ts`（或 `src/services/ai/`）：封装 `chatCompletions` / `streamChat`，只读 `uiStore`。  
+2. 校验：无 `apiKey` 时 toast「请先在设置中配置 API Key」，并可选 `openSettings()`。  
+3. `answerLanguage` / `autoCite` 进 system prompt，勿另起一套设置 UI。
+
+---
+
+## 3. AI 提问 / 问答（待接请求）
+
+### 3.1 规范要点（`UI_spec.md` §8.6 / §9）
+
+- 气泡：用户右对齐（`--accent-subtle`），助手左对齐（`--bg-surface`）。  
+- 助手消息操作：复制 / 引入批注 / 重新生成。  
+- 流式：`status: 'streaming'` 时末尾光标；发送键变「停止生成」。  
+- `aria-live="polite"`；完成后可播报「回答完成」（§11）。  
+- 划词提问：引用块在气泡顶部；最多约 3 行折叠。
+
+### 3.2 已有 UI 与钩子
+
+| 路径 | 现状 |
+|---|---|
+| `src/features/reader/panels/QAPanel.tsx` | EmptyState + 输入框 + 发送（清空草稿，**无 API**）；离线禁用 |
+| `src/features/reader/panels/SidePanel.tsx` | 上 QA / 下批注；顶栏「整理习得」 |
+| `src/stores/readerStore.ts` | `pendingQaQuote`：划词「提问」灌入引用 |
+| `src/features/reader/canvas/SelectionToolbar.tsx`（及调用链） | 提问 → `setPendingQaQuote` + 展开侧栏 |
+
+### 3.3 类型（已定义，尚未落库）
+
+```ts
+// src/types/index.ts
+type QaRole = 'user' | 'assistant';
+type QaMessageStatus = 'pending' | 'streaming' | 'done' | 'error';
+
+interface QaMessage {
   id: string;
-  fileId: string;
-  startedAt: string;          // ISO 8601
-  endedAt: string | null;
-  durationSec: number;
-  linesRead: number;          // 行数计量（§13 决策1）
-  focusSamples: MetricSample[];   // { atSec, value 0–100 }
-  fatigueSamples: MetricSample[];
-  distractions: DistractionEvent[];
+  fileId: string;              // 一文件一会话
+  role: QaRole;
+  content: string;
+  quotedText: string | null;
+  quotedPage: number | null;
+  createdAt: string;
+  status: QaMessageStatus;
 }
 ```
 
-| 存储 | 路径 |
+### 3.4 建议新增
+
+| 项 | 建议 |
 |---|---|
-| IndexedDB object store | `sessions`（`src/db/sessions.ts`） |
-| Zustand | `src/stores/sessionStore.ts`（`loadSessions` / `range` / …） |
-| 聚合工具 | `src/utils/dashboardMetrics.ts`（`summarizeMetrics`、`buildHeatmap`、`filterSessionsByRange`） |
+| `src/stores/qaStore.ts` | 按 `fileId` 加载/追加消息；`send` / `stop` / `regenerate`；`if (get().fileId !== fileId) return` 防串文件 |
+| `src/db/qaMessages.ts` + IndexedDB **升版本** | object store `qaMessages`，index `by-file`；或单 key 存整段会话 JSON |
+| `src/utils/aiClient.ts` | OpenAI 兼容 `POST {baseUrl}/chat/completions` + SSE/stream |
+| 改 `QAPanel.tsx` | 渲染 `messages`；发送走 store；流式更新同一条 `assistant` 的 `content` |
 
-接真数据时建议映射关系（示意）：
+发送时建议 payload 上下文：
 
-| UI 区块 | 建议来源 |
-|---|---|
-| 专注时长 | `ReadingSession.durationSec` 聚合（或「有效专注」另算） |
-| 阅读行数 | `ReadingSession.linesRead` 聚合 |
-| 热力图 | 按日汇总 `durationSec` → 分钟（可用现成 `buildHeatmap`） |
-| 六维表 | **新接口**：摄像头本地推理输出；需扩展类型与 DB（可能升 IndexedDB 版本） |
+1. system：角色 + `answerLanguage` +（若 `autoCite`）要求标注原文页/句。  
+2. 可选：当前页附近正文 / 用户选中 `quotedText`。  
+3. 历史：同 `fileId` 的 `QaMessage[]`（截断至 token 预算）。  
+4. 批注摘要：见下一节（可选增强）。
 
-摄像头相关：`CameraState` / `useCamera`（画面与推理仅本地，§13 决策7）。仪表盘若恢复状态条，复用该 Hook，勿上传画面。
-
-## 1.5 建议接入顺序
-
-1. 定稿六维指标的正式 TypeScript 接口（写入 `types` + 必要时更新 `UI_spec.md §9`）。  
-2. 推理侧产出数值 → 写入会话或独立 store → 替换 `dashboardPlaceholders`。  
-3. 指标卡 / 热力图改读 `sessionStore` + `dashboardMetrics`。  
-4. 再评估是否恢复 §5 摄像头条、折线等（与产品对齐）。  
-5. 四态加载（idle / loading / empty / error，见 §9 加载约定）。
+**不要**在 `QAPanel` 内硬编码 Key；一律 `uiStore.aiSettings`。
 
 ---
 
-# 第二部分 · 知识图谱
+## 4. 批注与上下文（问答输入）
 
-## 2.1 现状简介
+### 4.1 已完成
+
+| 路径 | 职责 |
+|---|---|
+| `src/types/index.ts` → `Annotation` | `quotedText` / `body` / `page` / `anchor` / `color` |
+| `src/db/annotations.ts` | 按文件 CRUD、`listAllAnnotations` |
+| `src/stores/annotationStore.ts` | 加载/新增划词批注/空白批注/更新/删除 |
+| `src/features/reader/panels/AnnotationPanel.tsx` | 列表与编辑 |
+| 划词工具条 | 「批注」→ 创建卡片并聚焦 |
+
+### 4.2 与 AI 的联结方式（产品意图）
+
+| 场景 | 建议 |
+|---|---|
+| 提问带引用 | 已有 `quotedText`；请求里作为 user 消息前置引用块 |
+| 回答「引入批注」 | 助手气泡操作 → `annotationStore.addFromQuote({ quotedText: answerSnippet 或原文, body })` |
+| 整理习得 | 输入 = 该文件全部 `QaMessage` + `Annotation`（§8.9） |
+| 知识图谱 | 节点可来自文件；边可由「批注主题 / 文件相似度 / 共同引用」等由 **AI 离线任务** 产出 `GraphEdge`（前端只读） |
+| 批注高亮层 §8.8 | 用 `anchor` 在 PDF Text Layer / EPUB 上着色；点击滚动到 AnnotationPanel（**独立于聊天**，但提升「引用可跳转」体验，建议与 `autoCite` 一起做） |
+
+`listAnnotationsByFile(fileId)` / 未来 `listQaByFile(fileId)` 即 Digest 与建边的本地语料入口。
+
+---
+
+## 5. 整理习得 Digest（待接）
+
+### 5.1 规范（`UI_spec.md` §8.9）
+
+1. SidePanel 顶「整理习得」→ loading「整理中…」。  
+2. AI 根据**当前文件**全部问答 + 批注 → 结构化 Markdown。  
+3. Dialog 宽 760、高约 80vh，标题「阅读习得：{文件名}」。  
+4. 支持复制全文、导出 `.md`；Esc / 右上角关闭。  
+5. 离线：按钮 disabled + tooltip「需要连接 AI 服务」。
+
+### 5.2 现状
+
+`SidePanel.tsx` 仅 `toast.show('整理习得将在后续步骤接入')`。
+
+### 5.3 建议实现
 
 | 项 | 说明 |
 |---|---|
-| 路由 | `/knowledge-graph` |
-| 侧栏 | 「知识图谱」 |
-| 状态 | **仅 EmptyState 占位**；画布与交互实现已全部删除 |
-| 规范 | 完整 UI 仍以 `UI_spec.md` **§6** 为准；类型以 **§9** + **§13 决策4** 为准 |
+| `src/features/reader/DigestDialog.tsx` | Dialog + Markdown 渲染（可先用轻量库或预格式化 `<pre>`，再换 react-markdown） |
+| `qaStore` 或独立 `digestStore` | `runDigest(fileId)`；读 annotations + qaMessages |
+| Prompt | 固定大纲（要点 / 疑问 / 待跟进），语言跟 `answerLanguage` |
+| 导出 | `Blob` + `download` 文件名 `习得-{fileName}.md` |
 
-请勿在未读 §6 的情况下把旧演示启发式边原样抄回并标为「完成」。
+可先做「非流式一次返回」，再与问答共用 `aiClient`。
 
-## 2.2 文件位置
+---
 
-### 已保留
+## 6. 知识图谱 · 批注/文件联结（待重建 + AI 建边）
 
-| 项 | 路径 | 说明 |
-|---|---|---|
-| 路由 + lazy | `src/App.tsx` | `path: 'knowledge-graph'`，`handle.title = '知识图谱'` |
-| 侧栏 | `src/components/layout/Sidebar.tsx` | `to: '/knowledge-graph'` |
-| 页面壳 | `src/features/knowledge-graph/KnowledgeGraphPage.tsx` | EmptyState；在此目录重建 |
-| 样式壳 | `KnowledgeGraphPage.module.css` | 占位居中布局 |
-| 类型 | `src/types/index.ts` | `GraphNodeKind` / `GraphNode` / `GraphEdge` |
+### 6.1 产品边界
 
-### 已删除（需按 §6 重做）
+- 边：**仅 AI/后端**写入；前端展示、搜索、过滤（§13 决策4）。  
+- 节点：文件树派生 + 可选 tag；拖拽后可持久化 `x`/`y`。  
+- 建边中：顶栏 32px 进度条（§6.4）。  
+- 离线：只展示已有边，不重新计算（§14）。  
+- 详情侧栏可含「批注摘要」：该文件最近批注预览（§6）。
 
-```
-src/features/knowledge-graph/
-  GraphCanvas.tsx (+ .module.css)      # react-force-graph-2d
-  GraphToolbar.tsx (+ .module.css)     # 搜索 / 布局 / 适应视图
-  NodeDetailPanel.tsx (+ .module.css)  # 左侧详情 ~280px
-  GraphBuildBanner.tsx (+ .module.css) # AI 建边进度条
-
-src/stores/graphStore.ts
-src/utils/seedGraph.ts                 # 演示节点 + 启发式边
-src/utils/graphColors.ts               # Canvas 读 CSS 变量取色
-```
-
-依赖：`react-force-graph-2d` 已从 `package.json` 移除。重做时：
-
-```bash
-npm install react-force-graph-2d
-```
-
-**禁止**安装伞包 `react-force-graph`（会拉 aframe → `AFRAME is not defined`）。见 `PROGRESS.md` 黑屏备忘。
-
-## 2.3 数据接口（规范类型）
-
-权威定义：`UI_spec.md §9` / `src/types/index.ts`。
+### 6.2 类型（已有）
 
 ```ts
 type GraphNodeKind = 'file' | 'folder' | 'tag';
 
 interface GraphNode {
   id: string;
-  fileId: string | null;   // 标签节点为 null
+  fileId: string | null;
   label: string;
   kind: GraphNodeKind;
-  fileType?: FileType;     // 仅 kind === 'file'
-  x: number | null;        // 手动拖拽后持久化；未拖过为 null（力导向算）
+  fileType?: FileType;
+  x: number | null;
   y: number | null;
 }
 
 interface GraphEdge {
-  source: string;          // GraphNode.id
+  source: string;  // GraphNode.id
   target: string;
-  weight: number;          // 0–1 → 线粗与不透明度
+  weight: number;  // 0–1
 }
 ```
 
-### 数据职责边界
+### 6.3 AI 建边建议输入
 
-| 数据 | 谁产生 | 前端职责 |
-|---|---|---|
-| `GraphEdge` | AI / 后端（内容相似度等） | **只读**：展示、搜索、过滤；**禁止**手动建边/删边（§13 决策4） |
-| `GraphNode` | 可由文件树派生 + 标签节点 | 展示；拖拽后可写回 `x`/`y`（是否开放拖拽需产品确认） |
-| 建边进度 | AI 任务状态 | 画布顶 32px 条（`--bg-active`），完成隐藏（§6.4） |
+本地可提供给建边任务的语料（均已有或即将有）：
 
-### 建议的运行时状态（重建 `graphStore` 时）
+- `FileNode` 元数据（`fileStore` / `db/files`）  
+- 每文件 `Annotation[]`（正文 + 引用句）  
+- 每文件 `QaMessage[]`（接入后）  
+- 可选：文件全文抽取（PDF text layer / EPUB）——注意体积与隐私，默认本地
 
-| 字段 | 含义 |
-|---|---|
-| `nodes` / `edges` | 当前图数据 |
-| `selectedNodeId` | 左侧详情联动 |
-| `searchQuery` | 顶栏搜索 |
-| `layoutMode` | 力导向 / 树形 / 时间线（§6.1） |
-| `buildProgress` | `number \| null`（0–1；`null` 表示无进度条） |
-| `hydrated` | 是否已从文件/远端灌入 |
+输出：`GraphEdge[]`（+ 可选 tag 节点）。**禁止**用随机/启发式边冒充「AI 已完成」。
 
-持久化：若落节点坐标，可升 IndexedDB 版本新增 store（当前 DB 无独立 graph store）。离线时展示已有关联、不重新计算（§14）。
+### 6.4 UI 重建入口
 
-## 2.4 产品与交互约束（§6 摘要）
-
-1. 布局：全屏 Canvas（可抵消 AppShell Content padding）+ 左详情约 280px + 顶栏操作。  
-2. 交互：滚轮缩放、拖空白平移、单击选中、双击打开文件；右键菜单见 §6.2。  
-3. 节点规格：直径/配色/选中光环见 §6.3；连线粗细与选中高亮见 §6.4。  
-4. 样式：仅 CSS 变量；Canvas 用 `getComputedStyle` 读 token，禁止硬编码色值。  
-5. 单文件建议 &lt; 300 行；组件拆分为 Canvas / Toolbar / Detail / Banner。
-
-## 2.5 建议实现顺序
-
-1. 通读 `UI_spec.md §6`、§9 图谱类型、§13 决策4。  
-2. 安装 `react-force-graph-2d`。  
-3. 实现 `graphStore` + 真实边数据通道（勿用启发式 demo 边冒充完成）。  
-4. 重建 `GraphCanvas` / `GraphToolbar` / `NodeDetailPanel` / `GraphBuildBanner`。  
-5. 确认拖拽坐标是否持久化 → 再动 IndexedDB。  
-6. 双主题 + a11y（画布 `aria-label`、顶栏可键盘）走查。
+见 [附录 B](#附录-b--知识图谱文件清单)。安装 **`react-force-graph-2d`**，禁止伞包 `react-force-graph`。
 
 ---
 
-# 共用约定
+## 7. 建议实现顺序与 API 约定
 
-- **冲突处理**：本交接所述「当前产品结构」若与 `UI_spec.md` 冲突，改代码前先与产品确认以哪边为准，并回写规范或本文。  
-- **本地优先**：文件 / 会话 / 批注等走 IndexedDB；AI 依赖网络时需离线降级文案（§14）。  
-- **排错**：同一 bug 两次未修好 → 启动 `.cursorrules`「系统二」：假设 + 至少两方案，勿盲改。  
-- **文档同步**：模块从占位变为可用后，更新本文状态栏、`PROGRESS.md`、`README.md`。
+### 7.1 推荐顺序
+
+1. **`aiClient`** — 用设置里的 Key/URL/模型打通非流式 ping（如 `models` 列表或极短 completion）。  
+2. **`qaStore` + IDB** — QAPanel 真发送 + 流式 + 停止；一文件一会话。  
+3. **整理习得 Dialog** — 复用 client；依赖批注（已有）+ 问答（上一步）。  
+4. **回答 → 批注**、**批注高亮层 §8.8** — 引用可跳转，服务 `autoCite`。  
+5. **图谱画布重建** — 节点来自文件；边来自 AI 任务结果写入 store/IDB。  
+6. （可选）后台「重新分析关联」触发建边，进度条绑 `buildProgress`。
+
+### 7.2 OpenAI 兼容调用示意
+
+```http
+POST {baseUrl}/chat/completions
+Authorization: Bearer {apiKey}
+Content-Type: application/json
+
+{
+  "model": "{model}",
+  "temperature": {temperature},
+  "max_tokens": {maxTokens},
+  "stream": true,
+  "messages": [
+    { "role": "system", "content": "..." },
+    { "role": "user", "content": "引用：...\n\n问题：..." }
+  ]
+}
+```
+
+流式解析 SSE `data: {...}`；用户点停止 → `AbortController.abort()`。
+
+### 7.3 错误与空配置
+
+| 情况 | UI |
+|---|---|
+| 无 apiKey | toast + 引导打开设置 |
+| 网络错误 / 4xx/5xx | 该条 `status: 'error'`，可「重新生成」 |
+| `!isOnline` | 已有：输入禁用；整理习得按钮一并 disabled |
+| 空批注且无问答时点习得 | toast「暂无可整理的批注或问答」 |
+
+---
+
+## 附录 A · 个人仪表盘（已接会话）
+
+> 仪表盘**已不再**依赖 `dashboardPlaceholders` 作为页面主数据源；读 `sessionStore` + `dashboardMetrics`。
+
+| 项 | 路径 |
+|---|---|
+| 页面 | `src/features/dashboard/DashboardPage.tsx` |
+| 指标卡 | `MetricCards.tsx`（当次+累计；色跟 `--accent`） |
+| 热力图 | `ReadingHeatmap.tsx`（近 1 年） |
+| 会话表 | `FocusSessionList.tsx`（24h / 7 天 / 30 天 / 全部） |
+| 聚合 | `src/utils/dashboardMetrics.ts` |
+| 会话 | `sessionStore` / `db/sessions.ts` / `ReadingSession` |
+
+与 AI 弱相关：monitor 分心数据合并仍见 `PROGRESS.md` P1/P2；**不阻塞**问答接入。
+
+`dashboardPlaceholders.ts` 可视为遗留，新功能勿再依赖。
+
+---
+
+## 附录 B · 知识图谱文件清单
+
+### 已保留
+
+| 项 | 路径 |
+|---|---|
+| 路由 lazy | `src/App.tsx` → `/knowledge-graph` |
+| 侧栏 | `Sidebar.tsx` |
+| 占位页 | `src/features/knowledge-graph/KnowledgeGraphPage.tsx` |
+| 类型 | `GraphNode` / `GraphEdge`（`types/index.ts`） |
+
+### 需按 §6 重建（曾删除）
+
+```
+GraphCanvas / GraphToolbar / NodeDetailPanel / GraphBuildBanner
+graphStore.ts
+（可选）db graph store、seed 仅限开发勿当正式边
+```
+
+```bash
+npm install react-force-graph-2d
+# 禁止：npm install react-force-graph
+```
+
+---
+
+## 共用约定
+
+- 与 `UI_spec.md` 冲突时先对齐产品，再改代码并回写规范或本文。  
+- 颜色/间距只用 Design Tokens；单文件建议 &lt; 300 行。  
+- Store 不互相 import；跨 store 用 `useXxxStore.getState()`。  
+- 模块从占位变为可用后：更新本文状态表、`PROGRESS.md`、`README.md`。  
+- 同一 bug 两次未修好 → `.cursorrules`「系统二」：假设 + 至少两方案。
 
 ## 相关链接
 
 | 文档 | 用途 |
 |---|---|
-| [`UI_spec.md`](./UI_spec.md) §5 / §6 / §9 / §13 / §14 | 视觉与数据权威 |
-| [`PROGRESS.md`](./PROGRESS.md) | 总进度与已知债 |
+| [`UI_spec.md`](./UI_spec.md) §2.4 / §6 / §8.6–8.9 / §9 / §13 / §14 | 交互与模型权威 |
+| [`PROGRESS.md`](./PROGRESS.md) | 总进度、P0 AI 待办 |
+| [`monitor/README.md`](./monitor/README.md) | 行为检测（与聊天无关） |
 | [`README.md`](./README.md) | 启动与排障 |
 | [`.cursorrules`](./.cursorrules) | Agent / 工程习惯 |

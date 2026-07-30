@@ -32,6 +32,13 @@ function timeRange(a: SessionFocusAnalysis): string {
   return `${dateStr} ${startTime} — ${endTime}`;
 }
 
+const RANGE_TABS: { key: SessionRange; label: string }[] = [
+  { key: 'recent24h', label: '近 24h' },
+  { key: 'recent7', label: '近 7 天' },
+  { key: 'month', label: '近 30 天' },
+  { key: 'all', label: '全部' },
+];
+
 /**
  * FocusSessionList - 展示 analyze.py 产出的注视/分心/姿态/投入/综合分
  */
@@ -41,12 +48,6 @@ export function FocusSessionList({
   monitorStatus,
   onRangeChange,
 }: FocusSessionListProps) {
-  const ranges: { key: SessionRange; label: string }[] = [
-    { key: 'recent7', label: '近 7 天' },
-    { key: 'month', label: '近 30 天' },
-    { key: 'all', label: '全部' },
-  ];
-
   const subtitle =
     monitorStatus === 'loading'
       ? '正在拉取 monitor 分析…'
@@ -62,7 +63,7 @@ export function FocusSessionList({
         <h2 className={styles.title}>专注会话</h2>
         <p className={styles.subtitle}>{subtitle}</p>
         <nav className={styles.rangeTabs} aria-label="时间范围">
-          {ranges.map((r) => (
+          {RANGE_TABS.map((r) => (
             <button
               key={r.key}
               type="button"
@@ -70,6 +71,7 @@ export function FocusSessionList({
                 range === r.key ? styles.rangeActive : styles.rangeTab
               }
               onClick={() => onRangeChange(r.key)}
+              aria-pressed={range === r.key}
             >
               {r.label}
             </button>

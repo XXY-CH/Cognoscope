@@ -145,11 +145,62 @@
 }
 
 .checkbox {
+  /* 自定义外观：深色下原生 indeterminate 负号对比差 */
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
   width: var(--sp-4);
   height: var(--sp-4);
-  accent-color: var(--accent);
+  margin: 0;
+  border: var(--border-width) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
   opacity: 0; /* 默认隐藏，hover / 选中时显示 */
   cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition:
+    background-color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
+}
+
+.checkbox:checked,
+.checkbox:indeterminate {
+  background: var(--accent); /* 主强调色 */
+  border-color: var(--accent);
+}
+
+/* 勾选：对勾（高对比，双主题均用 on-accent） */
+.checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--text-on-accent);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+
+/* 部分选中：横杠负号，强制 on-accent 避免深色浅字 */
+.checkbox:indeterminate::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 50%;
+  width: 8px;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: var(--text-on-accent);
+  border-radius: 1px;
+}
+
+.checkbox:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .row:hover .checkbox,

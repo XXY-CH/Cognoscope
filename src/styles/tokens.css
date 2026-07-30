@@ -194,7 +194,8 @@
   --timeline-height: 64px; /* 分心事件时间轴高度 §5.5 */
   --metric-icon-size: 32px; /* 指标卡右上角图标 */
   --spark-height: 32px; /* 指标卡迷你趋势图高度 */
-  --heat-cell: 12px; /* 热力图单格边长 */
+  --heat-cell: 12px; /* 热力图单格参考边长（年视图由列宽自适应） */
+  --heat-empty: #e4e4ea; /* 热力图无阅读日，需与 --bg-elevated 可辨 */
 
   /* ---------- §8 阅读界面布局尺寸 ---------- */
   --reader-topbar-height: 48px; /* TopBar 高度 */
@@ -216,6 +217,25 @@
   --tooltip-bg: var(--bg-surface); /* 与浮层同级，柔和 */
   --tooltip-fg: var(--text-primary); /* 正文色，可读但不刺眼 */
   --tooltip-border: var(--border-subtle); /* 轻描边区分背景 */
+}
+
+/* ---------- 强调色风格（data-accent；与书签色板对齐，无警告红） ---------- */
+:root[data-accent='green'] {
+  --accent: #34c759;
+  --accent-hover: #2db84e;
+  --accent-subtle: #e8f9ed;
+}
+
+:root[data-accent='yellow'] {
+  --accent: #e6a800;
+  --accent-hover: #d09800;
+  --accent-subtle: #fff8e0;
+}
+
+:root[data-accent='pink'] {
+  --accent: #e85aad;
+  --accent-hover: #d44a9a;
+  --accent-subtle: #fce8f4;
 }
 
 /* ============================================================
@@ -255,6 +275,7 @@
   --chart-reading: #4ade80; /* 阅读时长 */
   --chart-bg-grid: #2e2e38; /* 图表网格线 */
   --chart-axis: #6a6a78; /* 轴线与刻度标签 */
+  --heat-empty: #323238; /* 热力图无阅读日，需与 --bg-elevated 可辨 */
 
   /* ---------- §1.1 分心事件类型配色（深色） ---------- */
   --event-drink: #38c7e0; /* 喝水 */
@@ -278,6 +299,31 @@
   --tooltip-border: var(--border-subtle);
   --reader-paper-bg: #2a2a2e; /* PDF 纸面深色/护眼底 */
   --reader-canvas-dark-bg: #121216; /* 深色画布底 */
+}
+
+/* 深色 · 强调色风格覆盖 */
+[data-theme='dark'][data-accent='green'] {
+  --accent: #4ade80;
+  --accent-hover: #3dca70;
+  --accent-subtle: #163822;
+}
+
+[data-theme='dark'][data-accent='yellow'] {
+  --accent: #f0c040;
+  --accent-hover: #e0b800;
+  --accent-subtle: #3a3208;
+}
+
+[data-theme='dark'][data-accent='pink'] {
+  --accent: #ff7ac6;
+  --accent-hover: #f068b4;
+  --accent-subtle: #3a1830;
+}
+
+[data-theme='dark'][data-accent='blue'] {
+  --accent: #6b8cf9;
+  --accent-hover: #5a7be8;
+  --accent-subtle: #1e2a5a;
 }
 
 /* ============================================================

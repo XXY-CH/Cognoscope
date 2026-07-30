@@ -1,52 +1,217 @@
 /**
- * ReadingHeatmap.module.css — 阅读热力图（仅格子）
+ * ReadingHeatmap.module.css — 近 1 年周历热力图（列宽自适应，无卡片内滚动）
+ * 规范参考：UI_spec.md §5.7
  */
 
 .root {
   padding: var(--sp-5);
   border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
+  background: var(--bg-elevated); /* 卡片层 */
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-3);
 }
 
 .title {
-  margin: 0 0 var(--sp-4);
+  margin: 0;
   font-size: var(--text-h2);
   line-height: var(--text-h2-lh);
   font-weight: var(--text-h2-weight);
   color: var(--text-primary);
 }
 
-.heat {
-  display: grid;
-  grid-template-columns: repeat(15, var(--heat-cell));
+.streak {
+  display: inline-flex;
+  align-items: center;
   gap: var(--sp-1);
-  justify-content: start;
+  margin: 0;
+  color: var(--accent); /* 跟随主题强调色 */
+}
+
+.streakIcon {
+  flex-shrink: 0;
+}
+
+.streakValue {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+  font-weight: var(--text-h2-weight);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.streakUnit {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.emptyHint {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.calendar {
+  overflow: hidden; /* 禁止卡片内横/纵滚动 */
+  width: 100%;
+  min-width: 0;
+}
+
+.monthRow {
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: var(--sp-1);
+  width: 100%;
+  min-width: 0;
+}
+
+.weekdayGutter {
+  width: var(--sp-5); /* 与 weekdayCol 同宽，略收以省纵向空间 */
+  flex-shrink: 0;
+}
+
+.monthTrack {
+  display: flex;
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.monthSlot {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.body {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.weekdayCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  width: var(--sp-5);
+  flex-shrink: 0;
+}
+
+.weekdayLabel,
+.weekdayLabelHidden {
+  flex: 1;
+  min-height: 0;
+  font-size: var(--text-xs);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  color: var(--text-tertiary);
+}
+
+.weekdayLabelHidden {
+  visibility: hidden;
+}
+
+.weeks {
+  display: flex;
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.cell,
+.cellPad {
+  width: 100%;
+  aspect-ratio: 1;
+  height: auto;
+  border-radius: var(--radius-sm);
+  display: block;
+  flex-shrink: 0;
 }
 
 .cell {
-  width: var(--heat-cell);
-  height: var(--heat-cell);
-  border-radius: var(--radius-sm);
-  background: var(--bg-hover);
-  display: inline-block;
+  background: var(--heat-empty); /* 无阅读日，与卡片底可辨 */
+}
+
+.cellPad {
+  background: transparent;
+}
+
+.cell[data-level='0'] {
+  background: var(--heat-empty);
 }
 
 .cell[data-level='1'] {
-  background: color-mix(in srgb, var(--chart-reading) 25%, transparent);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
 }
 .cell[data-level='2'] {
-  background: color-mix(in srgb, var(--chart-reading) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .cell[data-level='3'] {
-  background: color-mix(in srgb, var(--chart-reading) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .cell[data-level='4'] {
-  background: var(--chart-reading);
+  background: var(--accent);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  margin-top: var(--sp-3);
+  flex-wrap: wrap;
 }
 
 .hint {
-  margin: var(--sp-3) 0 0;
+  margin: 0;
   font-size: var(--text-xs);
   color: var(--text-tertiary);
+}
+
+.legend {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.legend .cell {
+  width: var(--heat-cell);
+  height: var(--heat-cell);
+  aspect-ratio: auto;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cell {
+    transition: none;
+  }
 }

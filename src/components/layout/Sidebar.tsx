@@ -61,15 +61,14 @@ export function Sidebar() {
       className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}
       aria-label="全局导航"
     >
-      {/* 用户区：头像 + 姓名；设置齿轮打开抽屉 */}
+      {/* 品牌区：头像 + 系统名；设置齿轮打开抽屉 */}
       <div className="sidebar__user">
         <div className="sidebar__avatar" aria-hidden="true">
           学
         </div>
         {!collapsed && (
           <div className="sidebar__user-meta">
-            <span className="sidebar__user-name">学森用户</span>
-            <span className="sidebar__user-role">本地账户</span>
+            <span className="sidebar__user-name">学森</span>
           </div>
         )}
         <button

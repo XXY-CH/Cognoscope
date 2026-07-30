@@ -7,6 +7,7 @@ import type { ReactNode } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useSystemThemeListener } from '../../hooks/useSystemThemeListener';
+import { useAppShortcuts } from '../../hooks/useAppShortcuts';
 import { OfflineBanner } from './OfflineBanner';
 import { PageHeader } from './PageHeader';
 import { SettingsDrawer } from './SettingsDrawer';
@@ -37,6 +38,8 @@ export function AppShell({
   useSystemThemeListener();
   // 网络状态写入 uiStore（§14）
   useNetworkStatus();
+  // 全局快捷键
+  useAppShortcuts();
 
   return (
     <div className="app-shell">

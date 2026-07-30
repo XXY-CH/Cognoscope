@@ -113,7 +113,7 @@ export function FileToolbar() {
 
       <Button
         aria-label="导入文件"
-        variant="secondary"
+        variant="primary"
         size="md"
         leftIcon={<Upload size={20} strokeWidth={1.5} />}
         onClick={openImport}

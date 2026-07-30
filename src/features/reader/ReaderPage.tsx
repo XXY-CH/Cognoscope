@@ -9,6 +9,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
+import { SettingsDrawer } from '../../components/layout/SettingsDrawer';
+import { useAppShortcuts } from '../../hooks/useAppShortcuts';
 import { useLinesReadSync } from '../../hooks/useLinesReadSync';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useReadingSession } from '../../hooks/useReadingSession';
@@ -36,7 +38,9 @@ import styles from './ReaderPage.module.css';
  */
 export function ReaderPage() {
   useSystemThemeListener();
+  // 阅读路由无 AppShell，需单独挂载网络监听与快捷键
   useNetworkStatus();
+  useAppShortcuts();
   const rootRef = useRef<HTMLDivElement>(null);
   const zoomBeforeFsRef = useRef(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -227,6 +231,8 @@ export function ReaderPage() {
         {!isFullscreen ? <SidePanel /> : null}
       </div>
       {!isFullscreen ? <ReaderBottomBar /> : null}
+      {/* 阅读页独立于 AppShell，需自挂设置抽屉供快捷键打开 */}
+      <SettingsDrawer />
     </div>
   );
 }

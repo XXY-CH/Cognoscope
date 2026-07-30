@@ -61,9 +61,35 @@
 
 .table {
   width: 100%;
+  table-layout: fixed; /* 切换时段时列宽不随内容重排 */
   border-collapse: collapse;
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
+}
+
+/* 六列固定占比：时间略窄，给分心事件留足空间 */
+.colTime {
+  width: 22%;
+}
+
+.colDuration {
+  width: 11%;
+}
+
+.colLines {
+  width: 11%;
+}
+
+.colFocus {
+  width: 11%;
+}
+
+.colDistraction {
+  width: 34%;
+}
+
+.colScore {
+  width: 11%;
 }
 
 .table th[scope='col'] {
@@ -81,6 +107,9 @@
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table tbody tr:last-child td,
@@ -90,8 +119,13 @@
 
 .timeCell {
   font-weight: 500;
-  white-space: nowrap;
   text-align: left;
+}
+
+.distractionCell {
+  white-space: normal; /* 允许多行，避免分心摘要被截断 */
+  text-overflow: clip;
+  overflow: visible;
 }
 
 .scoreCell {

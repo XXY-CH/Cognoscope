@@ -76,11 +76,14 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const setTotalPages = useReaderStore((s) => s.setTotalPages);
   const bumpZoom = useReaderStore((s) => s.bumpZoom);
-  const setZoomPercent = useReaderStore((s) => s.setZoomPercent);
   const applyFitZoom = useReaderStore((s) => s.applyFitZoom);
+  const requestFitWidth = useReaderStore((s) => s.requestFitWidth);
+  const defaultFitWidth = useReaderStore((s) => s.defaultFitWidth);
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
   const findNonce = useReaderStore((s) => s.findNonce);
   const findQuery = useReaderStore((s) => s.findQuery);
+  /** 每个 fileId 只自动适应一次 */
+  const autoFitAppliedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -169,6 +172,14 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
     r.themes.default(themeCss(zoomPercent));
     r.themes.select('default');
   }, [zoomPercent, status]);
+
+  // 设置「默认适应宽度」：就绪后触发一次（EPUB 为重置舒适字号）
+  useEffect(() => {
+    if (status !== 'ready' || !defaultFitWidth) return;
+    if (autoFitAppliedRef.current === fileId) return;
+    autoFitAppliedRef.current = fileId;
+    requestFitWidth();
+  }, [status, defaultFitWidth, fileId, requestFitWidth]);
 
   // 适应宽度：EPUB 已铺满宿主，重置为舒适字号 100%
   useEffect(() => {

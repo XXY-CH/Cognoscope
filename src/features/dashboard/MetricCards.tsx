@@ -1,5 +1,5 @@
 /**
- * MetricCards - 专注时长 / 阅读行数指标卡
+ * MetricCards - 专注时长 / 阅读行数指标卡（当次 + 累计并排）
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.3
  */
@@ -50,11 +50,20 @@ interface MetricCardsProps {
   sessions: ReadingSession[];
 }
 
+/** 较上次文案：≥0 带 +（含 +0），负数由 formatValue 自带负号 */
+function formatDeltaLabel(
+  delta: number,
+  formatValue: (n: number) => string,
+  unit: string,
+): string {
+  const signed =
+    delta >= 0 ? `+${formatValue(delta)}` : formatValue(delta);
+  return `较上次 ${signed} ${unit}`;
+}
+
 /** MetricCards - 由 DashboardPage 注入已按范围过滤的会话 */
 export function MetricCards({ sessions }: MetricCardsProps) {
   const metrics = summarizeMetrics(sessions);
-  const focusDeltaSign = metrics.focusDeltaMin >= 0 ? '+' : '';
-  const linesDeltaSign = metrics.linesDelta >= 0 ? '+' : '';
 
   return (
     <div className={styles.grid} aria-label="关键指标">
@@ -66,12 +75,26 @@ export function MetricCards({ sessions }: MetricCardsProps) {
           aria-hidden="true"
         />
         <p className={styles.caption}>专注时长</p>
-        <p className={styles.value}>
-          {formatDurationHms(metrics.focusDurationSec)}
-        </p>
+        <div className={styles.valueRow}>
+          <div className={styles.valueBlock}>
+            <p className={styles.valueLabel}>当次</p>
+            <p className={styles.value}>
+              {formatDurationHms(metrics.focusDurationSec)}
+            </p>
+          </div>
+          <div className={styles.valueBlock}>
+            <p className={styles.valueLabel}>累计</p>
+            <p className={styles.value}>
+              {formatDurationHms(metrics.totalFocusDurationSec)}
+            </p>
+          </div>
+        </div>
         <p className={styles.sub}>
-          较上次 {focusDeltaSign}
-          {metrics.focusDeltaMin} 分钟
+          {formatDeltaLabel(
+            metrics.focusDeltaMin,
+            (n) => String(n),
+            '分钟',
+          )}
         </p>
         <MiniSpark
           values={metrics.sparkFocus}
@@ -88,12 +111,26 @@ export function MetricCards({ sessions }: MetricCardsProps) {
           aria-hidden="true"
         />
         <p className={styles.caption}>阅读行数</p>
-        <p className={styles.value}>
-          {formatLines(metrics.linesRead)} 行
-        </p>
+        <div className={styles.valueRow}>
+          <div className={styles.valueBlock}>
+            <p className={styles.valueLabel}>当次</p>
+            <p className={styles.value}>
+              {formatLines(metrics.linesRead)} 行
+            </p>
+          </div>
+          <div className={styles.valueBlock}>
+            <p className={styles.valueLabel}>累计</p>
+            <p className={styles.value}>
+              {formatLines(metrics.totalLinesRead)} 行
+            </p>
+          </div>
+        </div>
         <p className={styles.sub}>
-          较上次 {linesDeltaSign}
-          {formatLines(Math.abs(metrics.linesDelta))} 行
+          {formatDeltaLabel(
+            metrics.linesDelta,
+            formatLines,
+            '行',
+          )}
         </p>
         <MiniSpark
           values={metrics.sparkLines}

@@ -27,16 +27,34 @@
 }
 
 .sparkFocus.icon {
-  color: var(--chart-focus); /* 专注色 */
+  color: var(--accent); /* 跟随主题强调色 */
 }
 .sparkReading.icon {
-  color: var(--chart-reading); /* 阅读色 */
+  color: var(--accent); /* 跟随主题强调色 */
 }
 
 .caption {
   margin: 0 0 var(--sp-2);
   font-size: var(--text-sm);
   color: var(--text-secondary);
+}
+
+.valueRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-6);
+  min-width: 0;
+}
+
+.valueBlock {
+  min-width: 0;
+  flex: 1;
+}
+
+.valueLabel {
+  margin: 0 0 var(--sp-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
 }
 
 .value {
@@ -65,7 +83,7 @@
   flex: 1;
   min-width: var(--sp-1);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-  background: var(--chart-focus);
+  background: var(--accent);
   height: 20%;
 }
 
@@ -82,11 +100,9 @@
   height: 100%;
 }
 
-.sparkFocus .sparkBar {
-  background: var(--chart-focus);
-}
+.sparkFocus .sparkBar,
 .sparkReading .sparkBar {
-  background: var(--chart-reading);
+  background: var(--accent); /* 跟随主题强调色 */
 }
 
 @media (max-width: 640px) {

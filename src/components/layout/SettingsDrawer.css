@@ -1,6 +1,6 @@
 /**
  * SettingsDrawer.css — 设置抽屉样式
- * 规范参考：UI_spec.md §2.4；从右侧滑入，宽 420px
+ * 产品决定：从左侧滑入，宽 420px（偏离 UI_spec §2.4 右侧）
  */
 
 .settings-drawer {
@@ -33,7 +33,7 @@
 .settings-drawer__panel {
   position: absolute;
   top: 0;
-  right: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   width: var(--settings-drawer-width); /* 420px */
@@ -41,7 +41,7 @@
   height: 100%;
   background: var(--bg-surface); /* 浮层背景 */
   box-shadow: var(--shadow-lg); /* 重阴影 */
-  transform: translateX(100%);
+  transform: translateX(-100%);
   transition: transform var(--dur-base) var(--ease-out);
 }
 
@@ -143,21 +143,6 @@
   flex: 1;
   padding: var(--sp-5);
   overflow-y: auto;
-}
-
-.settings-drawer__placeholder,
-.settings-drawer__privacy-note {
-  margin: 0;
-  font-size: var(--text-body);
-  line-height: var(--text-body-lh);
-  color: var(--text-secondary);
-}
-
-.settings-drawer__privacy-note {
-  padding: var(--sp-4);
-  border-radius: var(--radius-md);
-  background: var(--accent-subtle); /* 强调色浅背景 */
-  color: var(--text-primary);
 }
 
 .settings-drawer__footer {

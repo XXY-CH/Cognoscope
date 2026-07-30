@@ -28,3 +28,12 @@ export async function deleteBookmarksByFile(fileId: string): Promise<void> {
   const list = await listBookmarksByFile(fileId);
   await Promise.all(list.map((b) => deleteBookmark(b.id)));
 }
+
+/**
+ * 清空全部书签（数据管理）
+ */
+export async function clearAllBookmarks(): Promise<void> {
+  const db = await getDb();
+  await db.clear('bookmarks');
+}
+

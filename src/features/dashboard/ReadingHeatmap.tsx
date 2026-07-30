@@ -1,68 +1,203 @@
 /**
- * ReadingHeatmap - 近 30 天阅读热力图
+ * ReadingHeatmap - 近 1 年阅读热力图（周历对齐 · 无卡片内滚动）
  * 所属页面：B · 个人仪表盘
  * 规范参考：UI_spec.md §5.7
  */
+import { useMemo } from 'react';
+import { Flame } from 'lucide-react';
 import { Tooltip } from '../../components/common';
 import type { ReadingSession } from '../../types';
-import { buildHeatmap, type HeatDay } from '../../utils/dashboardMetrics';
+import {
+  buildHeatmap,
+  computeReadingStreak,
+  heatLevel,
+  HEATMAP_DAYS,
+  type HeatDay,
+} from '../../utils/dashboardMetrics';
 import styles from './ReadingHeatmap.module.css';
 
-function levelFor(minutes: number, max: number): number {
-  if (minutes <= 0) return 0;
-  if (max <= 0) return 1;
-  const ratio = minutes / max;
-  if (ratio < 0.25) return 1;
-  if (ratio < 0.5) return 2;
-  if (ratio < 0.75) return 3;
-  return 4;
+/** 周一为周首：0=周一 … 6=周日 */
+const WEEKDAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
+
+interface HeatCell {
+  dateKey: string | null; // null = 窗口外占位
+  minutes: number;
+  inRange: boolean;
 }
 
 interface ReadingHeatmapProps {
   sessions: ReadingSession[];
 }
 
-/** ReadingHeatmap - 由 DashboardPage 注入会话列表 */
+/**
+ * 将一年数据铺成「周列 × 星期行」网格（周一为一周起始）
+ */
+function buildWeekGrid(days: HeatDay[]): HeatCell[][] {
+  if (days.length === 0) return [];
+  const byKey = new Map(days.map((d) => [d.dateKey, d.minutes]));
+  const first = new Date(`${days[0]!.dateKey}T12:00:00`);
+  const last = new Date(`${days[days.length - 1]!.dateKey}T12:00:00`);
+
+  // getDay: 0=日 → 转为周一=0
+  const mondayOffset = (first.getDay() + 6) % 7;
+  const gridStart = new Date(first);
+  gridStart.setDate(first.getDate() - mondayOffset);
+
+  const cells: HeatCell[] = [];
+  const cursor = new Date(gridStart);
+  const endPad = (7 - ((last.getDay() + 6) % 7) - 1 + 7) % 7;
+  const gridEnd = new Date(last);
+  gridEnd.setDate(last.getDate() + endPad);
+
+  while (cursor <= gridEnd) {
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    const day = String(cursor.getDate()).padStart(2, '0');
+    const dateKey = `${y}-${m}-${day}`;
+    const inRange = byKey.has(dateKey);
+    cells.push({
+      dateKey: inRange ? dateKey : null,
+      minutes: inRange ? (byKey.get(dateKey) ?? 0) : 0,
+      inRange,
+    });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  const weeks: HeatCell[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+  return weeks;
+}
+
+/** 每列周对应的月份标签（仅在月份变化的那一周显示） */
+function monthLabelForWeeks(weeks: HeatCell[][]): (string | null)[] {
+  let prevMonth = -1;
+  return weeks.map((week) => {
+    const firstInRange = week.find((c) => c.inRange && c.dateKey);
+    if (!firstInRange?.dateKey) return null;
+    const month = Number(firstInRange.dateKey.slice(5, 7));
+    if (month === prevMonth) return null;
+    prevMonth = month;
+    return `${month}月`;
+  });
+}
+
+/** ReadingHeatmap - 由 DashboardPage 注入全量会话，近一年周历 */
 export function ReadingHeatmap({ sessions }: ReadingHeatmapProps) {
-  // 热力图固定看近 30 天全量，不随「近 7 天」筛选收缩格子数
-  const days: HeatDay[] = buildHeatmap(sessions, 30);
-  const max = Math.max(...days.map((d) => d.minutes), 0);
-  const totalMin = days.reduce((s, d) => s + d.minutes, 0);
+  const days = useMemo(
+    () => buildHeatmap(sessions, HEATMAP_DAYS),
+    [sessions],
+  );
+  const weeks = useMemo(() => buildWeekGrid(days), [days]);
+  const monthLabels = useMemo(() => monthLabelForWeeks(weeks), [weeks]);
+  const max = useMemo(
+    () => Math.max(...days.map((d) => d.minutes), 0),
+    [days],
+  );
+  const totalMin = useMemo(
+    () => days.reduce((s, d) => s + d.minutes, 0),
+    [days],
+  );
+  const streak = useMemo(() => computeReadingStreak(days), [days]);
+  const hasAnyReading = totalMin > 0;
 
   return (
-    <section className={styles.root} aria-label="近 30 天阅读热力图">
-      <h2 className={styles.title}>阅读热力图</h2>
-      {totalMin === 0 ? (
-        <p className={styles.hint}>暂无阅读数据，打开论文后自动记录</p>
-      ) : (
-        <>
-          <div
-            className={styles.heat}
-            role="img"
-            aria-label={`近 30 天阅读热力图，共 ${totalMin} 分钟`}
-          >
-            {days.map((day) => {
-              const level = levelFor(day.minutes, max);
-              return (
-                <Tooltip
-                  key={day.dateKey}
-                  content={`${day.dateKey} · ${day.minutes} 分钟`}
-                  aria-label={`${day.dateKey} 阅读时长`}
-                >
-                  <span
-                    className={styles.cell}
-                    data-level={level}
-                    aria-label={`${day.dateKey} ${day.minutes} 分钟`}
-                  />
-                </Tooltip>
-              );
-            })}
+    <section className={styles.root} aria-label="近 1 年阅读热力图">
+      <div className={styles.header}>
+        <h2 className={styles.title}>阅读热力图</h2>
+        <p className={styles.streak} aria-label={`连续阅读 ${streak} 天`}>
+          <Flame
+            className={styles.streakIcon}
+            size={18}
+            strokeWidth={1.5}
+            aria-hidden="true"
+          />
+          <span className={styles.streakValue}>{streak}</span>
+          <span className={styles.streakUnit}>天连续</span>
+        </p>
+      </div>
+
+      {!hasAnyReading ? (
+        <p className={styles.emptyHint}>暂无阅读数据，打开论文后自动记录</p>
+      ) : null}
+
+      <div
+        className={styles.calendar}
+        role="img"
+        aria-label={`近 1 年阅读热力图，共 ${totalMin} 分钟，连续 ${streak} 天`}
+      >
+        <div className={styles.monthRow} aria-hidden="true">
+          <span className={styles.weekdayGutter} />
+          <div className={styles.monthTrack}>
+            {monthLabels.map((label, i) => (
+              <span key={`m-${i}`} className={styles.monthSlot}>
+                {label ?? ''}
+              </span>
+            ))}
           </div>
-          <p className={styles.hint}>
-            颜色越深表示当日阅读分钟越多（近 30 天）
-          </p>
-        </>
-      )}
+        </div>
+
+        <div className={styles.body}>
+          <div className={styles.weekdayCol} aria-hidden="true">
+            {WEEKDAY_LABELS.map((label, i) => (
+              <span
+                key={label}
+                className={
+                  i % 2 === 0 ? styles.weekdayLabel : styles.weekdayLabelHidden
+                }
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+
+          <div className={styles.weeks}>
+            {weeks.map((week, wi) => (
+              <div key={wi} className={styles.week}>
+                {week.map((cell, di) => {
+                  if (!cell.inRange || !cell.dateKey) {
+                    return (
+                      <span
+                        key={`pad-${wi}-${di}`}
+                        className={styles.cellPad}
+                        aria-hidden="true"
+                      />
+                    );
+                  }
+                  const level = heatLevel(cell.minutes, max);
+                  return (
+                    <Tooltip
+                      key={cell.dateKey}
+                      content={`${cell.dateKey} · ${cell.minutes} 分钟`}
+                      aria-label={`${cell.dateKey} 阅读时长`}
+                    >
+                      <span
+                        className={styles.cell}
+                        data-level={level}
+                        aria-label={`${cell.dateKey} ${cell.minutes} 分钟`}
+                      />
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.footer}>
+        <p className={styles.hint}>
+          近 1 年共 {totalMin.toLocaleString('zh-CN')} 分钟
+        </p>
+        <div className={styles.legend} aria-hidden="true">
+          <span className={styles.legendLabel}>少</span>
+          {[0, 1, 2, 3, 4].map((lv) => (
+            <span key={lv} className={styles.cell} data-level={lv} />
+          ))}
+          <span className={styles.legendLabel}>多</span>
+        </div>
+      </div>
     </section>
   );
 }
