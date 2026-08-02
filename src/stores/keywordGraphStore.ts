@@ -255,7 +255,8 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
           aiEdges = [];
         }
 
-        const newEdges = mergeKeywordEdges(coEdges, aiEdges);
+        // 将本次证据与历史边合并：AI 暂时不可用时，不覆盖既有语义证据。
+        const newEdges = mergeKeywordEdges(existingEdges, coEdges, aiEdges);
         if (newEdges.length > 0) await kwDb.putKeywordEdges(newEdges);
 
         // 写完后从 IDB 全量回读，保证 UI 与持久化一致、旧词不丢

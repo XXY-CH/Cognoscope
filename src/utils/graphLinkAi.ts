@@ -64,7 +64,14 @@ function parseEdgesJson(
       ? Math.max(0, Math.min(1, weightRaw))
       : 0.5;
     if (weight < 0.25) continue; // 弱关联丢弃
-    edges.push({ source, target, weight });
+    const reason = typeof rec.reason === 'string' ? rec.reason.trim() : '';
+    edges.push({
+      source,
+      target,
+      weight,
+      origin: 'ai',
+      ...(reason ? { reason: reason.slice(0, 160) } : {}),
+    });
   }
   return edges;
 }

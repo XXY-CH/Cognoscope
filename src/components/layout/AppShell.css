@@ -11,6 +11,7 @@
   background: var(--bg-base); /* 页面主背景 */
   color: var(--text-primary);
   font-family: var(--font-sans);
+  position: relative;
 }
 
 .app-shell__main {
@@ -27,4 +28,60 @@
   min-height: 0;
   overflow: auto; /* 纵向滚动条仅出现在 Content */
   padding: var(--sp-5) var(--sp-6); /* 顶 sp-5、左右 sp-6，§2.3 */
+  min-width: 0;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+/* 页面切换只做轻量 continuity transition，不阻塞导航或数据加载。 */
+.app-shell__content > * {
+  animation: page-content-enter var(--motion-route) var(--ease-out) both;
+}
+
+@keyframes page-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sp-1));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-shell__mobile-backdrop {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .app-shell {
+    overflow-x: hidden;
+  }
+
+  .app-shell__main {
+    width: 100%;
+  }
+
+  .app-shell__content {
+    padding: var(--sp-4);
+  }
+
+  .app-shell__mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-drawer) - 1);
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: var(--overlay-drawer);
+    cursor: pointer;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__content > * {
+    animation: none;
+  }
 }

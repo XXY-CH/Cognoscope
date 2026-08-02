@@ -23,7 +23,7 @@
   cursor: pointer;
   background: var(--overlay-drawer); /* 抽屉遮罩 0.32 */
   opacity: 0;
-  transition: opacity var(--dur-base) var(--ease-standard);
+  transition: opacity var(--motion-panel) var(--ease-standard);
 }
 
 .settings-drawer--open .settings-drawer__backdrop {
@@ -42,7 +42,7 @@
   background: var(--bg-surface); /* 浮层背景 */
   box-shadow: var(--shadow-lg); /* 重阴影 */
   transform: translateX(-100%);
-  transition: transform var(--dur-base) var(--ease-out);
+  transition: transform var(--motion-panel) var(--ease-emphasized);
 }
 
 .settings-drawer--open .settings-drawer__panel {
@@ -120,8 +120,14 @@
   font-family: inherit;
   cursor: pointer;
   transition:
-    background-color var(--dur-fast) var(--ease-standard),
-    color var(--dur-fast) var(--ease-standard);
+    background-color var(--motion-press) var(--ease-standard),
+    color var(--motion-press) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
+}
+
+.settings-drawer__tab:active,
+.settings-drawer__btn:active {
+  transform: scale(0.98);
 }
 
 .settings-drawer__tab:hover {
@@ -163,9 +169,10 @@
   cursor: pointer;
   border: var(--border-width) solid transparent;
   transition:
-    background-color var(--dur-fast) var(--ease-standard),
-    border-color var(--dur-fast) var(--ease-standard),
-    color var(--dur-fast) var(--ease-standard);
+    background-color var(--motion-press) var(--ease-standard),
+    border-color var(--motion-press) var(--ease-standard),
+    color var(--motion-press) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
 }
 
 .settings-drawer__btn:focus-visible {
@@ -197,6 +204,11 @@
   .settings-drawer__panel,
   .settings-drawer__tab,
   .settings-drawer__btn {
-    transition: none;
+    transition-duration: var(--motion-press);
+  }
+
+  .settings-drawer__tab:active,
+  .settings-drawer__btn:active {
+    transform: none;
   }
 }

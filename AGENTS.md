@@ -41,7 +41,7 @@ Route metadata via `handle` (not `useMatches` with `BrowserRouter` — that caus
 9 stores, all plain `create()` — **no middleware** (no persist, immer, devtools):
 
 | Store | Domain | Persistence |
-|-------|--------|-------------|
+| ------- | -------- | ------------- |
 | `fileStore` | File tree CRUD, import, sort, multi-select, trash | IndexedDB |
 | `readerStore` | Reader layout, zoom, page mode, find-in-document | localStorage (manual) |
 | `bookmarkStore` | Per-file bookmarks | IndexedDB |
@@ -53,6 +53,7 @@ Route metadata via `handle` (not `useMatches` with `BrowserRouter` — that caus
 | `toastStore` | Toast queue + imperative `toast` command API | — |
 
 **Store patterns to follow**:
+
 - State is flat — no nested sub-stores.
 - Cross-store access: `useOtherStore.getState()` at call site. No store imports another.
 - Selector exports: `selectVisibleFiles(state)` free functions usable with `useStore(selector)` or `getState()`.
@@ -65,7 +66,7 @@ Route metadata via `handle` (not `useMatches` with `BrowserRouter` — that caus
 Database `xuesen` v4, 5 object stores via `idb`:
 
 | Store | Key | Indexes |
-|-------|-----|---------|
+| ------- | ----- | --------- |
 | `files` | id | by-parent (parentId), by-deleted (deletedAt) |
 | `fileBlobs` | id | — |
 | `sessions` | id | by-started (startedAt), by-file (fileId) |
@@ -106,7 +107,7 @@ src/
 ## Development Commands
 
 | Command | What it does |
-|---------|-------------|
+| --------- | ------------- |
 | `npm run dev` | Vite dev server with HMR (default `localhost:5173`) |
 | `npm run build` | `tsc -b` type-check THEN `vite build` production bundle |
 | `npm run lint` | Oxlint (react + typescript + oxc plugins) |
@@ -204,7 +205,7 @@ const file = useFileStore.getState().files.find(...);
 ## Important Files
 
 | File | Role |
-|------|------|
+| ------ | ------ |
 | `src/main.tsx` | App entry — mounts React root, loads tokens + index.css |
 | `src/App.tsx` | Data Router definition, lazy route config, ToastViewport |
 | `src/types/index.ts` | All TypeScript types — source of truth for data shapes |
@@ -225,7 +226,7 @@ const file = useFileStore.getState().files.find(...);
 ## Runtime/Tooling Preferences
 
 | Concern | Choice |
-|---------|--------|
+| --------- | -------- |
 | Runtime | Node 22+ (not enforced in engines, but development standard) |
 | Package manager | npm (lockfile v3, `package-lock.json`) |
 | Module system | ES modules (`"type": "module"`) |
@@ -250,7 +251,6 @@ No formal test framework is configured. Current QA approach:
 - **Type checking during build**: `tsc -b` runs before `vite build`.
 
 When adding tests, prefer Vitest (Vite-native, same config as dev).
-
 
 ## Reading Monitor Integration
 
@@ -298,7 +298,7 @@ npm run dev
 ### API Endpoints
 
 | Method | Path | Description |
-|---|---|---|
+| --- | --- | --- |
 | `POST` | `/api/detect/start` | Start detection. Body: `{ fileId?: string }` |
 | `POST` | `/api/detect/stop` | Stop detection, return session path |
 | `GET` | `/api/detect/status` | Query running state, frame count, current fileId |
@@ -333,7 +333,7 @@ import {
 ### Label Mapping
 
 | Monitor label | xuesen DistractionKind | Notes |
-|---|---|---|
+| --- | --- | --- |
 | `playing_phone` | `phone` | Direct |
 | `drinking` | `drink` | Direct |
 | `chatting` | `talk` | Direct |
@@ -346,12 +346,13 @@ import {
 - No real-time streaming — detection is batch (start→stop→analyze)
 - `ReadingSession` type lacks engagement distribution field
 - `DistractionKind: 'yawn'` exists in xuesen but not detected by monitor
+
 ---
 
 ## Common Pitfalls
 
 | Symptom | Likely Cause |
-|---------|-------------|
+| --------- | ------------- |
 | Entire page black, `#root` empty | Used `BrowserRouter` + `useMatches` instead of Data Router |
 | `Maximum update depth exceeded` in file directory | Array selector without `useShallow` |
 | `AFRAME is not defined` | Installed umbrella `react-force-graph` instead of `react-force-graph-2d` |

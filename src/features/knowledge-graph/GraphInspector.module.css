@@ -1,0 +1,242 @@
+/** GraphInspector.module.css - 图谱节点证据面板 */
+
+.inspector {
+  flex-shrink: 0;
+  min-height: 0;
+  max-height: var(--graph-inspector-max-height);
+  overflow: auto;
+  padding: var(--sp-4);
+  background: var(--bg-elevated);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.mobileClose {
+  display: none;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: var(--btn-height-md);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+}
+
+.titleWrap {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  min-width: 0;
+  color: var(--text-secondary);
+}
+
+.titleWrap > svg {
+  flex-shrink: 0;
+  margin-top: var(--sp-1);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+  font-weight: var(--text-h3-weight);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-1) 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--sp-6);
+  margin-top: var(--sp-4);
+}
+
+.summary,
+.evidence {
+  min-width: 0;
+}
+
+.sectionHeading {
+  margin-bottom: var(--sp-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.abstract,
+.muted,
+.reason {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+}
+
+.muted {
+  color: var(--text-tertiary);
+}
+
+.abstract {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.keywordRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin-top: var(--sp-3);
+}
+
+.keyword {
+  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-active);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.listItem {
+  padding-bottom: var(--sp-2);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.listItem:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.relationButton {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.relationButton:hover .relationTitle {
+  color: var(--accent);
+}
+
+.relationButton:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-sm);
+}
+
+.relationTitle {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relationMeta,
+.paperRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.relationMeta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.reason {
+  margin-top: var(--sp-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.paperRow .relationButton {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .inspector[data-active='true'] {
+    position: fixed;
+    right: var(--sp-3);
+    bottom: var(--sp-3);
+    left: var(--sp-3);
+    z-index: var(--z-drawer);
+    max-height: var(--graph-inspector-max-height-mobile);
+    box-shadow: var(--shadow-lg);
+    animation: graph-inspector-in var(--motion-panel) var(--ease-emphasized) both;
+  }
+
+  .mobileClose {
+    display: inline-flex;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+}
+
+@keyframes graph-inspector-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--sp-3));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector[data-active='true'] {
+    animation: none;
+  }
+}

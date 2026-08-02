@@ -30,6 +30,11 @@ const KnowledgeGraphPage = lazy(() =>
     default: m.KnowledgeGraphPage,
   })),
 );
+const EvidenceMatrixPage = lazy(() =>
+  import('./features/evidence-matrix/EvidenceMatrixPage').then((m) => ({
+    default: m.EvidenceMatrixPage,
+  })),
+);
 const ReaderPage = lazy(() =>
   import('./features/reader/ReaderPage').then((m) => ({
     default: m.ReaderPage,
@@ -50,6 +55,10 @@ const knowledgeGraphHandle = {
 
 const trashHandle = {
   title: '回收站',
+} satisfies AppRouteHandle;
+
+const evidenceMatrixHandle = {
+  title: '证据矩阵',
 } satisfies AppRouteHandle;
 
 /** 路由懒加载占位：避免空白闪屏 */
@@ -98,6 +107,24 @@ const router = createBrowserRouter([
         path: 'trash',
         element: <TrashPage />,
         handle: trashHandle,
+      },
+      {
+        path: 'evidence-matrix',
+        element: (
+          <LazyPage>
+            <EvidenceMatrixPage />
+          </LazyPage>
+        ),
+        handle: evidenceMatrixHandle,
+      },
+      {
+        path: 'evidence-matrix/:matrixId',
+        element: (
+          <LazyPage>
+            <EvidenceMatrixPage />
+          </LazyPage>
+        ),
+        handle: evidenceMatrixHandle,
       },
     ],
   },

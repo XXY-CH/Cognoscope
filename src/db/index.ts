@@ -7,6 +7,9 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type {
   Annotation,
   Bookmark,
+  EvidenceMatrix,
+  EvidenceAnalysis,
+  EvidenceRow,
   FileDocMeta,
   FileNode,
   GraphEdge,
@@ -92,11 +95,37 @@ interface XuesenDB extends DBSchema {
     key: string;
     value: GraphEdgeRecord;
   };
+  /** 跨论文证据矩阵 */
+  evidenceMatrices: {
+    key: string;
+    value: EvidenceMatrix;
+    indexes: {
+      'by-updated': string;
+    };
+  };
+  /** 证据矩阵结论行 */
+  evidenceRows: {
+    key: string;
+    value: EvidenceRow;
+    indexes: {
+      'by-matrix': string;
+      'by-updated': string;
+    };
+  };
+  /** 证据矩阵二次分析（v9） */
+  evidenceAnalyses: {
+    key: string;
+    value: EvidenceAnalysis;
+    indexes: {
+      'by-matrix': string;
+      'by-updated': string;
+    };
+  };
 }
 
 const DB_NAME = 'xuesen';
-/** v7：关键词图谱节点/边 */
-const DB_VERSION = 7;
+/** v9：证据矩阵的结论/局限/空白分析 */
+const DB_VERSION = 9;
 
 let dbPromise: Promise<IDBPDatabase<XuesenDB>> | null = null;
 
@@ -166,6 +195,30 @@ export function getDb(): Promise<IDBPDatabase<XuesenDB>> {
         }
         if (!db.objectStoreNames.contains('keywordEdges')) {
           db.createObjectStore('keywordEdges', { keyPath: 'id' });
+        }
+
+        // —— evidence matrix（v8）——
+        if (!db.objectStoreNames.contains('evidenceMatrices')) {
+          const matrices = db.createObjectStore('evidenceMatrices', {
+            keyPath: 'id',
+          });
+          matrices.createIndex('by-updated', 'updatedAt');
+        }
+        if (!db.objectStoreNames.contains('evidenceRows')) {
+          const rows = db.createObjectStore('evidenceRows', {
+            keyPath: 'id',
+          });
+          rows.createIndex('by-matrix', 'matrixId');
+          rows.createIndex('by-updated', 'updatedAt');
+        }
+
+        // —— evidence analysis（v9）——
+        if (!db.objectStoreNames.contains('evidenceAnalyses')) {
+          const analyses = db.createObjectStore('evidenceAnalyses', {
+            keyPath: 'id',
+          });
+          analyses.createIndex('by-matrix', 'matrixId');
+          analyses.createIndex('by-updated', 'updatedAt');
         }
       },
     });

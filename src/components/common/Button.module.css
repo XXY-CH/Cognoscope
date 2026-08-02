@@ -21,7 +21,12 @@
     background-color var(--dur-fast) var(--ease-standard),
     border-color var(--dur-fast) var(--ease-standard),
     color var(--dur-fast) var(--ease-standard),
-    opacity var(--dur-fast) var(--ease-standard);
+    opacity var(--dur-fast) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
+}
+
+.root:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .root:focus-visible {
@@ -114,6 +119,14 @@
 
 @media (prefers-reduced-motion: reduce) {
   .root {
-    transition: none;
+    transition:
+      background-color var(--motion-press) var(--ease-standard),
+      border-color var(--motion-press) var(--ease-standard),
+      color var(--motion-press) var(--ease-standard),
+      opacity var(--motion-press) var(--ease-standard);
+  }
+
+  .root:active:not(:disabled) {
+    transform: none;
   }
 }

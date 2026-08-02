@@ -3,7 +3,7 @@
  * 所属页面：E · 阅读界面
  * 规范参考：UI_spec.md §8.2；检测指示来自 Python monitor
  */
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
   Bookmark,
@@ -38,6 +38,11 @@ export interface ReaderTopBarProps {
  */
 export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const matrixId = new URLSearchParams(location.search).get('matrixId');
+  const returnPath = matrixId
+    ? `/evidence-matrix/${encodeURIComponent(matrixId)}`
+    : '/';
   const fileId = useReaderStore((s) => s.fileId);
   const fileName = useReaderStore((s) => s.fileName);
   const fileType = useReaderStore((s) => s.fileType);
@@ -80,11 +85,11 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
         <button
           type="button"
           className={styles.back}
-          aria-label="返回文件目录"
-          onClick={() => navigate('/')}
+          aria-label={matrixId ? '返回证据矩阵' : '返回文件目录'}
+          onClick={() => navigate(returnPath)}
         >
           <ArrowLeft size={20} strokeWidth={1.5} aria-hidden="true" />
-          <span>文件目录</span>
+          <span>{matrixId ? '证据矩阵' : '文件目录'}</span>
         </button>
         <Tooltip content={fileName || '未命名'} aria-label="完整文件名">
           <h1 className={styles.fileName}>{fileName || '未命名文档'}</h1>

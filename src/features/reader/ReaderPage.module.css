@@ -21,6 +21,11 @@
   display: flex;
   flex-direction: row;
   overflow: hidden;
+  position: relative;
+}
+
+.mobilePanelScrim {
+  display: none;
 }
 
 .fullscreen {
@@ -30,4 +35,40 @@
 .fullscreen .body {
   /* 全屏时画布占满 */
   flex: 1;
+}
+
+@media (max-width: 899px) {
+  .body {
+    min-width: 0;
+  }
+
+  .mobilePanelScrim {
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-drawer) - 1);
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: var(--overlay-drawer);
+    cursor: pointer;
+    animation: reader-scrim-in var(--motion-panel) var(--ease-out) both;
+  }
+}
+
+@keyframes reader-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobilePanelScrim {
+    animation: none;
+  }
 }

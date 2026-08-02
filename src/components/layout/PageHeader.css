@@ -18,6 +18,40 @@
   flex-shrink: 0;
   background: var(--bg-base); /* 页面主背景 */
   border-bottom: var(--border-width) solid var(--border-subtle); /* 底部分隔线 */
+  transition: background-color var(--motion-state) var(--ease-standard);
+}
+
+.page-header__menu {
+  display: none;
+  flex: 0 0 var(--touch-target-size);
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-size);
+  height: var(--touch-target-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-press) var(--ease-standard),
+    color var(--motion-press) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
+}
+
+.page-header__menu:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.page-header__menu:active {
+  transform: scale(0.96);
+}
+
+.page-header__menu:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .page-header__left {
@@ -41,6 +75,7 @@
   align-items: center;
   gap: var(--sp-2);
   flex-shrink: 0;
+  max-width: 100%;
 }
 
 .page-header__breadcrumb {
@@ -92,4 +127,63 @@
   outline: var(--focus-ring-width) solid var(--accent);
   outline-offset: var(--focus-ring-offset);
   border-radius: var(--radius-sm);
+}
+
+@media (max-width: 899px) {
+  .page-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'menu left'
+      'actions actions';
+    min-height: var(--page-header-height);
+    height: auto;
+    min-width: 0;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-2) var(--sp-4);
+  }
+
+  .page-header__menu {
+    display: inline-flex;
+    grid-area: menu;
+  }
+
+  .page-header__left {
+    grid-area: left;
+    flex: 1 1 auto;
+  }
+
+  .page-header__title,
+  .page-header__breadcrumb {
+    font-size: var(--text-h2);
+    line-height: var(--text-h2-lh);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .page-header__actions {
+    grid-area: actions;
+    display: flex;
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    justify-content: flex-start;
+  }
+
+  .page-header--with-actions .page-header__title,
+  .page-header--with-actions .page-header__breadcrumb {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-header__menu {
+    transition: none;
+  }
+
+  .page-header__menu:active {
+    transform: none;
+  }
 }

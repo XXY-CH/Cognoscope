@@ -36,3 +36,9 @@
   color: var(--text-tertiary);
 }
 
+@media (max-width: 899px) {
+  .root {
+    min-width: 0;
+    padding: var(--sp-4);
+  }
+}

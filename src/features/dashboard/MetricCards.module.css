@@ -12,10 +12,17 @@
 .card {
   position: relative;
   padding: var(--sp-5);
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated); /* 卡片层 */
-  box-shadow: var(--shadow-sm);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface); /* 重复指标项的独立表面 */
   min-width: 0;
+  transition:
+    border-color var(--motion-state) var(--ease-standard),
+    background-color var(--motion-state) var(--ease-standard);
+}
+
+.card:hover {
+  border-color: var(--border-default);
 }
 
 .icon {

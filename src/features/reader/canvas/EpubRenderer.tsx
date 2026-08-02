@@ -3,7 +3,7 @@
  * 所属页面：E · 阅读界面 > ReaderCanvas
  * 规范参考：UI_spec.md §8.3 / §8.5
  */
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ePub, { type Book, type Contents, type Rendition } from 'epubjs';
 import { toast } from '../../../components/common';
 import { getFileBlob } from '../../../db/files';
@@ -82,8 +82,28 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
   const findNonce = useReaderStore((s) => s.findNonce);
   const findQuery = useReaderStore((s) => s.findQuery);
+  const pendingLocator = useReaderStore((s) => s.pendingLocator);
   /** 每个 fileId 只自动适应一次 */
   const autoFitAppliedRef = useRef<string | null>(null);
+
+  const replayPendingLocator = useCallback(async (book: Book, rendition: Rendition, total: number): Promise<void> => {
+    const handoff = useReaderStore.getState().pendingLocator;
+    if (handoff?.fileId !== fileId) return;
+    try {
+      if (handoff.locator.kind === 'epub-cfi' && handoff.locator.cfi) {
+        await rendition.display(handoff.locator.cfi);
+      } else if (handoff.locator.kind === 'epub-cfi' && handoff.locator.location != null) {
+        const cfi = book.locations.cfiFromLocation(
+          Math.max(0, Math.min(total - 1, handoff.locator.location)),
+        );
+        if (cfi) await rendition.display(cfi);
+      }
+    } catch {
+      // CFI 可能随 EPUB 版本漂移；保留默认首章并由矩阵提示复核。
+    } finally {
+      useReaderStore.getState().clearPendingLocator();
+    }
+  }, [fileId]);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -134,6 +154,8 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
         const total = Math.max(1, book.locations.length());
         setTotalPages(total);
 
+        await replayPendingLocator(book, rendition, total);
+
         rendition.on(
           'relocated',
           (loc: { start: { location: number } }) => {
@@ -163,7 +185,15 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
       host.replaceChildren();
     };
-  }, [fileId, pageMode, setCurrentPage, setTotalPages]);
+  }, [fileId, pageMode, replayPendingLocator, setCurrentPage, setTotalPages]);
+
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const book = bookRef.current;
+    const rendition = renditionRef.current;
+    if (!book || !rendition) return;
+    void replayPendingLocator(book, rendition, Math.max(1, book.locations.length()));
+  }, [status, fileId, pendingLocator, replayPendingLocator]);
 
   // 字号变化：更新主题；行键在 content hook 中按稳定 section+index 重登记
   useEffect(() => {

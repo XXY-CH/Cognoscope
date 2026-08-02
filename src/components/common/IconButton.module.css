@@ -17,7 +17,12 @@
   cursor: pointer;
   transition:
     background-color var(--dur-fast) var(--ease-standard),
-    color var(--dur-fast) var(--ease-standard);
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
+}
+
+.root:active:not(:disabled) {
+  transform: scale(0.94);
 }
 
 .root:hover:not(:disabled) {
@@ -64,5 +69,9 @@
 @media (prefers-reduced-motion: reduce) {
   .spinning .icon {
     animation: none;
+  }
+
+  .root:active:not(:disabled) {
+    transform: none;
   }
 }

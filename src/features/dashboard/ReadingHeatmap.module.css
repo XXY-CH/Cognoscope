@@ -5,9 +5,9 @@
 
 .root {
   padding: var(--sp-5);
-  border-radius: var(--radius-lg);
-  background: var(--bg-elevated); /* 卡片层 */
-  box-shadow: var(--shadow-sm);
+  border-top: var(--border-width) solid var(--border-subtle);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+  background: transparent;
   min-width: 0;
 }
 

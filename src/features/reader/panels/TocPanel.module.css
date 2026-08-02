@@ -11,7 +11,7 @@
   background: var(--bg-elevated);
   border-right: var(--border-width) solid var(--border-subtle);
   overflow: hidden;
-  transition: width var(--dur-base) var(--ease-standard);
+  transition: width var(--motion-panel) var(--ease-standard);
 }
 
 .dragging {
@@ -38,10 +38,16 @@
 
 .tabs {
   display: flex;
+  align-items: center;
   gap: var(--sp-1);
   padding: var(--sp-2);
   border-bottom: var(--border-width) solid var(--border-subtle);
   flex-shrink: 0;
+}
+
+.mobileClose {
+  display: none;
+  margin-left: auto;
 }
 
 .tab {
@@ -317,9 +323,37 @@
   background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
+@media (max-width: 899px) {
+  .root {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: var(--z-drawer);
+    width: min(var(--toc-panel-width), calc(100vw - var(--sp-12)));
+    max-width: calc(100vw - var(--sp-12));
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+    transition: transform var(--motion-panel) var(--ease-emphasized);
+  }
+
+  .collapsed {
+    width: min(var(--toc-panel-width), calc(100vw - var(--sp-12)));
+    max-width: calc(100vw - var(--sp-12));
+    transform: translateX(-100%);
+    border-right-width: var(--border-width);
+  }
+
+  .resizer {
+    display: none;
+  }
+
+  .mobileClose {
+    display: inline-flex;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .root {
-    transition: none;
+    transition-duration: var(--motion-press);
   }
 
   .resizer {

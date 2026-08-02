@@ -8,6 +8,10 @@
   overflow: auto;
 }
 
+.mobileTable {
+  /* 桌面仍使用原生表格；紧凑视口在媒体查询中切换为可扫描列表。 */
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -185,6 +189,14 @@
     opacity var(--dur-fast) var(--ease-standard);
 }
 
+.checkboxHit {
+  display: inline-grid;
+  place-items: center;
+  width: var(--sp-5);
+  height: var(--sp-5);
+  cursor: pointer;
+}
+
 .checkbox:checked,
 .checkbox:indeterminate {
   background: var(--accent); /* 主强调色 */
@@ -306,5 +318,179 @@
   .timeText,
   .actionsOverlay {
     transition: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .wrap {
+    overflow: visible;
+  }
+
+  .mobileTable {
+    display: block;
+    table-layout: auto;
+  }
+
+  .mobileTable thead,
+  .mobileTable tbody {
+    display: block;
+  }
+
+  .mobileTable thead {
+    position: static;
+    margin-bottom: var(--sp-2);
+  }
+
+  .mobileTable thead tr {
+    display: flex;
+    align-items: center;
+    min-height: var(--table-header-height);
+    border-bottom: var(--border-width) solid var(--border-subtle);
+  }
+
+  .mobileTable thead th {
+    display: none;
+    width: auto;
+    min-width: 0;
+    height: auto;
+    padding: var(--sp-2) var(--sp-1);
+    border-bottom: 0;
+  }
+
+  .mobileTable thead th:first-child,
+  .mobileTable thead th:nth-child(2),
+  .mobileTable thead th[colspan] {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobileTable thead th:first-child {
+    width: var(--touch-target-size);
+    flex-shrink: 0;
+    padding-left: 0;
+  }
+
+  .mobileTable thead th:nth-child(2) {
+    flex: 1;
+  }
+
+  .mobileTable thead th[colspan] {
+    flex: 1;
+    overflow-x: auto;
+  }
+
+  .mobileTable tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+  }
+
+  .mobileTable tbody tr {
+    display: grid;
+    grid-template-columns: var(--touch-target-size) minmax(0, 1fr) auto;
+    grid-template-areas:
+      'check name actions'
+      'check updated size';
+    gap: var(--sp-1) var(--sp-2);
+    align-items: center;
+    padding: var(--sp-3) var(--sp-2);
+    border: var(--border-width) solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-elevated);
+  }
+
+  .mobileTable tbody tr > td {
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  .mobileTable tbody tr > td:nth-child(1) {
+    grid-area: check;
+    align-self: start;
+    padding-top: var(--sp-1);
+  }
+
+  .mobileTable tbody tr > td:nth-child(2) {
+    grid-area: name;
+  }
+
+  .mobileTable[aria-label='文件列表'] tbody tr > td:nth-child(3) {
+    grid-area: updated;
+  }
+
+  .mobileTable[aria-label='文件列表'] tbody tr > td:nth-child(4) {
+    grid-area: actions;
+  }
+
+  .mobileTable[aria-label='文件列表'] tbody tr > td:nth-child(5) {
+    grid-area: size;
+  }
+
+  .mobileTable[aria-label='回收站列表'] tbody tr > td:nth-child(3) {
+    grid-area: updated;
+  }
+
+  .mobileTable[aria-label='回收站列表'] tbody tr > td:nth-child(4) {
+    display: none;
+  }
+
+  .mobileTable[aria-label='回收站列表'] tbody tr > td:nth-child(5) {
+    grid-area: actions;
+  }
+
+  .mobileTable[aria-label='回收站列表'] tbody tr > td:nth-child(6) {
+    grid-area: size;
+  }
+
+  .mobileTable .nameStack {
+    padding-block: 0;
+  }
+
+  .mobileTable .nameText {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .mobileTable .timeText,
+  .mobileTable .sizeText,
+  .mobileTable .pathText {
+    font-size: var(--text-xs);
+    line-height: var(--text-xs-lh);
+  }
+
+  .mobileTable .actionsOverlay {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    background: transparent;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobileTable .rowActionsVisible .actionsOverlay,
+  .mobileTable tbody tr .actionsOverlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobileTable .row:hover,
+  .mobileTable .row:focus-within,
+  .mobileTable .rowSelected:hover,
+  .mobileTable .rowSelected:focus-within {
+    background: var(--bg-elevated);
+  }
+
+  .mobileTable .checkbox {
+    opacity: 1;
+  }
+
+  .mobileTable .checkboxHit {
+    width: var(--touch-target-size);
+    height: var(--touch-target-size);
   }
 }

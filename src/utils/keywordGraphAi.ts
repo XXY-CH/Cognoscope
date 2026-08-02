@@ -334,7 +334,7 @@ export function buildCoOccurrenceEdges(input: {
     const key = edgeKey(a, b);
     const prev = edgeMap.get(key);
     if (!prev || weight > prev.weight) {
-      edgeMap.set(key, { source: a, target: b, weight });
+      edgeMap.set(key, { source: a, target: b, weight, origin: 'cooccurrence' });
     }
   };
 
@@ -473,7 +473,7 @@ export async function suggestKeywordEdgesWithAi(input: {
           '- 只评估给出的 pairs；不要编造 id',
           '',
           '只输出 JSON 数组：',
-          '[{"source":"id","target":"id","semanticScore":0到1}]',
+          '[{"source":"id","target":"id","semanticScore":0到1,"reason":"不超过30字的中文理由"}]',
           '不要输出解释、Markdown 或代码围栏；最多 20 条（优先高相关）。',
         ].join('\n'),
       },
@@ -514,7 +514,14 @@ export async function suggestKeywordEdgesWithAi(input: {
     const co = coOccurrenceScore(a.paperNodeIds, b.paperNodeIds);
     const w = combinedWeight(co, semantic);
     if (w < KEYWORD_EDGE_MIN_WEIGHT) continue;
-    edges.push({ source, target, weight: w });
+    const reason = typeof rec.reason === 'string' ? rec.reason.trim() : '';
+    edges.push({
+      source,
+      target,
+      weight: w,
+      origin: 'ai',
+      ...(reason ? { reason: reason.slice(0, 120) } : {}),
+    });
   }
   return edges;
 }
@@ -528,7 +535,21 @@ export function mergeKeywordEdges(
     for (const e of list) {
       const key = edgeKey(e.source, e.target);
       const prev = map.get(key);
-      if (!prev || e.weight > prev.weight) map.set(key, e);
+      if (!prev) {
+        map.set(key, e);
+        continue;
+      }
+      const bothEvidence =
+        (prev.origin === 'ai' && e.origin === 'cooccurrence') ||
+        (prev.origin === 'cooccurrence' && e.origin === 'ai') ||
+        prev.origin === 'mixed' ||
+        e.origin === 'mixed';
+      const stronger = e.weight > prev.weight ? e : prev;
+      map.set(key, {
+        ...stronger,
+        origin: bothEvidence ? 'mixed' : stronger.origin,
+        reason: e.reason ?? prev.reason,
+      });
     }
   }
   return [...map.values()];

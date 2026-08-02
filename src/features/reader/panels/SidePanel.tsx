@@ -7,8 +7,8 @@
  */
 import { useRef, useState, type CSSProperties } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Loader2, Sparkles } from 'lucide-react';
-import { Button, Tooltip, toast } from '../../../components/common';
+import { Loader2, Sparkles, X } from 'lucide-react';
+import { Button, IconButton, Tooltip, toast } from '../../../components/common';
 import {
   useHorizontalResize,
   useVerticalResize,
@@ -32,6 +32,7 @@ export function SidePanel() {
   const qaRatio = useReaderStore((s) => s.qaRatio);
   const fileId = useReaderStore((s) => s.fileId);
   const setSideWidth = useReaderStore((s) => s.setSideWidth);
+  const toggleSide = useReaderStore((s) => s.toggleSide);
   const setQaRatio = useReaderStore((s) => s.setQaRatio);
   const cycleSideSplit = useReaderStore((s) => s.cycleSideSplit);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -180,6 +181,13 @@ export function SidePanel() {
               </Button>
             </Tooltip>
           )}
+          <IconButton
+            className={styles.mobileClose}
+            aria-label="关闭侧边栏"
+            onClick={toggleSide}
+          >
+            <X size={18} strokeWidth={1.5} />
+          </IconButton>
         </header>
 
         <div

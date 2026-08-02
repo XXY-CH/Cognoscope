@@ -37,11 +37,19 @@
   padding: var(--sp-1) var(--sp-2);
   border-radius: var(--radius-md);
   flex-shrink: 0;
+  transition:
+    background-color var(--motion-press) var(--ease-standard),
+    color var(--motion-press) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
 }
 
 .back:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
+}
+
+.back:active {
+  transform: scale(0.98);
 }
 
 .back:focus-visible {
@@ -83,6 +91,14 @@
   color: var(--text-secondary);
   font-size: var(--text-sm);
   cursor: pointer;
+  transition:
+    background-color var(--motion-press) var(--ease-standard),
+    color var(--motion-press) var(--ease-standard),
+    transform var(--motion-press) var(--ease-standard);
+}
+
+.segmentBtn:active {
+  transform: scale(0.98);
 }
 
 .segmentActive {
@@ -128,4 +144,61 @@
 
 .camBad {
   background: var(--danger);
+}
+
+@media (max-width: 899px) {
+  .root {
+    height: auto;
+    min-height: var(--reader-topbar-height);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'left right'
+      'center center';
+    align-items: center;
+    padding: var(--sp-2) var(--sp-3);
+    gap: var(--sp-2);
+  }
+
+  .left {
+    grid-area: left;
+    gap: var(--sp-2);
+  }
+
+  .back span {
+    display: none;
+  }
+
+  .fileName {
+    font-size: var(--text-body);
+    line-height: var(--text-body-lh);
+  }
+
+  .center {
+    grid-area: center;
+    justify-content: flex-start;
+    min-width: 0;
+    overflow-x: auto;
+    padding-bottom: var(--sp-1);
+  }
+
+  .right {
+    grid-area: right;
+    gap: var(--sp-1);
+  }
+
+  .camDot {
+    margin: 0 var(--sp-1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back,
+  .segmentBtn {
+    transition: none;
+  }
+
+  .back:active,
+  .segmentBtn:active {
+    transform: none;
+  }
 }

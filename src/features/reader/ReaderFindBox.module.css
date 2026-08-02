@@ -79,3 +79,10 @@
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+@media (max-width: 899px) {
+  .root {
+    min-width: min(200px, 42vw);
+    width: min(200px, 42vw);
+  }
+}

@@ -4,10 +4,17 @@
  * 规范参考：UI_spec.md §8
  */
 import { create } from 'zustand';
-import type { PdfOutlineItem } from '../types';
+import type { EvidenceLocator, PdfOutlineItem } from '../types';
 
 export type PageMode = 'single' | 'double' | 'scroll';
 export type SideSplitPreset = 'half' | 'qa-only' | 'anno-only';
+
+export interface ReaderLocatorHandoff {
+  fileId: string;
+  matrixId: string;
+  rowId: string;
+  locator: EvidenceLocator;
+}
 
 const TOC_KEY = 'xuesen-toc-width';
 const SIDE_KEY = 'xuesen-side-width';
@@ -94,6 +101,8 @@ interface ReaderState {
   defaultFitWidth: boolean;
   /** 文本推断的 PDF 大纲；TocPanel 消费 */
   pdfOutline: PdfOutlineItem[];
+  /** 从证据矩阵跳转到来源时暂存的定位信息 */
+  pendingLocator: ReaderLocatorHandoff | null;
 
   openFile: (input: {
     id: string;
@@ -142,6 +151,8 @@ interface ReaderState {
   /** 使当前页适配画布宽度 */
   requestFitWidth: () => void;
   setPdfOutline: (items: PdfOutlineItem[]) => void;
+  setPendingLocator: (handoff: ReaderLocatorHandoff | null) => void;
+  clearPendingLocator: () => void;
 }
 
 export const useReaderStore = create<ReaderState>((set, get) => ({
@@ -172,6 +183,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   // 缺省开启：多数论文 PDF 更适合适应页宽起步
   defaultFitWidth: readBool(DEFAULT_FIT_WIDTH_KEY, true),
   pdfOutline: [],
+  pendingLocator: null,
 
   openFile: ({ id, name, type }) =>
     set({
@@ -207,6 +219,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       findNonce: 0,
       findDirection: 'next',
       pdfOutline: [],
+      pendingLocator: null,
     }),
 
   toggleToc: () => {
@@ -403,4 +416,6 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   },
 
   setPdfOutline: (pdfOutline) => set({ pdfOutline }),
+  setPendingLocator: (pendingLocator) => set({ pendingLocator }),
+  clearPendingLocator: () => set({ pendingLocator: null }),
 }));

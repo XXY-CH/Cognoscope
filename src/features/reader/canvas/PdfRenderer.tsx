@@ -53,6 +53,8 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
   const findNonce = useReaderStore((s) => s.findNonce);
   const findDirection = useReaderStore((s) => s.findDirection);
   const setPdfOutline = useReaderStore((s) => s.setPdfOutline);
+  const pendingLocator = useReaderStore((s) => s.pendingLocator);
+  const clearPendingLocator = useReaderStore((s) => s.clearPendingLocator);
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
   const lastFindPageRef = useRef(0);
   /** 每个 fileId 只自动适应一次，避免设置变更反复触发 */
@@ -71,6 +73,14 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
     if (!pdf) return;
     setTotalPages(pdf.numPages);
   }, [pdf, setTotalPages]);
+
+  useEffect(() => {
+    if (!pdf || pendingLocator?.fileId !== fileId) return;
+    if (pendingLocator.locator.kind === 'pdf-page') {
+      setCurrentPage(pendingLocator.locator.page);
+    }
+    clearPendingLocator();
+  }, [pdf, fileId, pendingLocator, setCurrentPage, clearPendingLocator]);
 
 
   // 文档就绪后提取基于字体大小的文本大纲

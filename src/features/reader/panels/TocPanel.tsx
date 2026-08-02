@@ -4,7 +4,7 @@
  * 规范参考：UI_spec.md §8.4
  */
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Bookmark, List, Pencil, Trash2 } from 'lucide-react';
+import { Bookmark, List, Pencil, Trash2, X } from 'lucide-react';
 import { EmptyState, IconButton } from '../../../components/common';
 import { useHorizontalResize } from '../../../hooks/usePanelResize';
 import { useBookmarkStore } from '../../../stores/bookmarkStore';
@@ -30,6 +30,7 @@ export function TocPanel() {
   const width = useReaderStore((s) => s.tocWidth);
   const fileId = useReaderStore((s) => s.fileId);
   const setTocWidth = useReaderStore((s) => s.setTocWidth);
+  const toggleToc = useReaderStore((s) => s.toggleToc);
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const tocTabRequest = useReaderStore((s) => s.tocTabRequest);
   const clearTocTabRequest = useReaderStore((s) => s.clearTocTabRequest);
@@ -116,6 +117,13 @@ export function TocPanel() {
           >
             书签{items.length > 0 ? ` ${items.length}` : ''}
           </button>
+          <IconButton
+            className={styles.mobileClose}
+            aria-label="关闭目录"
+            onClick={toggleToc}
+          >
+            <X size={18} strokeWidth={1.5} />
+          </IconButton>
         </div>
 
         <div className={styles.body} role="tabpanel">

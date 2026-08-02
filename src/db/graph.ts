@@ -63,7 +63,13 @@ export async function removeFilesFromGraphDb(fileIds: string[]): Promise<void> {
 export async function listGraphEdges(): Promise<GraphEdge[]> {
   const db = await getDb();
   const all = await db.getAll('graphEdges');
-  return all.map(({ source, target, weight }) => ({ source, target, weight }));
+  return all.map(({ source, target, weight, origin, reason }) => ({
+    source,
+    target,
+    weight,
+    ...(origin ? { origin } : {}),
+    ...(reason ? { reason } : {}),
+  }));
 }
 
 export async function putGraphEdges(edges: GraphEdge[]): Promise<void> {
@@ -78,6 +84,8 @@ export async function putGraphEdges(edges: GraphEdge[]): Promise<void> {
         source: e.source,
         target: e.target,
         weight: e.weight,
+        ...(e.origin ? { origin: e.origin } : {}),
+        ...(e.reason ? { reason: e.reason } : {}),
       };
       return tx.store.put(record);
     }),

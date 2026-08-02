@@ -102,6 +102,9 @@ export async function deleteFile(id: string): Promise<void> {
     'graphMembers',
     'keywordNodes',
     'keywordEdges',
+    'evidenceMatrices',
+    'evidenceRows',
+    'evidenceAnalyses',
   ] as const;
   const tx = db.transaction([...storeNames], 'readwrite');
   await tx.objectStore('files').delete(id);
@@ -152,6 +155,32 @@ export async function deleteFile(id: string): Promise<void> {
         .map((e) => kwEdgeStore.delete(e.id)),
     );
   }
+
+  // 证据矩阵：永久删除任一选定来源时，整个比较一并删除，避免留下不可解释的半矩阵。
+  const matrixStore = tx.objectStore('evidenceMatrices');
+  const matrices = await matrixStore.getAll();
+  const deletedMatrixIds = new Set(
+    matrices
+      .filter((matrix) => matrix.fileIds.includes(id))
+      .map((matrix) => matrix.id),
+  );
+  await Promise.all(
+    [...deletedMatrixIds].map((matrixId) => matrixStore.delete(matrixId)),
+  );
+  const evidenceStore = tx.objectStore('evidenceRows');
+  const evidenceRows = await evidenceStore.getAll();
+  await Promise.all(
+    evidenceRows
+      .filter((row) => deletedMatrixIds.has(row.matrixId))
+      .map((row) => evidenceStore.delete(row.id)),
+  );
+  const analysisStore = tx.objectStore('evidenceAnalyses');
+  const analyses = await analysisStore.index('by-matrix').getAll();
+  await Promise.all(
+    analyses
+      .filter((analysis) => deletedMatrixIds.has(analysis.matrixId))
+      .map((analysis) => analysisStore.delete(analysis.id)),
+  );
 
   await tx.done;
 }

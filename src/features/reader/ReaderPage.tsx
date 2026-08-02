@@ -6,7 +6,7 @@
  * 真全屏用 Fullscreen API；退出仅依赖 Esc（无自定义圆形叉）
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
 import { SettingsDrawer } from '../../components/layout/SettingsDrawer';
@@ -16,6 +16,7 @@ import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 import { useReadingSession } from '../../hooks/useReadingSession';
 import { useSystemThemeListener } from '../../hooks/useSystemThemeListener';
 import * as sessionsDb from '../../db/sessions';
+import { listEvidenceRowsByMatrix } from '../../db/evidenceRows';
 import { useFileStore } from '../../stores/fileStore';
 import { useReaderStore } from '../../stores/readerStore';
 import { convertToReadingSession } from '../../utils/monitorAdapter';
@@ -45,13 +46,35 @@ export function ReaderPage() {
   const zoomBeforeFsRef = useRef(100);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { fileId } = useParams<{ fileId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const files = useFileStore((s) => s.files);
   const loadFiles = useFileStore((s) => s.loadFiles);
   const openFile = useReaderStore((s) => s.openFile);
   const clearFile = useReaderStore((s) => s.clearFile);
+  const setPendingLocator = useReaderStore((s) => s.setPendingLocator);
   const activeFileId = useReaderStore((s) => s.fileId);
   useLinesReadSync(activeFileId);
+
+  // 直接刷新阅读器时，从 URL + IndexedDB 恢复矩阵行的来源定位。
+  useEffect(() => {
+    if (!fileId) return;
+    const params = new URLSearchParams(location.search);
+    const matrixId = params.get('matrixId');
+    const rowId = params.get('rowId');
+    if (!matrixId || !rowId) return;
+    let cancelled = false;
+    void listEvidenceRowsByMatrix(matrixId).then((rows) => {
+      if (cancelled) return;
+      const row = rows.find((candidate) => candidate.id === rowId);
+      const item = row?.evidence.find((candidate) => candidate.fileId === fileId);
+      if (!item) return;
+      setPendingLocator({ fileId, matrixId, rowId, locator: item.locator });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [fileId, location.search, setPendingLocator]);
 
   // Python monitor 会话 ID（由 startDetection 返回，stop 后用于拉取数据）
   const pySessionIdRef = useRef<string | null>(null);
@@ -133,6 +156,25 @@ export function ReaderPage() {
   const tocWidth = useReaderStore((s) => s.tocWidth);
   const sideWidth = useReaderStore((s) => s.sideWidth);
   const toggleToc = useReaderStore((s) => s.toggleToc);
+
+  // 紧凑视口中面板是 Sheet：Escape 应一次性退出临时层。
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      const reader = useReaderStore.getState();
+      if (!reader.tocOpen && !reader.sideOpen) return;
+      if (reader.tocOpen) reader.toggleToc();
+      if (reader.sideOpen) reader.toggleSide();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  const closeMobilePanels = () => {
+    const reader = useReaderStore.getState();
+    if (reader.tocOpen) reader.toggleToc();
+    if (reader.sideOpen) reader.toggleSide();
+  };
 
   useEffect(() => {
     if (files.length === 0) void loadFiles();
@@ -228,6 +270,14 @@ export function ReaderPage() {
       <div className={styles.body}>
         {!isFullscreen ? <TocPanel /> : null}
         <ReaderCanvas />
+        {!isFullscreen && (tocOpen || sideOpen) ? (
+          <button
+            type="button"
+            className={styles.mobilePanelScrim}
+            aria-label="关闭阅读面板"
+            onClick={closeMobilePanels}
+          />
+        ) : null}
         {!isFullscreen ? <SidePanel /> : null}
       </div>
       {!isFullscreen ? <ReaderBottomBar /> : null}

@@ -5,7 +5,7 @@
 > 设计权威：[`UI_spec.md`](./UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）  
 > 工程约束：[`.cursorrules`](./.cursorrules) · 进度：[`PROGRESS.md`](./PROGRESS.md) · 检测：[`monitor/README.md`](./monitor/README.md)
 
-本文说明：**AI 相关能力已具备哪些 UI/配置、还缺什么、该改哪些文件、类型与产品约束是什么**。仪表盘与图谱占位的简要现状见文末附录。
+本文说明：**AI 相关能力已具备哪些 UI/配置、还缺什么、该改哪些文件、类型与产品约束是什么**。当前知识图谱已经从占位进入可用切片：它负责论文获取后的跨论文理解与证据整理，不替代外部检索和写作工具。
 
 ---
 
@@ -16,7 +16,7 @@
 3. [AI 提问 / 问答（待接请求）](#3-ai-提问--问答待接请求)
 4. [批注与上下文（问答输入）](#4-批注与上下文问答输入)
 5. [整理习得 Digest（待接）](#5-整理习得-digest待接)
-6. [知识图谱 · 批注/文件联结（待重建 + AI 建边）](#6-知识图谱--批注文件联结待重建--ai-建边)
+6. [知识图谱 · 文件/关键词联结（当前可用，证据深化中）](#6-知识图谱--文件关键词联结当前可用证据深化中)
 7. [建议实现顺序与 API 约定](#7-建议实现顺序与-api-约定)
 8. [附录 A · 个人仪表盘（已接会话）](#附录-a--个人仪表盘已接会话)
 9. [附录 B · 知识图谱文件清单](#附录-b--知识图谱文件清单)
@@ -34,7 +34,7 @@
 | 批注 CRUD | ✅ AnnotationPanel | ✅ `Annotation` + IDB | — | ✅ `annotations` |
 | 批注原文高亮层 | ❌（§8.8） | 有 `anchor` 字段 | — | 有数据无图层 |
 | 整理习得 | ✅ 按钮（toast 占位） | 无 Digest 类型 | ❌ | ❌ |
-| 知识图谱 | ⏸ EmptyState | ✅ `GraphNode` / `GraphEdge` | ❌ 建边 | ❌ 无 graph store |
+| 知识图谱 | ✅ 双画布 / 搜索 / 节点详情 | ✅ `GraphNode` / `GraphEdge` + 来源 | ✅ 本地共现 + AI 建边 | ✅ IndexedDB |
 | 离线降级 | ✅ QA 输入禁用文案 | `uiStore.isOnline` | — | — |
 
 产品约束（务必遵守）：
@@ -205,15 +205,16 @@ interface QaMessage {
 
 ---
 
-## 6. 知识图谱 · 批注/文件联结（待重建 + AI 建边）
+## 6. 知识图谱 · 文件/关键词联结（当前可用，证据深化中）
 
 ### 6.1 产品边界
 
-- 边：**仅 AI/后端**写入；前端展示、搜索、过滤（§13 决策4）。  
+- 论文边由 AI 任务写入；关键词边由本地共现与 AI 语义评分共同写入；前端只展示、搜索、过滤，不提供手动连线（§13 决策4）。
 - 节点：文件树派生 + 可选 tag；拖拽后可持久化 `x`/`y`。  
 - 建边中：顶栏 32px 进度条（§6.4）。  
-- 离线：只展示已有边，不重新计算（§14）。  
-- 详情侧栏可含「批注摘要」：该文件最近批注预览（§6）。
+- 离线：只展示已有边，不重新计算（§14）。
+- 当前详情面板展示摘要、关键词、关联论文、关系来源/理由，并可直接打开阅读器。
+- 待深化：把批注、引用句和页码纳入边证据，并提供人工确认状态；在此之前不把关系表述为事实引用。分级结构与新 UI 的设计边界见 [Phase 003 知识图谱设计契约](./docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md)。
 
 ### 6.2 类型（已有）
 
@@ -318,21 +319,22 @@ Content-Type: application/json
 
 ## 附录 B · 知识图谱文件清单
 
-### 已保留
+### 已实现
 
 | 项 | 路径 |
 |---|---|
 | 路由 lazy | `src/App.tsx` → `/knowledge-graph` |
 | 侧栏 | `Sidebar.tsx` |
-| 占位页 | `src/features/knowledge-graph/KnowledgeGraphPage.tsx` |
-| 类型 | `GraphNode` / `GraphEdge`（`types/index.ts`） |
+| 页面 | `src/features/knowledge-graph/KnowledgeGraphPage.tsx` |
+| 画布 | `src/features/knowledge-graph/GraphCanvas.tsx` |
+| 详情 | `src/features/knowledge-graph/GraphInspector.tsx` |
+| 状态/持久化 | `src/stores/graphStore.ts`、`src/stores/keywordGraphStore.ts`、`src/db/graph.ts`、`src/db/keywordGraph.ts` |
+| 类型 | `GraphNode` / `GraphEdge` / `KeywordNode` / `KeywordEdge`（`types/index.ts`） |
 
-### 需按 §6 重建（曾删除）
+### 后续深化
 
 ```
-GraphCanvas / GraphToolbar / NodeDetailPanel / GraphBuildBanner
-graphStore.ts
-（可选）db graph store、seed 仅限开发勿当正式边
+批注/引用证据适配器、人工确认状态、关系重新分析进度条
 ```
 
 ```bash
@@ -356,6 +358,10 @@ npm install react-force-graph-2d
 |---|---|
 | [`UI_spec.md`](./UI_spec.md) §2.4 / §6 / §8.6–8.9 / §9 / §13 / §14 | 交互与模型权威 |
 | [`PROGRESS.md`](./PROGRESS.md) | 总进度、P0 AI 待办 |
+| [`docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md`](./docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md) | 五级数据层、视图与证据边界 |
+| [`docs/plans/2026-08-02-003-knowledge-graph-plan.md`](./docs/plans/2026-08-02-003-knowledge-graph-plan.md) | 分阶段实现与验证计划 |
+| [`docs/plans/2026-08-02-004-ui-system-UI-SPEC.md`](./docs/plans/2026-08-02-004-ui-system-UI-SPEC.md) | 全系统页面分级、表面层级、状态与动画契约 |
+| [`docs/plans/2026-08-02-004-ui-system-plan.md`](./docs/plans/2026-08-02-004-ui-system-plan.md) | 全系统 UI 分阶段实现与验证计划 |
 | [`monitor/README.md`](./monitor/README.md) | 行为检测（与聊天无关） |
 | [`README.md`](./README.md) | 启动与排障 |
 | [`.cursorrules`](./.cursorrules) | Agent / 工程习惯 |

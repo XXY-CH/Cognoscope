@@ -203,6 +203,111 @@ export interface Annotation {
   updatedAt: string;
 }
 
+/** 证据来源定位；不同阅读器坐标系不可静默互换。 */
+export type EvidenceLocator =
+  | {
+      kind: 'pdf-page';
+      page: number;
+      anchor: string | null;
+    }
+  | {
+      kind: 'epub-cfi';
+      cfi: string | null;
+      location: number | null;
+      sectionIndex: number | null;
+    }
+  | {
+      kind: 'unresolved';
+      reason: string;
+    };
+
+/** 证据是否已经经过用户确认。 */
+export type EvidenceVerificationState =
+  | 'proposed'
+  | 'edited'
+  | 'verified'
+  | 'disputed'
+  | 'unresolved';
+
+/** 证据内容的来源，保留 AI 建议与用户批注的边界。 */
+export type EvidenceProvenance = 'ai' | 'annotation' | 'user' | 'mixed';
+
+/** AI 证据摘录与本地材料的确定性匹配结果。 */
+export type EvidenceMatchMethod =
+  | 'annotation-exact'
+  | 'transcript-exact'
+  | 'none';
+
+/** 结论行中的一条可追溯证据。 */
+export interface EvidenceItem {
+  id: string;
+  rowId: string;
+  fileId: string;
+  annotationId: string | null;
+  /** 创建矩阵时的用户批注正文快照；原始批注记录仍独立保存。 */
+  annotationBody: string | null;
+  quotedText: string;
+  note: string;
+  locator: EvidenceLocator;
+  provenance: EvidenceProvenance;
+  originalProposal: string | null;
+  match: EvidenceMatchMethod;
+  verification: EvidenceVerificationState;
+}
+
+/** 跨论文比较中的一条结论。 */
+export interface EvidenceRow {
+  id: string;
+  matrixId: string;
+  conclusion: string;
+  originalProposal: string | null;
+  evidence: EvidenceItem[];
+  verification: EvidenceVerificationState;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 已保存的跨论文比较。 */
+export interface EvidenceMatrix {
+  id: string;
+  comparisonQuestion: string;
+  fileIds: string[];
+  extractionState: 'idle' | 'extracting' | 'ready' | 'error' | 'cancelled';
+  extractionError: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 证据矩阵二次分析的固定栏目。 */
+export type EvidenceAnalysisSection = 'findings' | 'limitations' | 'gaps';
+
+/** 由已确认矩阵行支撑的研究判断草稿。 */
+export interface EvidenceAnalysisItem {
+  id: string;
+  analysisId: string;
+  section: EvidenceAnalysisSection;
+  statement: string;
+  rationale: string;
+  /** 只允许引用当前矩阵中的 EvidenceRow.id。 */
+  rowIds: string[];
+  originalProposal: string | null;
+  verification: EvidenceVerificationState;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 一次“结论/局限/空白”分析及其提议状态。 */
+export interface EvidenceAnalysis {
+  id: string;
+  matrixId: string;
+  comparisonQuestion: string;
+  extractionState: 'idle' | 'extracting' | 'ready' | 'error' | 'cancelled';
+  extractionError: string | null;
+  items: EvidenceAnalysisItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** AI 问答消息角色 */
 export type QaRole = 'user' | 'assistant';
 
@@ -236,6 +341,14 @@ export interface QaMessage {
 /** 知识图谱节点种类：文件、文件夹、标签 */
 export type GraphNodeKind = 'file' | 'folder' | 'tag';
 
+/** 图谱边的证据来源；旧版记录没有该字段时按 unknown 展示 */
+export type GraphEdgeOrigin =
+  | 'ai'
+  | 'cooccurrence'
+  | 'mixed'
+  | 'manual'
+  | 'unknown';
+
 /**
  * GraphNode - 知识图谱节点
  * 所属：C · 知识图谱
@@ -259,7 +372,7 @@ export interface GraphNode {
 }
 
 /**
- * GraphEdge - 知识图谱连线（由 AI 计算后写入，前端只读展示）
+ * GraphEdge - 论文知识图谱连线（由算法/AI 计算后写入，前端只读展示）
  * 所属：C · 知识图谱
  * 规范参考：UI_spec.md §9 / §13 决策4
  */
@@ -270,6 +383,10 @@ export interface GraphEdge {
   target: string;
   /** 关联强度，约束范围 0–1；映射连线粗细与不透明度 */
   weight: number;
+  /** 关系来源；可用于解释边的生成依据 */
+  origin?: GraphEdgeOrigin;
+  /** AI 或人工确认时的简短理由 */
+  reason?: string;
 }
 
 /**
@@ -319,6 +436,10 @@ export interface KeywordEdge {
   source: string;
   target: string;
   weight: number;
+  /** 关系来源；旧版关键词边可能没有该字段 */
+  origin?: GraphEdgeOrigin;
+  /** AI 建边时的简短语义理由 */
+  reason?: string;
 }
 
 /**

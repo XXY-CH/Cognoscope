@@ -55,6 +55,8 @@ export function GraphCanvas({
       source: e.source,
       target: e.target,
       weight: e.weight,
+      origin: e.origin ?? 'unknown',
+      reason: e.reason,
     })),
   };
 
@@ -155,11 +157,20 @@ export function GraphCanvas({
         ctx.restore();
       }}
       linkWidth={(link: any) => Math.max(1, (link.weight ?? 0.5) * 1.5)}
-      linkColor={() =>
-        getComputedStyle(document.documentElement)
-          .getPropertyValue('--border-default')
-          .trim() || '#C8C8D2'
-      }
+      linkColor={(link: any) => {
+        const cssVars = getComputedStyle(document.documentElement);
+        const token =
+          link.origin === 'ai'
+            ? '--accent'
+            : link.origin === 'cooccurrence'
+              ? '--success'
+              : link.origin === 'mixed'
+                ? '--accent'
+              : link.origin === 'manual'
+                ? '--warning'
+                : '--border-default';
+        return cssVars.getPropertyValue(token).trim() || '#C8C8D2';
+      }}
       linkDirectionalParticles={2}
       linkDirectionalParticleWidth={(link: any) => (link.weight ?? 0.5) * 2}
       linkDirectionalParticleSpeed={0.005}

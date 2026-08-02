@@ -80,21 +80,23 @@ export function TrashTable({
         .filter(Boolean)
         .join(' ')}
     >
-      <table className={fileStyles.table} aria-label="回收站列表">
+      <table className={`${fileStyles.table} ${fileStyles.mobileTable}`} aria-label="回收站列表">
         <thead className={fileStyles.head}>
           <tr>
             <th scope="col" className={fileStyles.checkCol}>
-              <input
-                ref={headerCheckboxRef}
-                type="checkbox"
-                className={fileStyles.checkbox}
-                aria-label="全选回收站列表"
-                checked={allSelected}
-                onChange={() => {
-                  if (allSelected) onClearSelection();
-                  else onSelectAll(rows.map((r) => r.id));
-                }}
-              />
+              <label className={fileStyles.checkboxHit}>
+                <input
+                  ref={headerCheckboxRef}
+                  type="checkbox"
+                  className={fileStyles.checkbox}
+                  aria-label="全选回收站列表"
+                  checked={allSelected}
+                  onChange={() => {
+                    if (allSelected) onClearSelection();
+                    else onSelectAll(rows.map((r) => r.id));
+                  }}
+                />
+              </label>
             </th>
             {selectedIds.length > 0 ? (
               <>
@@ -196,13 +198,15 @@ export function TrashTable({
                 }}
               >
                 <td className={fileStyles.checkCol}>
-                  <input
-                    type="checkbox"
-                    className={fileStyles.checkbox}
-                    aria-label={`选择 ${file.name}`}
-                    checked={selected}
-                    onChange={() => onToggleSelect(file.id)}
-                  />
+                  <label className={fileStyles.checkboxHit}>
+                    <input
+                      type="checkbox"
+                      className={fileStyles.checkbox}
+                      aria-label={`选择 ${file.name}`}
+                      checked={selected}
+                      onChange={() => onToggleSelect(file.id)}
+                    />
+                  </label>
                 </td>
                 <td className={fileStyles.nameCol}>
                   <div className={fileStyles.nameBtn}>

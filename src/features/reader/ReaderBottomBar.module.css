@@ -153,3 +153,49 @@
   color: var(--text-primary);
   font-size: var(--text-sm);
 }
+
+@media (max-width: 899px) {
+  .root {
+    height: auto;
+    min-height: var(--reader-bottombar-height);
+    flex-wrap: wrap;
+    padding: var(--sp-1) var(--sp-3);
+    gap: var(--sp-1) var(--sp-2);
+  }
+
+  .left,
+  .right {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .center {
+    order: 3;
+    flex-basis: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .lines {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .camText {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .root {
+    padding-inline: var(--sp-2);
+  }
+
+  .camChip {
+    padding-inline: var(--sp-1);
+  }
+
+  .lines {
+    max-width: calc(var(--sp-12) * 2);
+  }
+}

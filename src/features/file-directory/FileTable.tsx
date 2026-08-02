@@ -4,7 +4,8 @@
  * 规范参考：UI_spec.md §4.3 / §4.4
  */
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown, GitCompareArrows } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, Input, toast } from '../../components/common';
 import type { FileNode } from '../../types';
@@ -67,6 +68,7 @@ function SortIcon({
 }
 
 export function FileTable({ rows, onOpen }: FileTableProps) {
+  const navigate = useNavigate();
   const sort = useFileStore((s) => s.sort);
   const selectedIds = useFileStore((s) => s.selectedIds);
   const renamingId = useFileStore((s) => s.renamingId);
@@ -111,6 +113,16 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
     rows.length > 0 && rows.every((r) => selectedIds.includes(r.id));
   const someSelected =
     rows.some((r) => selectedIds.includes(r.id)) && !allSelected;
+  const selectedPapers = rows.filter(
+    (row) =>
+      selectedIds.includes(row.id) &&
+      row.type !== 'folder' &&
+      row.deletedAt === null,
+  );
+  const canCompare =
+    selectedPapers.length >= 3 &&
+    selectedPapers.length <= 5 &&
+    selectedPapers.length === selectedIds.length;
 
   const headerCheckboxRef = (node: HTMLInputElement | null) => {
     if (node) node.indeterminate = someSelected;
@@ -152,21 +164,23 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
         .filter(Boolean)
         .join(' ')}
     >
-      <table className={styles.table} aria-label="文件列表">
+      <table className={`${styles.table} ${styles.mobileTable}`} aria-label="文件列表">
         <thead className={styles.head}>
           <tr>
             <th scope="col" className={styles.checkCol}>
-              <input
-                ref={headerCheckboxRef}
-                type="checkbox"
-                className={styles.checkbox}
-                aria-label="全选当前列表"
-                checked={allSelected}
-                onChange={() => {
-                  if (allSelected) clearSelection();
-                  else selectAllVisible(rows.map((r) => r.id));
-                }}
-              />
+              <label className={styles.checkboxHit}>
+                <input
+                  ref={headerCheckboxRef}
+                  type="checkbox"
+                  className={styles.checkbox}
+                  aria-label="全选当前列表"
+                  checked={allSelected}
+                  onChange={() => {
+                    if (allSelected) clearSelection();
+                    else selectAllVisible(rows.map((r) => r.id));
+                  }}
+                />
+              </label>
             </th>
             {selectedIds.length > 0 ? (
               <>
@@ -185,6 +199,21 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
                     role="group"
                     aria-label="批量操作"
                   >
+                    <Button
+                      aria-label="开始跨论文证据比较"
+                      variant="secondary"
+                      size="sm"
+                      leftIcon={<GitCompareArrows size={16} strokeWidth={1.5} />}
+                      disabled={!canCompare}
+                      onClick={() => {
+                        const query = selectedPapers
+                          .map((file) => `files=${encodeURIComponent(file.id)}`)
+                          .join('&');
+                        navigate(`/evidence-matrix?${query}`);
+                      }}
+                    >
+                      比较证据
+                    </Button>
                     <Button
                       aria-label="取消多选"
                       variant="ghost"
@@ -288,13 +317,15 @@ export function FileTable({ rows, onOpen }: FileTableProps) {
                 }}
               >
                 <td className={styles.checkCol}>
-                  <input
-                    type="checkbox"
-                    className={styles.checkbox}
-                    aria-label={`选择 ${file.name}`}
-                    checked={selected}
-                    onChange={() => toggleSelect(file.id)}
-                  />
+                  <label className={styles.checkboxHit}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      aria-label={`选择 ${file.name}`}
+                      checked={selected}
+                      onChange={() => toggleSelect(file.id)}
+                    />
+                  </label>
                 </td>
                 <td className={styles.nameCol}>
                   {renaming ? (

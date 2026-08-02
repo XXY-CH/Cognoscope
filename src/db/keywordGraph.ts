@@ -27,7 +27,13 @@ export async function putKeywordNodes(nodes: KeywordNode[]): Promise<void> {
 export async function listKeywordEdges(): Promise<KeywordEdge[]> {
   const db = await getDb();
   const all = await db.getAll('keywordEdges');
-  return all.map(({ source, target, weight }) => ({ source, target, weight }));
+  return all.map(({ source, target, weight, origin, reason }) => ({
+    source,
+    target,
+    weight,
+    ...(origin ? { origin } : {}),
+    ...(reason ? { reason } : {}),
+  }));
 }
 
 export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
@@ -42,6 +48,8 @@ export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
         source: e.source,
         target: e.target,
         weight: e.weight,
+        ...(e.origin ? { origin: e.origin } : {}),
+        ...(e.reason ? { reason: e.reason } : {}),
       };
       return tx.store.put(record);
     }),

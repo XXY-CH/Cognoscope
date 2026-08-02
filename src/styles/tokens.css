@@ -121,10 +121,17 @@
   --dur-base: 200ms; /* 标准 · 面板展开/收起、弹层进出 */
   --dur-slow: 320ms; /* 缓慢 · 侧栏折叠、页面切换、图谱布局 */
 
+  /* ---------- Phase 004 · 语义动效别名 ---------- */
+  --motion-press: var(--dur-fast); /* 按下、悬停和状态反馈 */
+  --motion-state: var(--dur-base); /* 内容状态和非手势布局变化 */
+  --motion-panel: var(--dur-slow); /* 抽屉、Sheet、侧栏和阅读面板 */
+  --motion-route: var(--dur-base); /* 路由内容 continuity transition */
+
   /* ---------- §1.5 缓动曲线 ---------- */
   --ease-standard: cubic-bezier(0.2, 0, 0, 1); /* 通用缓动 */
   --ease-out: cubic-bezier(0, 0, 0.2, 1); /* 元素进入 */
   --ease-in: cubic-bezier(0.4, 0, 1, 1); /* 元素退出 */
+  --ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1); /* 面板/Sheet 进入 */
 
   /* ---------- §1.6 层级（z-index） ---------- */
   --z-base: 0; /* 常规内容 */
@@ -165,6 +172,7 @@
   --btn-height-md: 36px; /* Button 中尺寸 / Input 高度 */
   --btn-height-lg: 40px; /* Button 大尺寸高度 */
   --icon-btn-size: 32px; /* IconButton 正方形边长 */
+  --touch-target-size: 44px; /* 触控布局的最小交互热区 */
   --table-header-height: 40px; /* 表头行高 */
   --table-row-height: 52px; /* 表体行高 */
   --dialog-width-confirm: 440px; /* 确认类 Dialog 宽度 */
@@ -197,6 +205,8 @@
   --spark-height: 32px; /* 指标卡迷你趋势图高度 */
   --heat-cell: 12px; /* 热力图单格参考边长（年视图由列宽自适应） */
   --heat-empty: #e4e4ea; /* 热力图无阅读日，需与 --bg-elevated 可辨 */
+  --graph-inspector-max-height: 280px; /* 图谱详情面板最大高度 */
+  --graph-inspector-max-height-mobile: 320px; /* 窄屏图谱详情面板最大高度 */
 
   /* ---------- §8 阅读界面布局尺寸 ---------- */
   --reader-topbar-height: 48px; /* TopBar 高度 */
@@ -333,8 +343,24 @@
 @media (prefers-reduced-motion: reduce) {
   :root,
   [data-theme="dark"] {
-    --dur-fast: 0ms; /* 减弱动效 · 快速过渡归零 */
-    --dur-base: 0ms; /* 减弱动效 · 标准过渡归零 */
-    --dur-slow: 0ms; /* 减弱动效 · 缓慢过渡归零 */
+    --dur-fast: 80ms; /* 减弱动效 · 保留即时反馈，不保留位移动画 */
+    --dur-base: 100ms; /* 减弱动效 · 用短交叉淡化替代移动 */
+    --dur-slow: 120ms; /* 减弱动效 · Sheet 仅保留短淡化 */
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root,
+  [data-theme="dark"] {
+    --overlay-drawer: var(--overlay);
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root,
+  [data-theme="dark"] {
+    --border-subtle: var(--border-default);
+    --border-strong: var(--text-secondary);
+    --focus-ring-width: 3px;
   }
 }
