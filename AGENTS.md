@@ -6,6 +6,11 @@
 
 Key constraint: all camera inference runs locally; no server upload for face/presence data.
 
+Project iteration graph: [`docs/GRAPH_ENGINEERING.md`](docs/GRAPH_ENGINEERING.md) and
+[`docs/graph-engineering.json`](docs/graph-engineering.json). When the user asks to
+continue, iterate, or use Graph Engineering, load these files first, select an
+unblocked node, preserve its contracts, and update the graph after verification.
+
 ---
 
 ## Architecture & Data Flow

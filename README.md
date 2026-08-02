@@ -7,6 +7,7 @@
 | [`UI_spec.md`](./UI_spec.md) | 产品与视觉规范（权威；部分产品迭代见下） |
 | [`PROGRESS.md`](./PROGRESS.md) | 进度、待办、技术债、变更记录 |
 | [`HANDOFF.md`](./HANDOFF.md) | **仪表盘 / 知识图谱**接手：文件位置、数据接口、接入顺序 |
+| [`docs/GRAPH_ENGINEERING.md`](./docs/GRAPH_ENGINEERING.md) | Codex 可直接调用的项目 Graph Engineering 迭代图 |
 | [`.cursorrules`](./.cursorrules) | Agent / 工程约束 |
 
 ## 技术栈
