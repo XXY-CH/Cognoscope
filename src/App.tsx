@@ -18,6 +18,7 @@ import {
   type AppRouteHandle,
 } from './components/layout/AppShellLayout';
 import { FileDirectoryPage } from './features/file-directory/FileDirectoryPage';
+import { CurrentResearchStatePage } from './features/research-state/CurrentResearchStatePage';
 import { TrashPage } from './features/trash/TrashPage';
 
 const DashboardPage = lazy(() =>
@@ -40,6 +41,10 @@ const ReaderPage = lazy(() =>
     default: m.ReaderPage,
   })),
 );
+
+const currentResearchStateHandle = {
+  title: '当前研究状态',
+} satisfies AppRouteHandle;
 
 const fileDirectoryHandle = {
   title: '文件目录',
@@ -82,6 +87,11 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <CurrentResearchStatePage />,
+        handle: currentResearchStateHandle,
+      },
+      {
+        path: 'library',
         element: <FileDirectoryPage />,
         handle: fileDirectoryHandle,
       },

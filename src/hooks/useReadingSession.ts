@@ -10,6 +10,9 @@ import { useSessionStore } from '../stores/sessionStore';
 import type { ReadingSession } from '../types';
 import { createId } from '../utils/id';
 
+/** 会话事实不能被 monitor/AI 网络任务无限期卡住。 */
+const END_CALLBACK_TIMEOUT_MS = 1500;
+
 /**
  * 为当前 fileId 开启一条 ReadingSession；周期性同步 linesRead；卸载时 endSession
  *
@@ -74,7 +77,13 @@ export function useReadingSession(
         // 允许外部在 end 前合并 monitor 检测数据
         if (onBeforeEnd) {
           try {
-            await onBeforeEnd(sid);
+            const callback = onBeforeEnd(sid).catch(() => undefined);
+            await Promise.race([
+              callback,
+              new Promise<void>((resolve) =>
+                window.setTimeout(resolve, END_CALLBACK_TIMEOUT_MS),
+              ),
+            ]);
           } catch {
             /* monitor 不可用时静默 */
           }

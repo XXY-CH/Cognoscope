@@ -1,0 +1,24 @@
+/** researchSignals - 用户立场与系统观察的本地持久化。 */
+import type { ResearchSignal } from '../types';
+import { getDb } from './index';
+
+export async function listResearchSignals(): Promise<ResearchSignal[]> {
+  const db = await getDb();
+  const list = await db.getAllFromIndex('researchSignals', 'by-updated');
+  return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function putResearchSignal(signal: ResearchSignal): Promise<void> {
+  const db = await getDb();
+  await db.put('researchSignals', signal);
+}
+
+export async function deleteResearchSignal(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('researchSignals', id);
+}
+
+export async function clearResearchSignals(): Promise<void> {
+  const db = await getDb();
+  await db.clear('researchSignals');
+}

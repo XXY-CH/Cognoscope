@@ -1,0 +1,36 @@
+/** researchDigests - 会话结束后的整理结果持久化。 */
+import type { ResearchDigest } from '../types';
+import { getDb } from './index';
+
+export async function listResearchDigests(): Promise<ResearchDigest[]> {
+  const db = await getDb();
+  const list = await db.getAllFromIndex('researchDigests', 'by-updated');
+  return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function getResearchDigestBySession(
+  sessionId: string,
+): Promise<ResearchDigest | undefined> {
+  const db = await getDb();
+  const list = await db.getAllFromIndex(
+    'researchDigests',
+    'by-session',
+    sessionId,
+  );
+  return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+}
+
+export async function putResearchDigest(digest: ResearchDigest): Promise<void> {
+  const db = await getDb();
+  await db.put('researchDigests', digest);
+}
+
+export async function deleteResearchDigest(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('researchDigests', id);
+}
+
+export async function clearResearchDigests(): Promise<void> {
+  const db = await getDb();
+  await db.clear('researchDigests');
+}

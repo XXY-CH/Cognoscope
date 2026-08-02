@@ -43,6 +43,7 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
   const returnPath = matrixId
     ? `/evidence-matrix/${encodeURIComponent(matrixId)}`
     : '/';
+  const returnLabel = matrixId ? '证据矩阵' : '当前研究';
   const fileId = useReaderStore((s) => s.fileId);
   const fileName = useReaderStore((s) => s.fileName);
   const fileType = useReaderStore((s) => s.fileType);
@@ -85,11 +86,11 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
         <button
           type="button"
           className={styles.back}
-          aria-label={matrixId ? '返回证据矩阵' : '返回文件目录'}
+          aria-label={`返回${returnLabel}`}
           onClick={() => navigate(returnPath)}
         >
           <ArrowLeft size={20} strokeWidth={1.5} aria-hidden="true" />
-          <span>{matrixId ? '证据矩阵' : '文件目录'}</span>
+          <span>{returnLabel}</span>
         </button>
         <Tooltip content={fileName || '未命名'} aria-label="完整文件名">
           <h1 className={styles.fileName}>{fileName || '未命名文档'}</h1>

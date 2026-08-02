@@ -30,7 +30,9 @@
 
   --danger: #e54545; /* 删除、错误 */
   --warning: #f5a623; /* 警告 */
+  --warning-subtle: #fff6e5; /* 警告浅背景 */
   --success: #34c759; /* 成功、专注度高 */
+  --success-subtle: #eaf9ef; /* 成功浅背景 */
 
   --overlay: rgba(0, 0, 0, 0.45); /* 模态遮罩 */
   --text-on-accent: #ffffff; /* 强调色实心按钮上的文字（双主题同值，保证对比） */
@@ -56,6 +58,7 @@
     sans-serif; /* 界面无衬线正文字体 */
   --font-serif: "Source Serif 4", "Songti SC", Georgia, serif; /* EPUB 正文可选衬线字体 */
   --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace; /* 代码、数值等宽字体 */
+  --tracking-label: 0.04em; /* 小标签的轻微字距 */
 
   /* ---------- §1.3 字号阶梯（尺寸 / 行高 / 字重） ---------- */
   --text-display: 32px; /* 仪表盘大数字 · 字号 */
@@ -179,6 +182,10 @@
   --dialog-width-form: 600px; /* 表单类 Dialog 宽度 */
   --dialog-width-digest: 760px; /* 整理习得 Dialog 宽度（§8.9） */
   --toast-width: 320px; /* Toast 宽度 */
+  --research-summary-file-max-width: 560px; /* 会话整理来源名最大宽度 */
+  --research-summary-preview-max-height: 280px; /* 会话整理正文预览高度 */
+  --reader-mobile-left-max-width: 132px; /* 窄屏阅读顶栏返回区宽度 */
+  --reader-mobile-file-max-width: 88px; /* 窄屏阅读顶栏文件名宽度 */
   --tooltip-max-width: 240px; /* Tooltip 最大宽度 */
   --empty-icon-size: 64px; /* EmptyState 图标尺寸 */
   --progress-ring-size: 88px; /* ProgressRing 外径 */
@@ -275,7 +282,9 @@
 
   --danger: #ff6b6b; /* 删除、错误 */
   --warning: #ffb830; /* 警告 */
+  --warning-subtle: #3d321c; /* 警告浅背景 */
   --success: #4ade80; /* 成功、专注度高 */
+  --success-subtle: #1c3827; /* 成功浅背景 */
 
   --overlay: rgba(0, 0, 0, 0.65); /* 模态遮罩 */
 

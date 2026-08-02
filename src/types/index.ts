@@ -308,6 +308,89 @@ export interface EvidenceAnalysis {
   updatedAt: string;
 }
 
+/** 研究信号的作者边界；系统推断不能覆盖用户主动记录的立场。 */
+export type ResearchSignalKind =
+  | 'authored-stance'
+  | 'inferred-interest'
+  | 'inferred-blind-spot';
+
+/** 研究信号/线索的可逆状态。 */
+export type ResearchRecordStatus =
+  | 'proposed'
+  | 'accepted'
+  | 'dismissed'
+  | 'stale';
+
+/** 研究产物回读所需的来源引用，不复制原文作为新的事实源。 */
+export interface ResearchSourceReference {
+  fileId: string;
+  sessionId: string | null;
+  annotationIds: string[];
+  rowIds: string[];
+  locator: EvidenceLocator | null;
+}
+
+/** 个人研究图谱中的用户立场或系统观察。 */
+export interface ResearchSignal {
+  id: string;
+  kind: ResearchSignalKind;
+  statement: string;
+  /** 对系统推断保留观察依据；用户立场可为空。 */
+  observation: string | null;
+  status: ResearchRecordStatus;
+  sourceRefs: ResearchSourceReference[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 需要用户判断的研究线索类型。 */
+export type ResearchLeadKind =
+  | 'bias-conflict'
+  | 'contradiction'
+  | 'counterexample'
+  | 'method-divergence'
+  | 'dataset-overlap'
+  | 'source-stale'
+  | 'evidence-gap';
+
+/** 偏向冲突、反例和失效来源等待审阅线索。 */
+export interface ResearchLead {
+  id: string;
+  kind: ResearchLeadKind;
+  title: string;
+  explanation: string;
+  status: ResearchRecordStatus;
+  sessionId: string | null;
+  fileIds: string[];
+  signalIds: string[];
+  rowIds: string[];
+  sourceRefs: ResearchSourceReference[];
+  /** 人类可读的门槛失败原因；不使用裸概率替代解释。 */
+  reasons: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 会话结束后的 AI 整理结果；Markdown 是展示/导出视图，不是 citation-ready 事实。 */
+export type ResearchDigestStatus = 'waiting' | 'generating' | 'ready' | 'error';
+
+export interface ResearchDigest {
+  id: string;
+  sessionId: string;
+  fileId: string;
+  markdown: string;
+  usedTranscript: boolean;
+  status: ResearchDigestStatus;
+  errorMessage: string | null;
+  candidateCount: number;
+  directSaveCount: number;
+  reviewCount: number;
+  directSaveReasons: string[];
+  reviewReasons: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** AI 问答消息角色 */
 export type QaRole = 'user' | 'assistant';
 

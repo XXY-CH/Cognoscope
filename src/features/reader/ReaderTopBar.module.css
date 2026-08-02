@@ -184,10 +184,27 @@
   .right {
     grid-area: right;
     gap: var(--sp-1);
+    min-width: 0;
+    overflow: hidden;
   }
 
   .camDot {
     margin: 0 var(--sp-1);
+  }
+}
+
+@media (max-width: 560px) {
+  /* 顶栏优先保留返回和面板入口；搜索在窄屏通过文内快捷入口再打开。 */
+  .left {
+    max-width: var(--reader-mobile-left-max-width);
+  }
+
+  .fileName {
+    max-width: var(--reader-mobile-file-max-width);
+  }
+
+  .right > :first-child {
+    display: none;
   }
 }
 

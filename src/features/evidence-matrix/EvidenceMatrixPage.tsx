@@ -165,7 +165,7 @@ export function EvidenceMatrixPage() {
               <h2 className={styles.title}>跨论文证据矩阵</h2>
               <p className={styles.matrixMeta}>把批注和原文整理成可核对、可引用的比较材料。</p>
             </div>
-            <Button aria-label="返回文件目录" variant="ghost" leftIcon={<ArrowLeft size={16} strokeWidth={1.5} />} onClick={() => navigate('/')}>
+            <Button aria-label="返回文件目录" variant="ghost" leftIcon={<ArrowLeft size={16} strokeWidth={1.5} />} onClick={() => navigate('/library')}>
               文件目录
             </Button>
           </div>
@@ -215,7 +215,7 @@ export function EvidenceMatrixPage() {
           description="请选择三至五篇仍在文件目录中的非文件夹文献。"
           actionLabel="返回文件目录"
           actionAriaLabel="返回文件目录"
-          onAction={() => navigate('/')}
+          onAction={() => navigate('/library')}
         />
       </main>
     );
@@ -259,7 +259,7 @@ export function EvidenceMatrixPage() {
             </div>
           </div>
           <div className={styles.toolbarActions}>
-            <Button aria-label="返回文件目录" variant="ghost" leftIcon={<ArrowLeft size={16} strokeWidth={1.5} />} onClick={() => navigate('/')}>
+            <Button aria-label="返回文件目录" variant="ghost" leftIcon={<ArrowLeft size={16} strokeWidth={1.5} />} onClick={() => navigate('/library')}>
               文件目录
             </Button>
             <Button aria-label="删除当前矩阵" variant="ghost" leftIcon={<Trash2 size={15} strokeWidth={1.5} />} onClick={() => { void deleteActive().then(() => navigate('/evidence-matrix')); }}>

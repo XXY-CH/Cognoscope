@@ -10,6 +10,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
 import { SettingsDrawer } from '../../components/layout/SettingsDrawer';
+import * as annotationsDb from '../../db/annotations';
 import { useAppShortcuts } from '../../hooks/useAppShortcuts';
 import { useLinesReadSync } from '../../hooks/useLinesReadSync';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
@@ -19,6 +20,8 @@ import * as sessionsDb from '../../db/sessions';
 import { listEvidenceRowsByMatrix } from '../../db/evidenceRows';
 import { useFileStore } from '../../stores/fileStore';
 import { useReaderStore } from '../../stores/readerStore';
+import { useResearchArtifactStore } from '../../stores/researchArtifactStore';
+import { useUiStore } from '../../stores/uiStore';
 import { convertToReadingSession } from '../../utils/monitorAdapter';
 import {
   getSessionFrames,
@@ -79,34 +82,63 @@ export function ReaderPage() {
   // Python monitor 会话 ID（由 startDetection 返回，stop 后用于拉取数据）
   const pySessionIdRef = useRef<string | null>(null);
 
-  // 会话结束时合并 monitor 检测数据到 IndexedDB 会话
-  const mountedRef = useRef(true);
-  useEffect(() => () => { mountedRef.current = false; }, []);
-
+  // 会话结束时合并 monitor 检测数据，并在离开阅读边界后生成整理结果。
   const mergeMonitorData = useCallback(
     async (dbSessionId: string) => {
+      const currentFileId = activeFileId;
+      if (!currentFileId) return;
       const pySid = pySessionIdRef.current;
-      if (!pySid || !mountedRef.current) return;
-      try {
-        const { frames } = await getSessionFrames(pySid);
-        if (!frames || frames.length === 0 || !mountedRef.current) return;
-        // 大量帧同步处理会阻塞主线程 → yield 后再转换，并限制帧数
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-        if (!mountedRef.current) return;
-        const capped = frames.length > 6000 ? frames.slice(-6000) : frames;
-        const monitorSession = convertToReadingSession(capped, activeFileId!);
-        if (!monitorSession || !mountedRef.current) return;
-        const cur = await sessionsDb.getSession(dbSessionId);
-        if (!cur) return;
-        await sessionsDb.putSession({
-          ...cur,
-          focusSamples: monitorSession.focusSamples,
-          fatigueSamples: monitorSession.fatigueSamples,
-          distractions: monitorSession.distractions,
-        });
-      } catch {
-        /* monitor 不可用时静默 */
-      }
+      const monitorTask = pySid
+        ? (async () => {
+            try {
+              const { frames } = await getSessionFrames(pySid);
+              if (!frames || frames.length === 0) return;
+              // 大量帧同步处理会阻塞主线程 → yield 后再转换，并限制帧数
+              await new Promise<void>((resolve) => setTimeout(resolve, 0));
+              const capped = frames.length > 6000 ? frames.slice(-6000) : frames;
+              const monitorSession = convertToReadingSession(capped, currentFileId);
+              const cur = await sessionsDb.getSession(dbSessionId);
+              if (monitorSession && cur) {
+                await sessionsDb.putSession({
+                  ...cur,
+                  focusSamples: monitorSession.focusSamples,
+                  fatigueSamples: monitorSession.fatigueSamples,
+                  distractions: monitorSession.distractions,
+                });
+              }
+            } catch {
+              /* monitor 不可用时静默；阅读整理仍继续 */
+            }
+          })()
+        : Promise.resolve();
+
+      const digestTask = (async () => {
+        const file = useFileStore
+          .getState()
+          .files.find(
+            (item) =>
+              item.id === currentFileId &&
+              item.deletedAt === null &&
+              item.type !== 'folder',
+          );
+        if (!file) return;
+        try {
+          const annotations = await annotationsDb.listAnnotationsByFile(currentFileId);
+          const ui = useUiStore.getState();
+          await useResearchArtifactStore.getState().createForSession({
+            sessionId: dbSessionId,
+            file,
+            annotations,
+            ai: ui.aiSettings,
+            isOnline: ui.isOnline,
+          });
+        } catch {
+          /* 本地整理记录失败不应阻塞会话结束 */
+        }
+      })();
+
+      // 两条任务并行：monitor 服务卡住时，整理结果仍可落库。
+      await Promise.allSettled([monitorTask, digestTask]);
     },
     [activeFileId],
   );

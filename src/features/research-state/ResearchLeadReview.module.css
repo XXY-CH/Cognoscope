@@ -1,0 +1,114 @@
+/** ResearchLeadReview.module.css - 线索审阅队列的低干扰层级。 */
+
+.root {
+  position: relative;
+  display: grid;
+  gap: var(--sp-4);
+  min-width: 0;
+  padding: var(--sp-5);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.kicker {
+  margin: 0 0 var(--sp-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--text-xs-lh);
+  letter-spacing: var(--tracking-label);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-h2);
+  font-weight: var(--text-h2-weight);
+  line-height: var(--text-h2-lh);
+}
+
+.count {
+  min-width: var(--sp-6);
+  color: var(--warning);
+  font-size: var(--text-h2);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--text-h2-weight);
+  line-height: var(--text-h2-lh);
+  text-align: right;
+}
+
+.list {
+  display: grid;
+  gap: 0;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0;
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.itemCopy {
+  min-width: 0;
+}
+
+.itemCopy h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: var(--text-body-lh);
+}
+
+.itemCopy p {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+}
+
+.itemCopy ul {
+  display: grid;
+  gap: var(--sp-1);
+  margin: var(--sp-2) 0 0;
+  padding-left: var(--sp-5);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.trailing {
+  position: absolute;
+  right: var(--sp-5);
+  bottom: var(--sp-5);
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 700px) {
+  .item {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+}

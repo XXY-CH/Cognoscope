@@ -5,10 +5,11 @@
  */
 import {
   BarChart3,
+  Compass,
   ChevronLeft,
   CloudOff,
-  Folder,
   GitCompareArrows,
+  Library,
   Moon,
   Monitor,
   Settings,
@@ -30,10 +31,17 @@ import './Sidebar.css';
 /** 产品层级导航：资料库 → 研究 → 进展；回收站仍属于资料库。 */
 const NAV_GROUPS = [
   {
-    id: 'library',
-    label: '资料库',
+    id: 'now',
+    label: '现在',
     items: [
-      { to: '/', label: '文件目录', icon: Folder, end: true },
+      { to: '/', label: '当前研究', icon: Compass, end: true },
+    ],
+  },
+  {
+    id: 'library',
+    label: '资料',
+    items: [
+      { to: '/library', label: '文件目录', icon: Library, end: false },
       { to: '/trash', label: '回收站', icon: Trash2, end: false },
     ],
   },

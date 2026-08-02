@@ -8,6 +8,10 @@ import type { AiSettingsDraft } from '../stores/uiStore';
 import { chatCompletion } from './aiChat';
 import { buildDigestMessages } from './digestPrompt';
 import { loadDocumentTranscript } from './loadDocumentTranscript';
+import {
+  evaluateAnnotationArtifacts,
+  type ResearchArtifactGateSummary,
+} from './researchArtifactGate';
 
 export interface RunDigestInput {
   file: FileNode;
@@ -20,6 +24,8 @@ export interface RunDigestResult {
   markdown: string;
   /** 是否成功附上 PDF 文字稿 */
   usedTranscript: boolean;
+  /** 仅基于本地摘录/定位的可解释门槛结果。 */
+  artifactGate: ResearchArtifactGateSummary;
 }
 
 /**
@@ -55,6 +61,11 @@ export async function runDigest(
   return {
     markdown,
     usedTranscript: transcript.text.length > 0,
+    artifactGate: evaluateAnnotationArtifacts({
+      file,
+      annotations: meaningful,
+      transcript: transcript.text,
+    }),
   };
 }
 

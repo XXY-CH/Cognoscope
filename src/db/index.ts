@@ -17,6 +17,9 @@ import type {
   GraphNode,
   KeywordNode,
   ReadingSession,
+  ResearchDigest,
+  ResearchLead,
+  ResearchSignal,
 } from '../types';
 
 /** 文件二进制内容（与 FileNode 分离，避免污染 §9 字段） */
@@ -121,11 +124,40 @@ interface XuesenDB extends DBSchema {
       'by-updated': string;
     };
   };
+  /** 会话结束后的整理结果（v10） */
+  researchDigests: {
+    key: string;
+    value: ResearchDigest;
+    indexes: {
+      'by-file': string;
+      'by-session': string;
+      'by-updated': string;
+    };
+  };
+  /** 用户立场与系统观察（v10） */
+  researchSignals: {
+    key: string;
+    value: ResearchSignal;
+    indexes: {
+      'by-status': string;
+      'by-updated': string;
+    };
+  };
+  /** 偏向冲突、反例与待审阅线索（v10） */
+  researchLeads: {
+    key: string;
+    value: ResearchLead;
+    indexes: {
+      'by-status': string;
+      'by-session': string;
+      'by-updated': string;
+    };
+  };
 }
 
 const DB_NAME = 'xuesen';
-/** v9：证据矩阵的结论/局限/空白分析 */
-const DB_VERSION = 9;
+/** v10：会话后整理、研究信号与待审阅线索 */
+const DB_VERSION = 10;
 
 let dbPromise: Promise<IDBPDatabase<XuesenDB>> | null = null;
 
@@ -219,6 +251,31 @@ export function getDb(): Promise<IDBPDatabase<XuesenDB>> {
           });
           analyses.createIndex('by-matrix', 'matrixId');
           analyses.createIndex('by-updated', 'updatedAt');
+        }
+
+        // —— research environment artifacts（v10）——
+        if (!db.objectStoreNames.contains('researchDigests')) {
+          const digests = db.createObjectStore('researchDigests', {
+            keyPath: 'id',
+          });
+          digests.createIndex('by-file', 'fileId');
+          digests.createIndex('by-session', 'sessionId');
+          digests.createIndex('by-updated', 'updatedAt');
+        }
+        if (!db.objectStoreNames.contains('researchSignals')) {
+          const signals = db.createObjectStore('researchSignals', {
+            keyPath: 'id',
+          });
+          signals.createIndex('by-status', 'status');
+          signals.createIndex('by-updated', 'updatedAt');
+        }
+        if (!db.objectStoreNames.contains('researchLeads')) {
+          const leads = db.createObjectStore('researchLeads', {
+            keyPath: 'id',
+          });
+          leads.createIndex('by-status', 'status');
+          leads.createIndex('by-session', 'sessionId');
+          leads.createIndex('by-updated', 'updatedAt');
         }
       },
     });

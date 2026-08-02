@@ -105,6 +105,9 @@ export async function deleteFile(id: string): Promise<void> {
     'evidenceMatrices',
     'evidenceRows',
     'evidenceAnalyses',
+    'researchDigests',
+    'researchSignals',
+    'researchLeads',
   ] as const;
   const tx = db.transaction([...storeNames], 'readwrite');
   await tx.objectStore('files').delete(id);
@@ -180,6 +183,33 @@ export async function deleteFile(id: string): Promise<void> {
     analyses
       .filter((analysis) => deletedMatrixIds.has(analysis.matrixId))
       .map((analysis) => analysisStore.delete(analysis.id)),
+  );
+
+  // 研究环境派生物只保留来源仍存在的记录；永久删除时级联清理。
+  const digestStore = tx.objectStore('researchDigests');
+  const digests = await digestStore.getAll();
+  await Promise.all(
+    digests
+      .filter((digest) => digest.fileId === id)
+      .map((digest) => digestStore.delete(digest.id)),
+  );
+  const signalStore = tx.objectStore('researchSignals');
+  const signals = await signalStore.getAll();
+  await Promise.all(
+    signals
+      .filter((signal) => signal.sourceRefs.some((ref) => ref.fileId === id))
+      .map((signal) => signalStore.delete(signal.id)),
+  );
+  const leadStore = tx.objectStore('researchLeads');
+  const leads = await leadStore.getAll();
+  await Promise.all(
+    leads
+      .filter(
+        (lead) =>
+          lead.fileIds.includes(id) ||
+          lead.sourceRefs.some((ref) => ref.fileId === id),
+      )
+      .map((lead) => leadStore.delete(lead.id)),
   );
 
   await tx.done;
