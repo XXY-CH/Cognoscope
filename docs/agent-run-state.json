@@ -8,10 +8,12 @@
   "blocked": [],
   "attempts": {},
   "artifacts": [
-    "docs/AGENT_DEPENDENCY_GRAPH.md",
-    "docs/agent-dependency-graph.json",
     "docs/GRAPH_ENGINEERING.md",
     "docs/graph-engineering.json"
+  ],
+  "localAgentGraph": [
+    "docs/AGENT_DEPENDENCY_GRAPH.md",
+    "docs/agent-dependency-graph.json"
   ],
   "findings": [],
   "lastVerification": [

@@ -6,15 +6,16 @@
 
 Key constraint: all camera inference runs locally; no server upload for face/presence data.
 
-Project Graph Engineering has an Agent execution layer and a project context layer:
-[`docs/AGENT_DEPENDENCY_GRAPH.md`](docs/AGENT_DEPENDENCY_GRAPH.md),
-[`docs/agent-dependency-graph.json`](docs/agent-dependency-graph.json),
-[`docs/agent-run-state.json`](docs/agent-run-state.json),
-[`docs/GRAPH_ENGINEERING.md`](docs/GRAPH_ENGINEERING.md), and
-[`docs/graph-engineering.json`](docs/graph-engineering.json). When the user asks to
-continue, iterate, or use Graph Engineering, restore the Agent run state first,
-start only unblocked Agent nodes, preserve ownership/contracts, and update both
-graphs after review, QA, and integration verification.
+Project Graph Engineering has a tracked project context layer and an optional
+Codex-local Agent execution overlay. The tracked layer is
+[`docs/GRAPH_ENGINEERING.md`](docs/GRAPH_ENGINEERING.md) and
+[`docs/graph-engineering.json`](docs/graph-engineering.json); when the local
+overlay files `docs/AGENT_DEPENDENCY_GRAPH.md` and
+`docs/agent-dependency-graph.json` are present, restore them together with
+[`docs/agent-run-state.json`](docs/agent-run-state.json). When the user asks to
+continue, iterate, or use Graph Engineering, start only unblocked Agent nodes,
+preserve ownership/contracts, and update the local overlay and tracked project
+graph after review, QA, and integration verification.
 
 ---
 

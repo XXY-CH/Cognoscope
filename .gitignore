@@ -28,6 +28,10 @@ monitor/models/*.task
 monitor/models/*.pt
 monitor/sessions/
 
+# Codex-local Agent dependency graph overlay (keep out of the remote repo)
+/docs/AGENT_DEPENDENCY_GRAPH.md
+/docs/agent-dependency-graph.json
+
 # Python bytecode / caches
 __pycache__/
 *.py[cod]

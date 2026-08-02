@@ -1,18 +1,18 @@
 # 学森 Graph Engineering
 
-> Graph Engineering 由两张相互连接的图组成：[`AGENT_DEPENDENCY_GRAPH.md`](./AGENT_DEPENDENCY_GRAPH.md) 固化 Agent 之间的执行依赖；本文件固化项目目标、工作流、代码触点和验证状态。
+> Graph Engineering 由项目上下文图和一个可选的 Codex-local Agent 执行覆盖层组成。本文件固化项目目标、工作流、代码触点和验证状态；Agent 覆盖层只保留在本地，不进入远端仓库。
 
 Agent 图是执行入口，项目图是执行上下文。它们都不是论文知识图谱，也不是 `graphify` 的代码扫描结果。
 
 机器可读版本：[`docs/graph-engineering.json`](./graph-engineering.json)
-Agent 图机器可读版本：[`docs/agent-dependency-graph.json`](./agent-dependency-graph.json)
+本地 Agent 图文件（若存在）：`docs/AGENT_DEPENDENCY_GRAPH.md`、`docs/agent-dependency-graph.json`
 
 ## 直接调用
 
 在 Codex 中可以直接说：
 
 ```text
-按 Graph Engineering 继续学森：先读取 docs/AGENT_DEPENDENCY_GRAPH.md 和 docs/agent-dependency-graph.json，恢复 Agent run state；再读取 docs/GRAPH_ENGINEERING.md 和 docs/graph-engineering.json 作为项目上下文，只启动当前依赖已满足的 Agent，完成 review/QA/integration 后更新两张图。
+按 Graph Engineering 继续学森：先读取本地存在的 Agent 图和 `docs/agent-run-state.json`，再读取 `docs/GRAPH_ENGINEERING.md` 和 `docs/graph-engineering.json` 作为项目上下文；只启动当前依赖已满足的 Agent，完成 review/QA/integration 后更新本地 Agent 图和项目图。
 ```
 
 也可以指定节点：

@@ -7,7 +7,6 @@
 | [`UI_spec.md`](./UI_spec.md) | 产品与视觉规范（权威；部分产品迭代见下） |
 | [`PROGRESS.md`](./PROGRESS.md) | 进度、待办、技术债、变更记录 |
 | [`HANDOFF.md`](./HANDOFF.md) | **仪表盘 / 知识图谱**接手：文件位置、数据接口、接入顺序 |
-| [`docs/AGENT_DEPENDENCY_GRAPH.md`](./docs/AGENT_DEPENDENCY_GRAPH.md) | Agent 依赖图：并行、交接、失败回退和持续迭代协议 |
 | [`docs/agent-run-state.json`](./docs/agent-run-state.json) | Agent 跨轮次 checkpoint：当前目标、活跃节点、finding 和下一跳 |
 | [`docs/GRAPH_ENGINEERING.md`](./docs/GRAPH_ENGINEERING.md) | Codex 可直接调用的项目 Graph Engineering 迭代图 |
 | [`.cursorrules`](./.cursorrules) | Agent / 工程约束 |
