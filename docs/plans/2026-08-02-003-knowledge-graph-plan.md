@@ -182,4 +182,3 @@ into a global force graph.
   or should the UI allow a user to classify a concept as method/dataset/outcome?
 - What is the smallest realistic fixture set for browser verification of a
   selected graph node with a resolvable evidence anchor?
-
