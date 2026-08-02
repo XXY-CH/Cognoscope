@@ -1,0 +1,193 @@
+{
+  "schema": "xuesen.agent-dependency-graph/v1",
+  "graphId": "xuesen-iterative-agent-system",
+  "title": "学森持续迭代 Agent 依赖图",
+  "updatedAt": "2026-08-02",
+  "rootObjective": "把学森推进成阅读优先、证据可回读、图谱可解释的 AI 时代科研环境。",
+  "projectGraph": "docs/graph-engineering.json",
+  "runStateFile": "docs/agent-run-state.json",
+  "state": {
+    "runId": null,
+    "objective": null,
+    "active": ["AG-ORCH"],
+    "done": [],
+    "blocked": [],
+    "attempts": {},
+    "artifacts": [],
+    "findings": [],
+    "lastVerification": [],
+    "next": ["AG-STATE"],
+    "iteration": 0
+  },
+  "edgeKinds": {
+    "requires": "source must satisfy exit criteria before target starts",
+    "parallel": "source and target may run concurrently when ownership does not overlap",
+    "handoff": "source artifact becomes target input",
+    "review_loop": "failure returns to implementation with findings",
+    "replan": "contract or objective failure returns to planning/architecture",
+    "checkpoint": "persist state and evidence for the next iteration"
+  },
+  "agents": [
+    {
+      "id": "AG-ORCH",
+      "name": "Orchestrator",
+      "role": "Own the run objective, graph transitions, scope, and stop conditions.",
+      "reads": ["docs/AGENT_DEPENDENCY_GRAPH.md", "docs/agent-dependency-graph.json", "docs/GRAPH_ENGINEERING.md"],
+      "writes": ["run state", "task DAG", "final handoff"],
+      "entryCriteria": ["user objective is present or a prior run is resumable"],
+      "exitCriteria": ["runId, objective, scope, and initial next node are persisted"],
+      "failureTo": "AG-STATE"
+    },
+    {
+      "id": "AG-STATE",
+      "name": "State Auditor",
+      "role": "Reconcile the graph with actual repository, branch, code, docs, and verification state.",
+      "reads": ["git status", "recent commits", "docs/graph-engineering.json", "PROGRESS.md", "relevant sourceOfTruth"],
+      "writes": ["state snapshot", "stale-node findings", "evidence index"],
+      "entryCriteria": ["AG-ORCH has created or resumed a run"],
+      "exitCriteria": ["current/done/next/blocked statuses are evidence-backed"],
+      "failureTo": "AG-PLAN"
+    },
+    {
+      "id": "AG-PLAN",
+      "name": "Planner",
+      "role": "Turn the objective into minimal bounded tasks, dependencies, ownership, acceptance, and verification.",
+      "reads": ["AG-STATE snapshot", "project graph", "relevant plans/specs"],
+      "writes": ["task DAG", "parallel lanes", "risk register", "verification plan"],
+      "entryCriteria": ["state snapshot is available"],
+      "exitCriteria": ["every task has nodeId, owner, reads, writes, dependsOn, acceptance, and verification"],
+      "failureTo": "AG-ORCH"
+    },
+    {
+      "id": "AG-ARCH",
+      "name": "Architect",
+      "role": "Validate boundaries, contracts, migrations, and rollback before implementation.",
+      "reads": ["task DAG", "types", "stores", "db schema", "route contracts"],
+      "writes": ["contract delta", "migration plan", "rollback decision"],
+      "entryCriteria": ["planner identifies a cross-module or data contract change"],
+      "exitCriteria": ["contract is compatible or explicitly escalated"],
+      "failureTo": "AG-PLAN"
+    },
+    {
+      "id": "AG-UX",
+      "name": "UX / UI Specialist",
+      "role": "Define user flow, information hierarchy, responsive states, motion, and browser acceptance.",
+      "reads": ["UI specs", "Apple Design skill when selected", "existing components/tokens", "task DAG"],
+      "writes": ["UI contract", "state matrix", "browser scenarios"],
+      "entryCriteria": ["task changes a user-facing surface"],
+      "exitCriteria": ["desktop/tablet/mobile, keyboard, loading/error/empty/offline states are specified"],
+      "failureTo": "AG-PLAN"
+    },
+    {
+      "id": "AG-DATA",
+      "name": "Data / Provenance Specialist",
+      "role": "Protect evidence, locator, persistence, stale invalidation, and local-first boundaries.",
+      "reads": ["types", "db", "stores", "evidence plans", "source locator contracts"],
+      "writes": ["schema/store contract", "invariants", "migration and invalidation checks"],
+      "entryCriteria": ["task changes persisted data, evidence, graph, or AI artifacts"],
+      "exitCriteria": ["source of truth, lifecycle, and failure states are explicit"],
+      "failureTo": "AG-ARCH"
+    },
+    {
+      "id": "AG-RESEARCH",
+      "name": "Research Quality Specialist",
+      "role": "Check whether outputs help real research decisions rather than merely adding features.",
+      "reads": ["product intent", "evidence rules", "domain plans", "current workflow"],
+      "writes": ["research quality rubric", "counterexample/method/dataset checks", "user-value findings"],
+      "entryCriteria": ["task changes research synthesis, graph meaning, or AI output"],
+      "exitCriteria": ["output is useful, explainable, and does not overclaim evidence"],
+      "failureTo": "AG-PLAN"
+    },
+    {
+      "id": "AG-EXEC",
+      "name": "Implementer",
+      "role": "Implement the approved slice within the assigned file and contract boundaries.",
+      "reads": ["approved task DAG", "all upstream artifacts", "repository patterns"],
+      "writes": ["source changes", "focused tests", "migration", "implementation notes"],
+      "entryCriteria": ["all required upstream agents have passed"],
+      "exitCriteria": ["acceptance is implemented and local checks are runnable"],
+      "failureTo": "AG-REVIEW"
+    },
+    {
+      "id": "AG-REVIEW",
+      "name": "Adversarial Reviewer",
+      "role": "Find defects, regressions, security/privacy issues, contract violations, and evidence overclaims.",
+      "reads": ["diff", "task acceptance", "contracts", "tests", "project graph"],
+      "writes": ["severity-ranked findings", "review verdict"],
+      "entryCriteria": ["AG-EXEC reports implementation complete"],
+      "exitCriteria": ["no unresolved high-severity findings; medium findings are dispositioned"],
+      "failureTo": "AG-EXEC"
+    },
+    {
+      "id": "AG-QA",
+      "name": "Build / Browser QA",
+      "role": "Run build, lint, targeted tests, browser flows, and responsive/accessibility checks matching risk.",
+      "reads": ["review verdict", "verification plan", "browser scenarios"],
+      "writes": ["command output", "screenshots or interaction evidence", "QA verdict"],
+      "entryCriteria": ["review has no blocking finding"],
+      "exitCriteria": ["required checks pass or a reproducible blocker is recorded"],
+      "failureTo": "AG-EXEC"
+    },
+    {
+      "id": "AG-INTEGRATION",
+      "name": "Workflow Integrator",
+      "role": "Verify that the changed capability connects to adjacent surfaces and preserves end-to-end user flow.",
+      "reads": ["QA evidence", "project graph", "route/data contracts", "upstream artifacts"],
+      "writes": ["integration report", "risk disposition", "next unlocked nodes"],
+      "entryCriteria": ["QA passes required checks"],
+      "exitCriteria": ["workflow is coherent and no cross-module contract is silently broken"],
+      "failureTo": "AG-ARCH"
+    },
+    {
+      "id": "AG-RELEASE",
+      "name": "Checkpoint / Release",
+      "role": "Create a traceable commit, push when requested by the run contract, and persist the next checkpoint.",
+      "reads": ["integration report", "git status", "run state", "project and agent graphs"],
+      "writes": ["commit", "remote branch", "updated graphs", "PROGRESS.md change log", "next run checkpoint"],
+      "entryCriteria": ["integration gate passes and no required work is pending"],
+      "exitCriteria": ["commit/push and state update are verified, or an explicit external blocker is recorded"],
+      "failureTo": "AG-STATE"
+    }
+  ],
+  "edges": [
+    {"from": "AG-ORCH", "to": "AG-STATE", "kind": "requires"},
+    {"from": "AG-STATE", "to": "AG-PLAN", "kind": "handoff"},
+    {"from": "AG-PLAN", "to": "AG-ARCH", "kind": "requires"},
+    {"from": "AG-PLAN", "to": "AG-UX", "kind": "parallel"},
+    {"from": "AG-PLAN", "to": "AG-DATA", "kind": "parallel"},
+    {"from": "AG-PLAN", "to": "AG-RESEARCH", "kind": "parallel"},
+    {"from": "AG-ARCH", "to": "AG-EXEC", "kind": "requires"},
+    {"from": "AG-UX", "to": "AG-EXEC", "kind": "handoff"},
+    {"from": "AG-DATA", "to": "AG-EXEC", "kind": "handoff"},
+    {"from": "AG-RESEARCH", "to": "AG-EXEC", "kind": "handoff"},
+    {"from": "AG-EXEC", "to": "AG-REVIEW", "kind": "requires"},
+    {"from": "AG-REVIEW", "to": "AG-EXEC", "kind": "review_loop", "when": "blocking finding"},
+    {"from": "AG-REVIEW", "to": "AG-QA", "kind": "requires", "when": "no blocking finding"},
+    {"from": "AG-QA", "to": "AG-EXEC", "kind": "review_loop", "when": "reproducible regression or failed check"},
+    {"from": "AG-QA", "to": "AG-INTEGRATION", "kind": "requires", "when": "required checks pass"},
+    {"from": "AG-INTEGRATION", "to": "AG-ARCH", "kind": "replan", "when": "cross-module contract conflict"},
+    {"from": "AG-INTEGRATION", "to": "AG-RELEASE", "kind": "requires", "when": "workflow passes"},
+    {"from": "AG-RELEASE", "to": "AG-STATE", "kind": "checkpoint"},
+    {"from": "AG-STATE", "to": "AG-PLAN", "kind": "checkpoint", "when": "objective remains incomplete"}
+  ],
+  "iterationTemplate": {
+    "entry": "AG-ORCH",
+    "terminal": "AG-RELEASE",
+    "loopBack": "AG-STATE",
+    "parallelLanes": ["AG-UX", "AG-DATA", "AG-RESEARCH"],
+    "qualityGates": ["AG-REVIEW", "AG-QA", "AG-INTEGRATION"],
+    "stopConditions": ["objective acceptance verified", "user decision required", "external authority missing"],
+    "neverSkip": ["AG-STATE", "AG-PLAN", "AG-REVIEW", "AG-QA", "AG-INTEGRATION"],
+    "stateFields": ["runId", "objective", "active", "done", "blocked", "attempts", "artifacts", "findings", "lastVerification", "next"]
+  },
+  "failureRouting": {
+    "implementation_bug": "AG-EXEC",
+    "review_finding": "AG-EXEC",
+    "qa_regression": "AG-EXEC",
+    "contract_conflict": "AG-ARCH",
+    "objective_ambiguity": "AG-PLAN",
+    "research_quality_gap": "AG-RESEARCH",
+    "missing_external_decision": "blocked",
+    "release_or_git_failure": "AG-STATE"
+  }
+}

@@ -6,10 +6,15 @@
 
 Key constraint: all camera inference runs locally; no server upload for face/presence data.
 
-Project iteration graph: [`docs/GRAPH_ENGINEERING.md`](docs/GRAPH_ENGINEERING.md) and
+Project Graph Engineering has an Agent execution layer and a project context layer:
+[`docs/AGENT_DEPENDENCY_GRAPH.md`](docs/AGENT_DEPENDENCY_GRAPH.md),
+[`docs/agent-dependency-graph.json`](docs/agent-dependency-graph.json),
+[`docs/agent-run-state.json`](docs/agent-run-state.json),
+[`docs/GRAPH_ENGINEERING.md`](docs/GRAPH_ENGINEERING.md), and
 [`docs/graph-engineering.json`](docs/graph-engineering.json). When the user asks to
-continue, iterate, or use Graph Engineering, load these files first, select an
-unblocked node, preserve its contracts, and update the graph after verification.
+continue, iterate, or use Graph Engineering, restore the Agent run state first,
+start only unblocked Agent nodes, preserve ownership/contracts, and update both
+graphs after review, QA, and integration verification.
 
 ---
 

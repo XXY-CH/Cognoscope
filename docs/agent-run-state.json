@@ -1,0 +1,24 @@
+{
+  "schema": "xuesen.agent-run-state/v1",
+  "runId": null,
+  "objective": null,
+  "scope": [],
+  "active": ["AG-ORCH"],
+  "done": [],
+  "blocked": [],
+  "attempts": {},
+  "artifacts": [
+    "docs/AGENT_DEPENDENCY_GRAPH.md",
+    "docs/agent-dependency-graph.json",
+    "docs/GRAPH_ENGINEERING.md",
+    "docs/graph-engineering.json"
+  ],
+  "findings": [],
+  "lastVerification": [
+    "agent graph reference validation",
+    "project graph reference validation"
+  ],
+  "next": ["AG-STATE"],
+  "iteration": 0,
+  "lastCheckpoint": "Agent dependency graph initialized; no objective-specific run has started."
+}

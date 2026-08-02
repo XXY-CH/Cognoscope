@@ -1,17 +1,18 @@
 # 学森 Graph Engineering
 
-> 这是学森项目的可执行迭代图。它描述“产品目标 → 研究工作流 → 数据/页面 → 验证门 → 下一步”的依赖关系，供 Codex 在后续迭代中恢复上下文、选择任务和检查边界。
+> Graph Engineering 由两张相互连接的图组成：[`AGENT_DEPENDENCY_GRAPH.md`](./AGENT_DEPENDENCY_GRAPH.md) 固化 Agent 之间的执行依赖；本文件固化项目目标、工作流、代码触点和验证状态。
 
-它不是论文知识图谱，也不是 `graphify` 的代码扫描结果。论文知识图谱服务最终用户的研究判断；本图服务项目本身的工程演进。
+Agent 图是执行入口，项目图是执行上下文。它们都不是论文知识图谱，也不是 `graphify` 的代码扫描结果。
 
 机器可读版本：[`docs/graph-engineering.json`](./graph-engineering.json)
+Agent 图机器可读版本：[`docs/agent-dependency-graph.json`](./agent-dependency-graph.json)
 
 ## 直接调用
 
 在 Codex 中可以直接说：
 
 ```text
-按 Graph Engineering 继续学森：先读取 docs/GRAPH_ENGINEERING.md 和 docs/graph-engineering.json，检查当前节点与代码状态，选择第一个未阻塞的 next 节点执行；完成后更新图、运行对应验证，并报告节点状态变化。
+按 Graph Engineering 继续学森：先读取 docs/AGENT_DEPENDENCY_GRAPH.md 和 docs/agent-dependency-graph.json，恢复 Agent run state；再读取 docs/GRAPH_ENGINEERING.md 和 docs/graph-engineering.json 作为项目上下文，只启动当前依赖已满足的 Agent，完成 review/QA/integration 后更新两张图。
 ```
 
 也可以指定节点：
@@ -157,4 +158,3 @@ flowchart LR
 - 对应 build/lint/测试/浏览器检查已经运行并读取结果。
 - 失效、离线、空状态、移动布局和键盘路径没有被省略（与节点范围相关时）。
 - 相关文档和图状态已更新，下一节点依赖关系仍然一致。
-
