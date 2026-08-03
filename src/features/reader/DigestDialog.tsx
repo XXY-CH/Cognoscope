@@ -5,6 +5,7 @@
  */
 import { Copy, Download } from 'lucide-react';
 import { Button, Dialog, toast } from '../../components/common';
+import type { ResearchDigestStructure } from '../../types';
 import { downloadDigestMarkdown } from '../../utils/runDigest';
 import styles from './DigestDialog.module.css';
 
@@ -12,6 +13,7 @@ interface DigestDialogProps {
   open: boolean;
   fileName: string;
   markdown: string;
+  structured?: ResearchDigestStructure | null;
   onClose: () => void;
 }
 
@@ -22,6 +24,7 @@ export function DigestDialog({
   open,
   fileName,
   markdown,
+  structured = null,
   onClose,
 }: DigestDialogProps) {
   const handleCopy = async () => {
@@ -61,9 +64,36 @@ export function DigestDialog({
         </>
       }
     >
-      <pre className={styles.markdown} tabIndex={0}>
-        {markdown}
-      </pre>
+      <p className={styles.provenanceNotice} role="note">
+        这是阅读工作记忆，不是引用材料；可引用内容仍需在证据矩阵的 verified 行中核对。
+      </p>
+      {structured?.parseStatus === 'structured' ? (
+        <div className={styles.sections} aria-label="结构化整理栏目">
+          {structured.sections.map((section) => (
+            <section key={section.id} className={styles.section}>
+              <h3>{section.title}</h3>
+              {section.body ? <p>{section.body}</p> : null}
+              {section.items.length > 0 ? (
+                <ul>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))}
+          <details className={styles.exportSource}>
+            <summary>查看 Markdown 导出正文</summary>
+            <pre className={styles.markdown} tabIndex={0}>
+              {markdown}
+            </pre>
+          </details>
+        </div>
+      ) : (
+        <pre className={styles.markdown} tabIndex={0}>
+          {markdown}
+        </pre>
+      )}
     </Dialog>
   );
 }

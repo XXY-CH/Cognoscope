@@ -1,8 +1,8 @@
 # 学森 · 模块交接说明（AI 能力优先）
 
-> 更新时间：2026-07-30  
-> 读者：**接入 AI 问答 / 整理习得 / 知识图谱建边** 的前后端开发者  
-> 设计权威：[`UI_spec.md`](./UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）  
+> 更新时间：2026-08-03
+> 读者：**接入 AI 问答 / 整理习得 / 知识图谱建边** 的前后端开发者
+> 设计权威：[`UI_spec.md`](./UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）
 > 工程约束：[`.cursorrules`](./.cursorrules) · 进度：[`PROGRESS.md`](./PROGRESS.md) · 检测：[`monitor/README.md`](./monitor/README.md)
 
 本文说明：**AI 相关能力已具备哪些 UI/配置、还缺什么、该改哪些文件、类型与产品约束是什么**。当前知识图谱已经从占位进入可用切片：它负责论文获取后的跨论文理解与证据整理，不替代外部检索和写作工具。
@@ -13,9 +13,9 @@
 
 1. [总览：现状与缺口](#1-总览现状与缺口)
 2. [AI 设置（已落地）](#2-ai-设置已落地)
-3. [AI 提问 / 问答（待接请求）](#3-ai-提问--问答待接请求)
+3. [AI 提问 / 问答（已接请求）](#3-ai-提问--问答已接请求)
 4. [批注与上下文（问答输入）](#4-批注与上下文问答输入)
-5. [整理习得 Digest（待接）](#5-整理习得-digest待接)
+5. [整理习得 Digest（已接会话边界）](#5-整理习得-digest已接会话边界)
 6. [知识图谱 · 文件/关键词联结（当前可用，证据深化中）](#6-知识图谱--文件关键词联结当前可用证据深化中)
 7. [建议实现顺序与 API 约定](#7-建议实现顺序与-api-约定)
 8. [附录 A · 个人仪表盘（已接会话）](#附录-a--个人仪表盘已接会话)
@@ -29,19 +29,19 @@
 | 能力 | UI | 配置/类型 | 网络请求 | 持久化 |
 |---|---|---|---|---|
 | AI 设置 | ✅ 设置抽屉 · AI Tab | ✅ `AiSettingsDraft` + localStorage | — | ✅ 本机 |
-| AI 提问 | ✅ QAPanel 壳（引用块/离线禁用） | ✅ `QaMessage` 类型已有 | ❌ 发送为空操作 | ❌ 无 QA store / IDB |
-| 划词「提问」 | ✅ 写入 `pendingQaQuote` | — | — | 仅内存草稿 |
+| AI 提问 | ✅ QAPanel（引用块/离线禁用/停止生成） | ✅ `QaMessage` + `qaStore` | ✅ OpenAI 兼容 SSE | ✅ IndexedDB v11 `qaMessages`，按文件 |
+| 划词「提问」 | ✅ 写入 `pendingQaQuote`（含页码） | — | — | 本地草稿 + QA 持久化 |
 | 批注 CRUD | ✅ AnnotationPanel | ✅ `Annotation` + IDB | — | ✅ `annotations` |
 | 批注原文高亮层 | ❌（§8.8） | 有 `anchor` 字段 | — | 有数据无图层 |
-| 整理习得 | ✅ 按钮（toast 占位） | 无 Digest 类型 | ❌ | ❌ |
+| 整理习得 | ✅ 会话结束后自动生成 / 阅读中查看最近结果 | ✅ `ResearchDigest` + structured projection | ✅ 非流式 OpenAI 兼容请求 | ✅ `researchDigests` |
 | 知识图谱 | ✅ 双画布 / 搜索 / 节点详情 | ✅ `GraphNode` / `GraphEdge` + 来源 | ✅ 本地共现 + AI 建边 | ✅ IndexedDB |
 | 离线降级 | ✅ QA 输入禁用文案 | `uiStore.isOnline` | — | — |
 
 产品约束（务必遵守）：
 
-- **§13 决策5**：一文件一问答会话，无多会话切换器。  
-- **§13 决策4**：图谱边由 AI 产生，前端**只读**展示/过滤，禁止手动建边删边。  
-- **§14**：离线时 AI 问答 / 整理习得禁用；本地模型部署时可再放开。  
+- **§13 决策5**：一文件一问答会话，无多会话切换器。
+- **§13 决策4**：图谱边由 AI 产生，前端**只读**展示/过滤，禁止手动建边删边。
+- **§14**：离线时 AI 问答 / 整理习得禁用；本地模型部署时可再放开。
 - 配置已存 OpenAI **兼容** 接口字段；实现时用 `baseUrl` + `apiKey` + `model`，勿写死官方域名。
 
 ---
@@ -50,8 +50,8 @@
 
 ### 2.1 用户路径
 
-设置齿轮（侧栏 / `Ctrl+,`）→ Tab **「AI」** → 编辑草稿 → 抽屉底部 **保存**（写入 `uiStore`）。  
-数据管理 Tab 可 **清除 AI 连接配置**（不含问答历史——历史尚未落库）。
+设置齿轮（侧栏 / `Ctrl+,`）→ Tab **「AI」** → 编辑草稿 → 抽屉底部 **保存**（写入 `uiStore`）。
+数据管理 Tab 可 **清除 AI 连接配置与问答历史**。
 
 ### 2.2 文件
 
@@ -88,32 +88,32 @@ const { apiKey, baseUrl, model, temperature, maxTokens, answerLanguage, autoCite
 
 实现请求层时建议：
 
-1. 新建 `src/utils/aiClient.ts`（或 `src/services/ai/`）：封装 `chatCompletions` / `streamChat`，只读 `uiStore`。  
-2. 校验：无 `apiKey` 时 toast「请先在设置中配置 API Key」，并可选 `openSettings()`。  
+1. 已复用 `src/utils/aiChat.ts`：封装 `chatCompletions` / `streamChat`，只读 `uiStore`。
+2. 校验：无 `apiKey` 时 toast「请先在设置中配置 API Key」，并可选 `openSettings()`。
 3. `answerLanguage` / `autoCite` 进 system prompt，勿另起一套设置 UI。
 
 ---
 
-## 3. AI 提问 / 问答（待接请求）
+## 3. AI 提问 / 问答（已接请求）
 
 ### 3.1 规范要点（`UI_spec.md` §8.6 / §9）
 
-- 气泡：用户右对齐（`--accent-subtle`），助手左对齐（`--bg-surface`）。  
-- 助手消息操作：复制 / 引入批注 / 重新生成。  
-- 流式：`status: 'streaming'` 时末尾光标；发送键变「停止生成」。  
-- `aria-live="polite"`；完成后可播报「回答完成」（§11）。  
+- 气泡：用户右对齐（`--accent-subtle`），助手左对齐（`--bg-surface`）。
+- 助手消息操作：复制 / 引入批注 / 重新生成。
+- 流式：`status: 'streaming'` 时末尾光标；发送键变「停止生成」。
+- `aria-live="polite"`；完成后可播报「回答完成」（§11）。
 - 划词提问：引用块在气泡顶部；最多约 3 行折叠。
 
 ### 3.2 已有 UI 与钩子
 
 | 路径 | 现状 |
 |---|---|
-| `src/features/reader/panels/QAPanel.tsx` | EmptyState + 输入框 + 发送（清空草稿，**无 API**）；离线禁用 |
+| `src/features/reader/panels/QAPanel.tsx` | EmptyState + 文件级历史 + 流式发送/停止；离线与缺 Key 禁用 |
 | `src/features/reader/panels/SidePanel.tsx` | 上 QA / 下批注；顶栏「整理习得」 |
 | `src/stores/readerStore.ts` | `pendingQaQuote`：划词「提问」灌入引用 |
 | `src/features/reader/canvas/SelectionToolbar.tsx`（及调用链） | 提问 → `setPendingQaQuote` + 展开侧栏 |
 
-### 3.3 类型（已定义，尚未落库）
+### 3.3 类型与持久化
 
 ```ts
 // src/types/index.ts
@@ -132,20 +132,20 @@ interface QaMessage {
 }
 ```
 
-### 3.4 建议新增
+### 3.4 已落地与后续
 
 | 项 | 建议 |
 |---|---|
-| `src/stores/qaStore.ts` | 按 `fileId` 加载/追加消息；`send` / `stop` / `regenerate`；`if (get().fileId !== fileId) return` 防串文件 |
-| `src/db/qaMessages.ts` + IndexedDB **升版本** | object store `qaMessages`，index `by-file`；或单 key 存整段会话 JSON |
-| `src/utils/aiClient.ts` | OpenAI 兼容 `POST {baseUrl}/chat/completions` + SSE/stream |
+| `src/stores/qaStore.ts` | 按 `fileId` 加载/追加消息；`send` / `stop`；request/file generation 防串文件 |
+| `src/db/qaMessages.ts` + IndexedDB v11 | object store `qaMessages`，index `by-file` / `by-created` |
+| `src/utils/aiChat.ts` | OpenAI 兼容 `POST {baseUrl}/chat/completions` + SSE/stream |
 | 改 `QAPanel.tsx` | 渲染 `messages`；发送走 store；流式更新同一条 `assistant` 的 `content` |
 
 发送时建议 payload 上下文：
 
-1. system：角色 + `answerLanguage` +（若 `autoCite`）要求标注原文页/句。  
-2. 可选：当前页附近正文 / 用户选中 `quotedText`。  
-3. 历史：同 `fileId` 的 `QaMessage[]`（截断至 token 预算）。  
+1. system：角色 + `answerLanguage` +（若 `autoCite`）要求标注原文页/句。
+2. 可选：当前页附近正文 / 用户选中 `quotedText`。
+3. 历史：同 `fileId` 的 `QaMessage[]`（截断至 token 预算）。
 4. 批注摘要：见下一节（可选增强）。
 
 **不要**在 `QAPanel` 内硬编码 Key；一律 `uiStore.aiSettings`。
@@ -178,30 +178,30 @@ interface QaMessage {
 
 ---
 
-## 5. 整理习得 Digest（待接）
+## 5. 整理习得 Digest（已接会话边界）
 
 ### 5.1 规范（`UI_spec.md` §8.9）
 
-1. SidePanel 顶「整理习得」→ loading「整理中…」。  
-2. AI 根据**当前文件**全部问答 + 批注 → 结构化 Markdown。  
-3. Dialog 宽 760、高约 80vh，标题「阅读习得：{文件名}」。  
-4. 支持复制全文、导出 `.md`；Esc / 右上角关闭。  
+1. 离开阅读会话后由 `ReaderPage` 触发；阅读中只查看最近已生成结果。
+2. AI 根据**当前文件**全部问答 + 批注 → 结构化 Markdown。
+3. Dialog 宽 760、高约 80vh，标题「阅读习得：{文件名}」。
+4. 支持复制全文、导出 `.md`；Esc / 右上角关闭。
 5. 离线：按钮 disabled + tooltip「需要连接 AI 服务」。
 
 ### 5.2 现状
 
-`SidePanel.tsx` 仅 `toast.show('整理习得将在后续步骤接入')`。
+`runDigest` 消费当前文件批注、已完成问答和本地文字稿，返回结构化栏目投影与原始 Markdown；`ResearchDigest` 持久化会话状态和 gate 结果。解析失败保留 Markdown-only 草稿。
 
-### 5.3 建议实现
+### 5.3 实现边界
 
 | 项 | 说明 |
 |---|---|
-| `src/features/reader/DigestDialog.tsx` | Dialog + Markdown 渲染（可先用轻量库或预格式化 `<pre>`，再换 react-markdown） |
-| `qaStore` 或独立 `digestStore` | `runDigest(fileId)`；读 annotations + qaMessages |
+| `src/features/reader/DigestDialog.tsx` | Dialog + 结构化栏目、Markdown 复制/导出 |
+| `src/stores/researchArtifactStore.ts` | 会话边界去重、读 annotations + qaMessages、写 `ResearchDigest` |
 | Prompt | 固定大纲（要点 / 疑问 / 待跟进），语言跟 `answerLanguage` |
 | 导出 | `Blob` + `download` 文件名 `习得-{fileName}.md` |
 
-可先做「非流式一次返回」，再与问答共用 `aiClient`。
+已采用非流式整理请求，并与问答共用 `src/utils/aiChat.ts`；回答引入批注和原文高亮层仍是后续独立切片。
 
 ---
 
@@ -210,8 +210,8 @@ interface QaMessage {
 ### 6.1 产品边界
 
 - 论文边由 AI 任务写入；关键词边由本地共现与 AI 语义评分共同写入；前端只展示、搜索、过滤，不提供手动连线（§13 决策4）。
-- 节点：文件树派生 + 可选 tag；拖拽后可持久化 `x`/`y`。  
-- 建边中：顶栏 32px 进度条（§6.4）。  
+- 节点：文件树派生 + 可选 tag；拖拽后可持久化 `x`/`y`。
+- 建边中：顶栏 32px 进度条（§6.4）。
 - 离线：只展示已有边，不重新计算（§14）。
 - 当前详情面板展示摘要、关键词、关联论文、关系来源/理由，并可直接打开阅读器。
 - 待深化：把批注、引用句和页码纳入边证据，并提供人工确认状态；在此之前不把关系表述为事实引用。分级结构与新 UI 的设计边界见 [Phase 003 知识图谱设计契约](./docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md)。
@@ -242,9 +242,9 @@ interface GraphEdge {
 
 本地可提供给建边任务的语料（均已有或即将有）：
 
-- `FileNode` 元数据（`fileStore` / `db/files`）  
-- 每文件 `Annotation[]`（正文 + 引用句）  
-- 每文件 `QaMessage[]`（接入后）  
+- `FileNode` 元数据（`fileStore` / `db/files`）
+- 每文件 `Annotation[]`（正文 + 引用句）
+- 每文件 `QaMessage[]`（已接入）
 - 可选：文件全文抽取（PDF text layer / EPUB）——注意体积与隐私，默认本地
 
 输出：`GraphEdge[]`（+ 可选 tag 节点）。**禁止**用随机/启发式边冒充「AI 已完成」。
@@ -259,12 +259,11 @@ interface GraphEdge {
 
 ### 7.1 推荐顺序
 
-1. **`aiClient`** — 用设置里的 Key/URL/模型打通非流式 ping（如 `models` 列表或极短 completion）。  
-2. **`qaStore` + IDB** — QAPanel 真发送 + 流式 + 停止；一文件一会话。  
-3. **整理习得 Dialog** — 复用 client；依赖批注（已有）+ 问答（上一步）。  
-4. **回答 → 批注**、**批注高亮层 §8.8** — 引用可跳转，服务 `autoCite`。  
-5. **图谱画布重建** — 节点来自文件；边来自 AI 任务结果写入 store/IDB。  
-6. （可选）后台「重新分析关联」触发建边，进度条绑 `buildProgress`。
+1. **回答 → 批注**、**批注高亮层 §8.8** — 引用可跳转，服务 `autoCite`。
+2. **真实文档浏览器验收** — PDF/EPUB、390/768/1280、主题、离线与减弱动效。
+3. **monitor → ReadingSession** — 将专注/分心数据纳入会话状态。
+4. **图谱画布重建** — 节点来自文件；边来自 AI 任务结果写入 store/IDB。
+5. （可选）后台「重新分析关联」触发建边，进度条绑 `buildProgress`。
 
 ### 7.2 OpenAI 兼容调用示意
 
@@ -346,10 +345,10 @@ npm install react-force-graph-2d
 
 ## 共用约定
 
-- 与 `UI_spec.md` 冲突时先对齐产品，再改代码并回写规范或本文。  
-- 颜色/间距只用 Design Tokens；单文件建议 &lt; 300 行。  
-- Store 不互相 import；跨 store 用 `useXxxStore.getState()`。  
-- 模块从占位变为可用后：更新本文状态表、`PROGRESS.md`、`README.md`。  
+- 与 `UI_spec.md` 冲突时先对齐产品，再改代码并回写规范或本文。
+- 颜色/间距只用 Design Tokens；单文件建议 &lt; 300 行。
+- Store 不互相 import；跨 store 用 `useXxxStore.getState()`。
+- 模块从占位变为可用后：更新本文状态表、`PROGRESS.md`、`README.md`。
 - 同一 bug 两次未修好 → `.cursorrules`「系统二」：假设 + 至少两方案。
 
 ## 相关链接

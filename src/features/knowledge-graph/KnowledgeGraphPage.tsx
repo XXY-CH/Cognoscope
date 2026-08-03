@@ -3,14 +3,23 @@
  * 所属页面：C · 知识图谱
  * 规范参考：UI_spec.md §6；访谈规格 keyword-graph-2026-07-30
  */
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Network } from 'lucide-react';
 import { EmptyState, toast } from '../../components/common';
+import { listEvidenceRowsByFileIds } from '../../db/evidenceRows';
 import * as metaDb from '../../db/fileDocMeta';
+import { useFileStore } from '../../stores/fileStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useKeywordGraphStore } from '../../stores/keywordGraphStore';
+import { useReaderStore } from '../../stores/readerStore';
 import type { FileDocMeta, GraphNode, KeywordNode } from '../../types';
+import {
+  canOpenGraphEvidence,
+  fileIdsForGraphSelection,
+  selectGraphEvidenceAnchors,
+  type GraphEvidenceAnchor,
+} from '../../utils/graphEvidence';
 import { GraphCanvas } from './GraphCanvas';
 import { GraphInspector } from './GraphInspector';
 import { GraphToolbar } from './GraphToolbar';
@@ -34,11 +43,18 @@ function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
  */
 export function KnowledgeGraphPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<GraphKindFilter>('all');
   const [selectedMeta, setSelectedMeta] = useState<FileDocMeta | null>(null);
   const [metaLoading, setMetaLoading] = useState(false);
+  const [evidenceAnchors, setEvidenceAnchors] = useState<GraphEvidenceAnchor[]>([]);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const restoredSelectionRef = useRef<string | null>(null);
 
+  const files = useFileStore((s) => s.files);
+  const loadFiles = useFileStore((s) => s.loadFiles);
   const nodes = useGraphStore((s) => s.nodes);
   const edges = useGraphStore((s) => s.edges);
   const loading = useGraphStore((s) => s.loading);
@@ -69,7 +85,8 @@ export function KnowledgeGraphPage() {
   useEffect(() => {
     void loadGraph();
     void loadKeywordGraph();
-  }, [loadGraph, loadKeywordGraph]);
+    if (files.length === 0) void loadFiles();
+  }, [files.length, loadFiles, loadGraph, loadKeywordGraph]);
 
   /** 点词时高亮的论文节点 id */
   const highlightedPaperIds = useMemo(() => {
@@ -113,6 +130,53 @@ export function KnowledgeGraphPage() {
     () => kwNodes.find((node) => node.id === selectedKeywordId) ?? null,
     [kwNodes, selectedKeywordId],
   );
+  const readableFileIds = useMemo(
+    () =>
+      new Set(
+        files
+          .filter((file) => file.deletedAt === null && file.type !== 'folder')
+          .map((file) => file.id),
+      ),
+    [files],
+  );
+
+  const selectedFileIds = useMemo(
+    () =>
+      fileIdsForGraphSelection({
+        selectedPaper,
+        selectedKeyword,
+        paperNodes: nodes,
+      }),
+    [nodes, selectedKeyword, selectedPaper],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    setEvidenceError(null);
+    if (selectedFileIds.length === 0) {
+      setEvidenceAnchors([]);
+      setEvidenceLoading(false);
+      return;
+    }
+    setEvidenceLoading(true);
+    void listEvidenceRowsByFileIds(selectedFileIds)
+      .then((rows) => {
+        if (cancelled) return;
+        setEvidenceAnchors(selectGraphEvidenceAnchors(rows, files, selectedFileIds));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEvidenceAnchors([]);
+          setEvidenceError('本地证据记录暂时无法读取');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setEvidenceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [files, selectedFileIds]);
 
   useEffect(() => {
     if (selectedNodeId && !visiblePaperIds.has(selectedNodeId)) {
@@ -160,38 +224,101 @@ export function KnowledgeGraphPage() {
     toast.show('已清除本地图谱数据');
   };
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedNode(null);
     setSelectedKeyword(null);
     setHighlightedKeywords([]);
-  };
+  }, [setHighlightedKeywords, setSelectedKeyword, setSelectedNode]);
 
-  const handlePaperClick = (node: GraphNode) => {
-    if (!visiblePaperIds.has(node.id)) {
-      setQuery('');
-      setKindFilter('all');
-    }
-    setSelectedNode(node.id);
-    setSelectedKeyword(null);
-    // 高亮挂接该论文的关键词
-    const linked = kwNodes
-      .filter((k) => k.paperNodeIds.includes(node.id))
-      .map((k) => k.id);
-    setHighlightedKeywords(linked);
-  };
+  const handlePaperClick = useCallback(
+    (node: GraphNode) => {
+      if (!visiblePaperIds.has(node.id)) {
+        setQuery('');
+        setKindFilter('all');
+      }
+      setSelectedNode(node.id);
+      setSelectedKeyword(null);
+      // 高亮挂接该论文的关键词
+      const linked = kwNodes
+        .filter((k) => k.paperNodeIds.includes(node.id))
+        .map((k) => k.id);
+      setHighlightedKeywords(linked);
+    },
+    [kwNodes, setHighlightedKeywords, setSelectedKeyword, setSelectedNode, visiblePaperIds],
+  );
 
-  const handleKeywordClick = (node: GraphNode) => {
-    if (!visibleKeywordIds.has(node.id)) {
-      setQuery('');
-      setKindFilter('all');
+  const handleKeywordClick = useCallback(
+    (node: GraphNode) => {
+      if (!visibleKeywordIds.has(node.id)) {
+        setQuery('');
+        setKindFilter('all');
+      }
+      setSelectedKeyword(node.id);
+      setSelectedNode(null);
+      setHighlightedKeywords([node.id]);
+    },
+    [setHighlightedKeywords, setSelectedKeyword, setSelectedNode, visibleKeywordIds],
+  );
+
+  // Reader 返回图谱时，通过内部 query 恢复原先的选中节点；普通直达不受影响。
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const nodeId = params.get('node');
+    const kind = params.get('kind');
+    if (!nodeId || (kind !== 'paper' && kind !== 'keyword')) return;
+    const key = `${kind}:${nodeId}`;
+    if (restoredSelectionRef.current === key) return;
+    if (kind === 'paper') {
+      const node = nodes.find((candidate) => candidate.id === nodeId);
+      if (!node) return;
+      handlePaperClick(node);
+    } else {
+      const node = kwNodes.find((candidate) => candidate.id === nodeId);
+      if (!node) return;
+      handleKeywordClick({
+        id: node.id,
+        fileId: null,
+        label: node.label,
+        kind: 'tag',
+        x: node.x,
+        y: node.y,
+      });
     }
-    setSelectedKeyword(node.id);
-    setSelectedNode(null);
-    setHighlightedKeywords([node.id]);
+    restoredSelectionRef.current = key;
+  }, [handleKeywordClick, handlePaperClick, kwNodes, location.search, nodes]);
+
+  const graphReturnParams = () => {
+    const selectedId = selectedPaper?.id ?? selectedKeyword?.id;
+    const selectedKind = selectedPaper ? 'paper' : selectedKeyword ? 'keyword' : null;
+    const params = new URLSearchParams({ returnTo: 'knowledge-graph' });
+    if (selectedId && selectedKind) {
+      params.set('returnNodeId', selectedId);
+      params.set('returnNodeKind', selectedKind);
+    }
+    return params;
   };
 
   const handleOpenPaper = (fileId: string) => {
-    navigate(`/read/${fileId}`);
+    if (!readableFileIds.has(fileId)) {
+      toast.warning('来源文件不存在或已移入回收站');
+      return;
+    }
+    const params = graphReturnParams();
+    navigate(`/read/${encodeURIComponent(fileId)}?${params.toString()}`);
+  };
+
+  const handleOpenEvidence = (anchor: GraphEvidenceAnchor) => {
+    if (!canOpenGraphEvidence(anchor)) return;
+    const params = graphReturnParams();
+    params.set('matrixId', anchor.matrixId);
+    params.set('rowId', anchor.rowId);
+    useReaderStore.getState().setPendingLocator({
+      fileId: anchor.fileId,
+      matrixId: anchor.matrixId,
+      rowId: anchor.rowId,
+      locator: anchor.locator,
+    });
+    navigate(`/read/${encodeURIComponent(anchor.fileId)}?${params.toString()}`);
   };
 
   const handleCreateComparison = (fileIds: string[]) => {
@@ -273,8 +400,13 @@ export function KnowledgeGraphPage() {
         keywordEdges={kwEdges}
         selectedMeta={selectedMeta}
         metaLoading={metaLoading}
+        readableFileIds={readableFileIds}
+        evidenceAnchors={evidenceAnchors}
+        evidenceLoading={evidenceLoading}
+        evidenceError={evidenceError}
         onSelectPaper={handlePaperClick}
         onOpenPaper={handleOpenPaper}
+        onOpenEvidence={handleOpenEvidence}
         onCreateComparison={handleCreateComparison}
         onClose={clearSelection}
       />

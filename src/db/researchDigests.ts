@@ -2,10 +2,16 @@
 import type { ResearchDigest } from '../types';
 import { getDb } from './index';
 
+function normalizeDigest(digest: ResearchDigest): ResearchDigest {
+  return { ...digest, structured: digest.structured ?? null };
+}
+
 export async function listResearchDigests(): Promise<ResearchDigest[]> {
   const db = await getDb();
   const list = await db.getAllFromIndex('researchDigests', 'by-updated');
-  return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  return list
+    .map(normalizeDigest)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
 export async function getResearchDigestBySession(
@@ -17,7 +23,9 @@ export async function getResearchDigestBySession(
     'by-session',
     sessionId,
   );
-  return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  return list
+    .map(normalizeDigest)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
 }
 
 export async function putResearchDigest(digest: ResearchDigest): Promise<void> {

@@ -51,22 +51,6 @@
   display: none;
 }
 
-@keyframes sidePanelSpin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.spin {
-  animation: sidePanelSpin var(--dur-slow) linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spin {
-    animation: none;
-  }
-}
-
 .body {
   flex: 1;
   min-height: 0;

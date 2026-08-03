@@ -70,6 +70,10 @@ export function PostReadingSummary({
         </p>
       ) : null}
 
+      <p className={styles.provenanceNotice} role="note">
+        这里是阅读工作记忆，不是引用材料；可引用内容仍需在证据矩阵的 verified 行中核对。
+      </p>
+
       {digest.reviewReasons.length > 0 && pendingLeadCount > 0 ? (
         <div className={styles.reviewBlock}>
           <span className={styles.reviewLabel}>待审阅原因</span>
@@ -78,6 +82,24 @@ export function PostReadingSummary({
               <li key={reason}>{reason}</li>
             ))}
           </ul>
+        </div>
+      ) : null}
+
+      {digest.structured?.parseStatus === 'structured' ? (
+        <div className={styles.structured} aria-label="结构化整理栏目">
+          {digest.structured.sections.map((section) => (
+            <section key={section.id}>
+              <h3>{section.title}</h3>
+              {section.body ? <p>{section.body}</p> : null}
+              {section.items.length > 0 ? (
+                <ul>
+                  {section.items.slice(0, 3).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))}
         </div>
       ) : null}
 

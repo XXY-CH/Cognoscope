@@ -184,7 +184,7 @@ export function SelectionToolbar() {
   const onAsk = () => {
     openSide();
     setQaRatio(0.65);
-    setPendingQaQuote(pos.text);
+    setPendingQaQuote({ text: pos.text, page: pos.page });
     clearSel();
   };
 

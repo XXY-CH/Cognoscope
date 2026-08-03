@@ -33,17 +33,28 @@ export interface ReaderTopBarProps {
   onEnterFullscreen: () => void;
 }
 
+function graphReturnPath(params: URLSearchParams): string | null {
+  if (params.get('returnTo') !== 'knowledge-graph') return null;
+  const nodeId = params.get('returnNodeId');
+  const nodeKind = params.get('returnNodeKind');
+  if (!nodeId || (nodeKind !== 'paper' && nodeKind !== 'keyword')) {
+    return '/knowledge-graph';
+  }
+  return `/knowledge-graph?node=${encodeURIComponent(nodeId)}&kind=${nodeKind}`;
+}
+
 /**
  * ReaderTopBar - 返回、文件名、页面模式、文内搜索、适应宽度、书签、全屏
  */
 export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const matrixId = new URLSearchParams(location.search).get('matrixId');
-  const returnPath = matrixId
-    ? `/evidence-matrix/${encodeURIComponent(matrixId)}`
-    : '/';
-  const returnLabel = matrixId ? '证据矩阵' : '当前研究';
+  const searchParams = new URLSearchParams(location.search);
+  const matrixId = searchParams.get('matrixId');
+  const graphPath = graphReturnPath(searchParams);
+  const returnPath = graphPath ??
+    (matrixId ? `/evidence-matrix/${encodeURIComponent(matrixId)}` : '/');
+  const returnLabel = graphPath ? '知识图谱' : matrixId ? '证据矩阵' : '当前研究';
   const fileId = useReaderStore((s) => s.fileId);
   const fileName = useReaderStore((s) => s.fileName);
   const fileType = useReaderStore((s) => s.fileType);

@@ -16,6 +16,14 @@
   overflow: auto;
 }
 
+.status {
+  min-height: var(--sp-5);
+  padding: var(--sp-1) var(--sp-3) 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
 .list {
   list-style: none;
   margin: 0;
@@ -52,7 +60,7 @@
 .bubbleQuote {
   margin: 0 0 var(--sp-2);
   padding: var(--sp-1) var(--sp-2);
-  border-left: 3px solid var(--border-subtle);
+  border-left: var(--quote-border-width) solid var(--border-subtle);
   color: var(--text-tertiary);
   font-size: var(--text-xs);
   font-style: italic;
@@ -92,7 +100,7 @@
   min-width: 0;
   margin: 0;
   padding: var(--sp-2) var(--sp-3);
-  border-left: 3px solid var(--border-subtle); /* §8.6 引用块左侧竖线 */
+  border-left: var(--quote-border-width) solid var(--border-subtle); /* §8.6 引用块左侧竖线 */
   color: var(--text-tertiary);
   font-size: var(--text-sm);
   font-style: italic;
@@ -119,7 +127,7 @@
 
 .input {
   flex: 1;
-  min-height: 36px;
+  min-height: var(--btn-height-md);
   max-height: calc(var(--sp-8) * 5);
   resize: none;
   padding: var(--sp-2) var(--sp-3);
@@ -132,12 +140,12 @@
 }
 
 .input:disabled {
-  opacity: 0.6;
+  opacity: var(--disabled-opacity);
   cursor: not-allowed;
   color: var(--text-tertiary);
 }
 
 .input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
 }

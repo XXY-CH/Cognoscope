@@ -17,6 +17,22 @@ export async function listEvidenceRowsByMatrix(
   return rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+/**
+ * 读取与文件相关的证据行，供图谱检查器派生局部证据锚点。
+ * 证据仍以矩阵行持久化；这里不复制或改写任何图谱记录。
+ */
+export async function listEvidenceRowsByFileIds(
+  fileIds: string[],
+): Promise<EvidenceRow[]> {
+  const ids = new Set(fileIds.filter(Boolean));
+  if (ids.size === 0) return [];
+  const db = await getDb();
+  const rows = await db.getAll('evidenceRows');
+  return rows
+    .filter((row) => row.evidence.some((item) => ids.has(item.fileId)))
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
 export async function getEvidenceRow(
   id: string,
 ): Promise<EvidenceRow | undefined> {

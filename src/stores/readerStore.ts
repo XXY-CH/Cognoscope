@@ -16,6 +16,11 @@ export interface ReaderLocatorHandoff {
   locator: EvidenceLocator;
 }
 
+export interface PendingQaQuote {
+  text: string;
+  page: number;
+}
+
 const TOC_KEY = 'xuesen-toc-width';
 const SIDE_KEY = 'xuesen-side-width';
 const TOC_COLLAPSED_KEY = 'xuesen-toc-collapsed';
@@ -78,7 +83,7 @@ interface ReaderState {
   totalPages: number;
   linesRead: number;
   /** 划词「提问」写入的引用草稿（QAPanel 消费后清空） */
-  pendingQaQuote: string | null;
+  pendingQaQuote: PendingQaQuote | null;
   /** 划词「批注」后待聚焦的批注 id */
   focusAnnotationId: string | null;
   /** 文内搜索：输入框草稿（可与已提交 findQuery 不同） */
@@ -137,7 +142,7 @@ interface ReaderState {
   setTotalPages: (total: number) => void;
   bumpZoom: (delta: number) => void;
   setLinesRead: (n: number) => void;
-  setPendingQaQuote: (quote: string | null) => void;
+  setPendingQaQuote: (quote: PendingQaQuote | null) => void;
   setFocusAnnotationId: (id: string | null) => void;
   setFindDraft: (q: string) => void;
   setFindQuery: (q: string) => void;
@@ -202,6 +207,7 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       fitWidthActive: false,
       zoomBeforeFit: null,
       pdfOutline: [],
+      pendingLocator: null,
     }),
 
   // 不重置 linesRead：离开页时 clearFile 可能先于会话 cleanup，清零会覆盖 IndexedDB

@@ -108,6 +108,7 @@ export async function deleteFile(id: string): Promise<void> {
     'researchDigests',
     'researchSignals',
     'researchLeads',
+    'qaMessages',
   ] as const;
   const tx = db.transaction([...storeNames], 'readwrite');
   await tx.objectStore('files').delete(id);
@@ -211,6 +212,10 @@ export async function deleteFile(id: string): Promise<void> {
       )
       .map((lead) => leadStore.delete(lead.id)),
   );
+
+  const qaStore = tx.objectStore('qaMessages');
+  const qaMessages = await qaStore.index('by-file').getAll(id);
+  await Promise.all(qaMessages.map((message) => qaStore.delete(message.id)));
 
   await tx.done;
 }

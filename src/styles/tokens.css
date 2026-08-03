@@ -155,6 +155,7 @@
 
   --focus-ring-width: 2px; /* focus-visible 外描边宽度 */
   --focus-ring-offset: 2px; /* focus-visible 外描边偏移 */
+  --quote-border-width: 3px; /* 引用块左侧强调线宽 */
   --disabled-opacity: 0.4; /* 禁用态透明度 */
   --tooltip-delay: 400ms; /* Tooltip 出现延迟 */
 

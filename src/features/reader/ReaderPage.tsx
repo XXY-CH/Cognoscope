@@ -11,6 +11,7 @@ import { toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
 import { SettingsDrawer } from '../../components/layout/SettingsDrawer';
 import * as annotationsDb from '../../db/annotations';
+import * as qaMessagesDb from '../../db/qaMessages';
 import { useAppShortcuts } from '../../hooks/useAppShortcuts';
 import { useLinesReadSync } from '../../hooks/useLinesReadSync';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
@@ -56,28 +57,40 @@ export function ReaderPage() {
   const openFile = useReaderStore((s) => s.openFile);
   const clearFile = useReaderStore((s) => s.clearFile);
   const setPendingLocator = useReaderStore((s) => s.setPendingLocator);
+  const clearPendingLocator = useReaderStore((s) => s.clearPendingLocator);
   const activeFileId = useReaderStore((s) => s.fileId);
   useLinesReadSync(activeFileId);
 
   // 直接刷新阅读器时，从 URL + IndexedDB 恢复矩阵行的来源定位。
   useEffect(() => {
-    if (!fileId) return;
+    if (!fileId) {
+      clearPendingLocator();
+      return;
+    }
     const params = new URLSearchParams(location.search);
     const matrixId = params.get('matrixId');
     const rowId = params.get('rowId');
+    clearPendingLocator();
     if (!matrixId || !rowId) return;
     let cancelled = false;
-    void listEvidenceRowsByMatrix(matrixId).then((rows) => {
-      if (cancelled) return;
-      const row = rows.find((candidate) => candidate.id === rowId);
-      const item = row?.evidence.find((candidate) => candidate.fileId === fileId);
-      if (!item) return;
-      setPendingLocator({ fileId, matrixId, rowId, locator: item.locator });
-    });
+    void listEvidenceRowsByMatrix(matrixId)
+      .then((rows) => {
+        if (cancelled) return;
+        const row = rows.find((candidate) => candidate.id === rowId);
+        const item = row?.evidence.find((candidate) => candidate.fileId === fileId);
+        if (!item) {
+          clearPendingLocator();
+          return;
+        }
+        setPendingLocator({ fileId, matrixId, rowId, locator: item.locator });
+      })
+      .catch(() => {
+        if (!cancelled) clearPendingLocator();
+      });
     return () => {
       cancelled = true;
     };
-  }, [fileId, location.search, setPendingLocator]);
+  }, [clearPendingLocator, fileId, location.search, setPendingLocator]);
 
   // Python monitor 会话 ID（由 startDetection 返回，stop 后用于拉取数据）
   const pySessionIdRef = useRef<string | null>(null);
@@ -124,11 +137,13 @@ export function ReaderPage() {
         if (!file) return;
         try {
           const annotations = await annotationsDb.listAnnotationsByFile(currentFileId);
+          const qaMessages = await qaMessagesDb.listQaMessagesByFile(currentFileId);
           const ui = useUiStore.getState();
           await useResearchArtifactStore.getState().createForSession({
             sessionId: dbSessionId,
             file,
             annotations,
+            qaMessages,
             ai: ui.aiSettings,
             isOnline: ui.isOnline,
           });

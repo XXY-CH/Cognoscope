@@ -7,9 +7,13 @@ import { useState } from 'react';
 import { Button, Dialog, toast } from '../../common';
 import { useSessionStore } from '../../../stores/sessionStore';
 import { useUiStore } from '../../../stores/uiStore';
+import { useAnnotationStore } from '../../../stores/annotationStore';
+import { useBookmarkStore } from '../../../stores/bookmarkStore';
+import { useQaStore } from '../../../stores/qaStore';
 import * as sessionsDb from '../../../db/sessions';
 import * as annotationsDb from '../../../db/annotations';
 import * as bookmarksDb from '../../../db/bookmarks';
+import * as qaMessagesDb from '../../../db/qaMessages';
 import styles from './SettingsForm.module.css';
 
 type ClearKind = 'sessions' | 'notes' | 'ai' | null;
@@ -18,6 +22,9 @@ type ClearKind = 'sessions' | 'notes' | 'ai' | null;
 export function DataPanel() {
   const loadSessions = useSessionStore((s) => s.loadSessions);
   const clearAiSettings = useUiStore((s) => s.clearAiSettings);
+  const clearQaState = useQaStore((s) => s.clear);
+  const clearAnnotationState = useAnnotationStore((s) => s.clear);
+  const clearBookmarkState = useBookmarkStore((s) => s.clear);
   const [kind, setKind] = useState<ClearKind>(null);
   const [busy, setBusy] = useState(false);
 
@@ -32,7 +39,7 @@ export function DataPanel() {
       '将删除仪表盘用的阅读会话与专注统计。文献文件、批注与书签会保留。',
     notes:
       '将删除全部划词批注与书签。阅读会话与文献文件会保留。',
-    ai: '将清除本机保存的 API Key、接口地址与模型名。问答记录目前未持久化，无历史可删。',
+    ai: '将清除本机保存的 API Key、接口地址、模型名与按文件保存的问答历史。',
   };
 
   const runClear = async () => {
@@ -46,8 +53,13 @@ export function DataPanel() {
       } else if (kind === 'notes') {
         await annotationsDb.clearAllAnnotations();
         await bookmarksDb.clearAllBookmarks();
+        clearAnnotationState();
+        clearBookmarkState();
         toast.show('已清除批注与书签');
       } else {
+        // 先取消活动流并使待写入队列失效，避免清空后旧响应重新写回历史。
+        clearQaState();
+        await qaMessagesDb.clearQaMessages();
         clearAiSettings();
         toast.show('已清除 AI 配置');
       }

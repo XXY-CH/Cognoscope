@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import * as researchDigestsDb from '../db/researchDigests';
 import * as researchLeadsDb from '../db/researchLeads';
 import * as researchSignalsDb from '../db/researchSignals';
+import * as qaMessagesDb from '../db/qaMessages';
 import type {
   Annotation,
   FileNode,
@@ -13,6 +14,7 @@ import type {
   ResearchLead,
   ResearchSignal,
   ResearchSourceReference,
+  QaMessage,
 } from '../types';
 import type { AiSettingsDraft } from './uiStore';
 import { loadDocumentTranscript } from '../utils/loadDocumentTranscript';
@@ -25,6 +27,7 @@ interface CreateDigestInput {
   sessionId: string;
   file: FileNode;
   annotations: Annotation[];
+  qaMessages?: QaMessage[];
   ai: AiSettingsDraft;
   isOnline: boolean;
 }
@@ -88,6 +91,9 @@ function meaningfulAnnotations(annotations: Annotation[]): Annotation[] {
   );
 }
 
+/** StrictMode/路由 cleanup 可能重复结束同一会话；同一 session 只允许一条整理任务。 */
+const digestRuns = new Map<string, Promise<ResearchDigest>>();
+
 export const useResearchArtifactStore = create<ResearchArtifactState>(
   (set, get) => ({
     digests: [],
@@ -113,13 +119,19 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
       }
     },
 
-    createForSession: async ({
-      sessionId,
-      file,
-      annotations,
-      ai,
-      isOnline,
-    }) => {
+    createForSession: async (input) => {
+      const {
+        sessionId,
+        file,
+        annotations,
+        qaMessages,
+        ai,
+        isOnline,
+      } = input;
+      const pending = digestRuns.get(sessionId);
+      if (pending) return pending;
+
+      const run = (async (): Promise<ResearchDigest> => {
       const existing = await researchDigestsDb.getResearchDigestBySession(sessionId);
       if (existing?.status === 'ready') return existing;
 
@@ -134,6 +146,11 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
       }
 
       const meaningful = meaningfulAnnotations(annotations);
+      const persistedQa =
+        qaMessages ?? (await qaMessagesDb.listQaMessagesByFile(file.id));
+      const meaningfulQa = persistedQa.filter(
+        (message) => message.status === 'done' && message.content.trim(),
+      );
       const gate = evaluateAnnotationArtifacts({ file, annotations: meaningful, transcript });
       const timestamp = now();
       let digest: ResearchDigest = existing ?? {
@@ -141,6 +158,7 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
         sessionId,
         fileId: file.id,
         markdown: '',
+        structured: null,
         usedTranscript,
         status: 'waiting',
         errorMessage: null,
@@ -197,14 +215,17 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
         }
       }
 
-      const canCallAi = isOnline && ai.apiKey.trim().length > 0;
+      const canCallAi =
+        isOnline &&
+        ai.apiKey.trim().length > 0 &&
+        (meaningful.length > 0 || meaningfulQa.length > 0);
       if (!canCallAi) {
         digest = {
           ...digest,
           usedTranscript,
           status: 'waiting',
           errorMessage:
-            meaningful.length === 0
+            meaningful.length === 0 && meaningfulQa.length === 0
               ? '暂无可整理的批注或问答'
               : 'AI 未配置或当前离线；本地批注已保留，稍后可重新整理',
           candidateCount: gate.candidates.length,
@@ -235,10 +256,16 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
       set({ digests: upsertById(get().digests, digest) });
 
       try {
-        const result = await runDigest({ file, annotations: meaningful, ai });
+        const result = await runDigest({
+          file,
+          annotations: meaningful,
+          qaMessages: meaningfulQa,
+          ai,
+        });
         digest = {
           ...digest,
           markdown: result.markdown,
+          structured: result.structured,
           usedTranscript: result.usedTranscript,
           status: 'ready',
           errorMessage: null,
@@ -260,6 +287,13 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
       await researchDigestsDb.putResearchDigest(digest);
       set({ digests: upsertById(get().digests, digest) });
       return digest;
+      })();
+      digestRuns.set(sessionId, run);
+      try {
+        return await run;
+      } finally {
+        if (digestRuns.get(sessionId) === run) digestRuns.delete(sessionId);
+      }
     },
 
     setLeadStatus: async (leadIdValue, status) => {

@@ -1,9 +1,9 @@
 /**
  * digestPrompt.ts - 整理习得 Prompt 组装
  * 所属：E · 阅读界面 > SidePanel > 整理习得
- * 规范参考：UI_spec.md §8.9；语料 = 批注 + PDF 文字稿
+ * 规范参考：UI_spec.md §8.9；语料 = 批注 + 问答 + PDF 文字稿
  */
-import type { Annotation } from '../types';
+import type { Annotation, QaMessage } from '../types';
 import type { AiAnswerLanguage } from '../stores/uiStore';
 import type { ChatMessage } from './aiChat';
 
@@ -14,6 +14,7 @@ export interface DigestPromptInput {
   transcript: string;
   transcriptTruncated?: boolean;
   answerLanguage: AiAnswerLanguage;
+  qaMessages?: QaMessage[];
 }
 
 function langInstruction(lang: AiAnswerLanguage): string {
@@ -42,6 +43,32 @@ export function formatAnnotationsForPrompt(annotations: Annotation[]): string {
     .join('\n');
 }
 
+const QA_MAX_MESSAGES = 24;
+const QA_MAX_CHARS = 12000;
+
+/** 只把已完成、非空的本地问答作为上下文；问答不是 citation-ready 事实。 */
+export function formatQaMessagesForPrompt(messages: QaMessage[] = []): string {
+  const selected = messages
+    .filter((message) => message.status === 'done' && message.content.trim())
+    .slice(-QA_MAX_MESSAGES);
+  if (selected.length === 0) return '（暂无已完成问答）';
+
+  let used = 0;
+  const rows: string[] = [];
+  for (const message of selected) {
+    const role = message.role === 'user' ? '用户问题' : '助手回答';
+    const quote = message.quotedText?.trim()
+      ? `\n   选中片段：${message.quotedText.trim()}`
+      : '';
+    const page = message.quotedPage != null ? ` · 第 ${message.quotedPage} 页` : '';
+    const row = `${role}${page}：${message.content.trim()}${quote}`;
+    if (used + row.length > QA_MAX_CHARS && rows.length > 0) break;
+    rows.push(row);
+    used += row.length;
+  }
+  return rows.join('\n');
+}
+
 /**
  * 组装整理习得的 system + user 消息
  */
@@ -52,6 +79,7 @@ export function buildDigestMessages(input: DigestPromptInput): ChatMessage[] {
     transcript,
     transcriptTruncated = false,
     answerLanguage,
+    qaMessages = [],
   } = input;
 
   const system = [
@@ -85,6 +113,9 @@ export function buildDigestMessages(input: DigestPromptInput): ChatMessage[] {
     '',
     '## 用户批注（请重点利用）',
     formatAnnotationsForPrompt(annotations),
+    '',
+    '## 用户问答（仅作为阅读上下文，不可替代有 locator 的原文证据）',
+    formatQaMessagesForPrompt(qaMessages),
     '',
     transcriptBlock,
     '',

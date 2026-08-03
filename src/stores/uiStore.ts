@@ -201,7 +201,7 @@ interface UiState {
   setOnline: (online: boolean) => void;
   setAiApiKey: (key: string) => void;
   setAiSettings: (partial: Partial<AiSettingsDraft>) => void;
-  /** 清除本机 AI 连接配置（不含问答历史：尚未落库） */
+  /** 清除本机 AI 连接配置；问答历史由 DataPanel 另行清除。 */
   clearAiSettings: () => void;
 }
 

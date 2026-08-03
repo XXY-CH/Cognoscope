@@ -2,7 +2,16 @@
  * GraphInspector - 选中节点的证据与回读入口
  * 将图上的一条关系还原为论文、关键词和生成依据，避免只看视觉连线。
  */
-import { BookOpen, FileText, GitCompareArrows, Hash, Link2, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  BookOpen,
+  FileText,
+  GitCompareArrows,
+  Hash,
+  Link2,
+  X,
+} from 'lucide-react';
 import { Badge, Button, IconButton } from '../../components/common';
 import type {
   FileDocMeta,
@@ -11,6 +20,15 @@ import type {
   KeywordEdge,
   KeywordNode,
 } from '../../types';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
+import {
+  canOpenGraphEvidence,
+  locatorLabel,
+  matchLabel,
+  sourceStateLabel,
+  type GraphEvidenceAnchor,
+  verificationLabel,
+} from '../../utils/graphEvidence';
 import styles from './GraphInspector.module.css';
 
 interface GraphInspectorProps {
@@ -22,8 +40,13 @@ interface GraphInspectorProps {
   keywordEdges: KeywordEdge[];
   selectedMeta: FileDocMeta | null;
   metaLoading: boolean;
+  readableFileIds: ReadonlySet<string>;
+  evidenceAnchors: GraphEvidenceAnchor[];
+  evidenceLoading: boolean;
+  evidenceError: string | null;
   onSelectPaper: (node: GraphNode) => void;
   onOpenPaper: (fileId: string) => void;
+  onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
   onCreateComparison: (fileIds: string[]) => void;
   onClose: () => void;
 }
@@ -68,6 +91,12 @@ function edgeOtherId(edge: GraphEdge | KeywordEdge, id: string): string {
   return edge.source === id ? edge.target : edge.source;
 }
 
+function relationStrengthLabel(weight: number): string {
+  if (weight >= 0.66) return '强关系线索';
+  if (weight >= 0.33) return '中等关系线索';
+  return '弱关系线索';
+}
+
 function EvidenceBadge({
   origin,
 }: {
@@ -81,6 +110,94 @@ function EvidenceBadge({
   );
 }
 
+function EvidenceAnchorList({
+  anchors,
+  loading,
+  error,
+  onOpenEvidence,
+}: {
+  anchors: GraphEvidenceAnchor[];
+  loading: boolean;
+  error: string | null;
+  onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
+}) {
+  return (
+    <div className={styles.evidenceAnchors}>
+      <div className={styles.sectionHeading}>证据锚点</div>
+      {loading ? (
+        <p className={styles.muted} role="status">正在读取可回读证据…</p>
+      ) : error ? (
+        <p className={styles.unavailable} role="alert">
+          <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" />
+          证据读取失败：{error}
+        </p>
+      ) : anchors.length === 0 ? (
+        <p className={styles.muted}>暂无已保存的证据锚点；图谱关系仍只是导航线索。</p>
+      ) : (
+        <ul className={styles.anchorList}>
+          {anchors.map((anchor) => {
+            const canOpen = canOpenGraphEvidence(anchor);
+            return (
+              <li className={styles.anchor} key={anchor.id}>
+                <div className={styles.anchorHeader}>
+                  <div className={styles.anchorSource}>
+                    <strong>{anchor.fileName}</strong>
+                    <span>{anchor.conclusion}</span>
+                  </div>
+                  <Badge
+                    aria-label={`来源状态：${sourceStateLabel(anchor.sourceState)}`}
+                    tone={canOpen ? 'success' : 'warning'}
+                    soft
+                  >
+                    {sourceStateLabel(anchor.sourceState)}
+                  </Badge>
+                </div>
+                <blockquote className={styles.quote}>
+                  {anchor.quotedText || '（没有摘录）'}
+                </blockquote>
+                {anchor.annotationBody ? (
+                  <p className={styles.annotationHint}>
+                    用户批注：{anchor.annotationBody}
+                  </p>
+                ) : null}
+                <div className={styles.anchorMeta}>
+                  <span>{locatorLabel(anchor.locator)}</span>
+                  <Badge aria-label={`匹配方式：${matchLabel(anchor.match)}`} tone={anchor.match === 'none' ? 'warning' : 'success'} soft>
+                    {matchLabel(anchor.match)}
+                  </Badge>
+                  <Badge aria-label={`核验状态：${verificationLabel(anchor.verification)}`} tone={anchor.verification === 'verified' ? 'success' : 'neutral'} soft>
+                    摘录：{verificationLabel(anchor.verification)}
+                  </Badge>
+                  <Badge aria-label={`矩阵行状态：${verificationLabel(anchor.rowVerification)}`} tone={anchor.rowVerification === 'verified' ? 'success' : 'neutral'} soft>
+                    行：{verificationLabel(anchor.rowVerification)}
+                  </Badge>
+                </div>
+                {!canOpen ? (
+                  <p className={styles.unavailable}>
+                    <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" />
+                    {anchor.sourceReason ?? '该来源暂时不能回读'}
+                  </p>
+                ) : null}
+                <Button
+                  className={styles.anchorAction}
+                  aria-label={canOpen ? `回读 ${anchor.fileName}` : '来源不可回读'}
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<BookOpen size={14} strokeWidth={1.5} />}
+                  disabled={!canOpen}
+                  onClick={() => onOpenEvidence(anchor)}
+                >
+                  回读来源
+                </Button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export function GraphInspector({
   selectedPaper,
   selectedKeyword,
@@ -90,12 +207,29 @@ export function GraphInspector({
   keywordEdges,
   selectedMeta,
   metaLoading,
+  readableFileIds,
+  evidenceAnchors,
+  evidenceLoading,
+  evidenceError,
   onSelectPaper,
   onOpenPaper,
+  onOpenEvidence,
   onCreateComparison,
   onClose,
 }: GraphInspectorProps) {
   const selectedId = selectedPaper?.id ?? selectedKeyword?.id ?? null;
+  const inspectorRef = useRef<HTMLElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 900px)');
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  useFocusTrap(inspectorRef, Boolean(selectedId) && isMobile, onClose);
 
   if (!selectedId) {
     return (
@@ -125,10 +259,25 @@ export function GraphInspector({
       ...relatedPapers
         .sort((left, right) => right.edge.weight - left.edge.weight)
         .map(({ node }) => node.fileId),
-    ].filter((id, index, ids): id is string => Boolean(id) && ids.indexOf(id) === index).slice(0, 5);
+    ]
+      .filter(
+        (id, index, ids): id is string =>
+          typeof id === 'string' &&
+          readableFileIds.has(id) &&
+          ids.indexOf(id) === index,
+      )
+      .slice(0, 5);
+    const canOpenPaper = Boolean(fileId && readableFileIds.has(fileId));
 
     return (
-      <section className={styles.inspector} data-active="true" aria-label="论文节点详情">
+      <section
+        ref={inspectorRef}
+        className={styles.inspector}
+        data-active="true"
+        role={isMobile ? 'dialog' : undefined}
+        aria-modal={isMobile ? true : undefined}
+        aria-label="论文节点详情"
+      >
         <div className={styles.header}>
           <div className={styles.titleWrap}>
             <FileText size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -143,28 +292,6 @@ export function GraphInspector({
             </div>
           </div>
           <div className={styles.headerActions}>
-            {fileId ? (
-              <Button
-                aria-label={`打开 ${selectedPaper.label}`}
-                variant="secondary"
-                size="sm"
-                leftIcon={<BookOpen size={15} strokeWidth={1.5} />}
-                onClick={() => onOpenPaper(fileId)}
-              >
-                打开阅读
-              </Button>
-            ) : null}
-            <Button
-              aria-label="用当前论文簇创建证据矩阵"
-              title={comparisonFileIds.length < 3 ? '当前论文簇不足 3 篇论文' : undefined}
-              variant="ghost"
-              size="sm"
-              leftIcon={<GitCompareArrows size={15} strokeWidth={1.5} />}
-              disabled={comparisonFileIds.length < 3}
-              onClick={() => onCreateComparison(comparisonFileIds)}
-            >
-              比较论文簇
-            </Button>
             <IconButton
               className={styles.mobileClose}
               aria-label="关闭节点详情"
@@ -213,7 +340,7 @@ export function GraphInspector({
                       <span className={styles.relationTitle}>{node.label}</span>
                       <span className={styles.relationMeta}>
                         <EvidenceBadge origin={edge.origin} />
-                        <span>{Math.round(edge.weight * 100)}%</span>
+                        <span>{relationStrengthLabel(edge.weight)}</span>
                       </span>
                     </button>
                     <p className={styles.reason}>
@@ -224,6 +351,38 @@ export function GraphInspector({
               </ul>
             )}
           </div>
+          <EvidenceAnchorList
+            anchors={evidenceAnchors}
+            loading={evidenceLoading}
+            error={evidenceError}
+            onOpenEvidence={onOpenEvidence}
+          />
+        </div>
+        <div className={styles.actions} role="group" aria-label="论文节点操作">
+          {fileId ? (
+            <Button
+              aria-label={`打开 ${selectedPaper.label}`}
+              title={canOpenPaper ? undefined : '来源文件不存在或已移入回收站'}
+              variant="secondary"
+              size="sm"
+              leftIcon={<BookOpen size={15} strokeWidth={1.5} />}
+              disabled={!canOpenPaper}
+              onClick={() => onOpenPaper(fileId)}
+            >
+              打开阅读
+            </Button>
+          ) : null}
+          <Button
+            aria-label="用当前论文簇创建证据矩阵"
+            title={comparisonFileIds.length < 3 ? '当前论文簇不足 3 篇论文' : undefined}
+            variant="ghost"
+            size="sm"
+            leftIcon={<GitCompareArrows size={15} strokeWidth={1.5} />}
+            disabled={comparisonFileIds.length < 3}
+            onClick={() => onCreateComparison(comparisonFileIds)}
+          >
+            比较论文簇
+          </Button>
         </div>
       </section>
     );
@@ -248,11 +407,23 @@ export function GraphInspector({
     .filter((item): item is { edge: KeywordEdge; node: KeywordNode } => Boolean(item.node));
   const comparisonFileIds = relatedPapers
     .map((paper) => paper.fileId)
-    .filter((id, index, ids): id is string => Boolean(id) && ids.indexOf(id) === index)
+    .filter(
+      (id, index, ids): id is string =>
+        typeof id === 'string' &&
+        readableFileIds.has(id) &&
+        ids.indexOf(id) === index,
+    )
     .slice(0, 5);
 
   return (
-    <section className={styles.inspector} data-active="true" aria-label="关键词节点详情">
+    <section
+      ref={inspectorRef}
+      className={styles.inspector}
+      data-active="true"
+      role={isMobile ? 'dialog' : undefined}
+      aria-modal={isMobile ? true : undefined}
+      aria-label="关键词节点详情"
+    >
       <div className={styles.header}>
         <div className={styles.titleWrap}>
           <Hash size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -267,17 +438,6 @@ export function GraphInspector({
           </div>
         </div>
         <div className={styles.headerActions}>
-          <Button
-            aria-label="用当前关键词关联论文创建证据矩阵"
-            title={comparisonFileIds.length < 3 ? '当前关键词关联论文不足 3 篇' : undefined}
-            variant="ghost"
-            size="sm"
-            leftIcon={<GitCompareArrows size={15} strokeWidth={1.5} />}
-            disabled={comparisonFileIds.length < 3}
-            onClick={() => onCreateComparison(comparisonFileIds)}
-          >
-            比较论文簇
-          </Button>
           <IconButton
             className={styles.mobileClose}
             aria-label="关闭节点详情"
@@ -295,31 +455,42 @@ export function GraphInspector({
             <p className={styles.muted}>暂无可回读的论文。</p>
           ) : (
             <ul className={styles.list}>
-              {relatedPapers.map((paper) => (
-                <li key={paper.id} className={styles.listItem}>
-                  <div className={styles.paperRow}>
-                    <button
-                      type="button"
-                      className={styles.relationButton}
-                      aria-label={`查看论文 ${paper.label}`}
-                      onClick={() => onSelectPaper(paper)}
-                    >
-                      <span className={styles.relationTitle}>{paper.label}</span>
-                    </button>
-                    {paper.fileId ? (
-                      <Button
-                        aria-label={`打开 ${paper.label}`}
-                        variant="ghost"
-                        size="sm"
-                        leftIcon={<BookOpen size={14} strokeWidth={1.5} />}
-                        onClick={() => onOpenPaper(paper.fileId!)}
+              {relatedPapers.map((paper) => {
+                const canOpenPaper = Boolean(
+                  paper.fileId && readableFileIds.has(paper.fileId),
+                );
+                return (
+                  <li key={paper.id} className={styles.listItem}>
+                    <div className={styles.paperRow}>
+                      <button
+                        type="button"
+                        className={styles.relationButton}
+                        aria-label={`查看论文 ${paper.label}`}
+                        onClick={() => onSelectPaper(paper)}
                       >
-                        阅读
-                      </Button>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
+                        <span className={styles.relationTitle}>{paper.label}</span>
+                      </button>
+                      {paper.fileId ? (
+                        <Button
+                          aria-label={`打开 ${paper.label}`}
+                          title={
+                            canOpenPaper
+                              ? undefined
+                              : '来源文件不存在或已移入回收站'
+                          }
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={<BookOpen size={14} strokeWidth={1.5} />}
+                          disabled={!canOpenPaper}
+                          onClick={() => onOpenPaper(paper.fileId!)}
+                        >
+                          阅读
+                        </Button>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -335,7 +506,7 @@ export function GraphInspector({
                   <div className={styles.relationMeta}>
                     <span className={styles.relationTitle}>{node.label}</span>
                     <EvidenceBadge origin={edge.origin} />
-                    <span>{Math.round(edge.weight * 100)}%</span>
+                    <span>{relationStrengthLabel(edge.weight)}</span>
                   </div>
                   <p className={styles.reason}>
                     {relationReason(edge.origin, edge.reason)}
@@ -345,6 +516,25 @@ export function GraphInspector({
             </ul>
           )}
         </div>
+        <EvidenceAnchorList
+          anchors={evidenceAnchors}
+          loading={evidenceLoading}
+          error={evidenceError}
+          onOpenEvidence={onOpenEvidence}
+        />
+      </div>
+      <div className={styles.actions} role="group" aria-label="关键词节点操作">
+        <Button
+          aria-label="用当前关键词关联论文创建证据矩阵"
+          title={comparisonFileIds.length < 3 ? '当前关键词关联论文不足 3 篇' : undefined}
+          variant="ghost"
+          size="sm"
+          leftIcon={<GitCompareArrows size={15} strokeWidth={1.5} />}
+          disabled={comparisonFileIds.length < 3}
+          onClick={() => onCreateComparison(comparisonFileIds)}
+        >
+          比较论文簇
+        </Button>
       </div>
     </section>
   );

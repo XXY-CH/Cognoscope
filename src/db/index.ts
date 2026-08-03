@@ -17,6 +17,7 @@ import type {
   GraphNode,
   KeywordNode,
   ReadingSession,
+  QaMessage,
   ResearchDigest,
   ResearchLead,
   ResearchSignal,
@@ -153,11 +154,20 @@ interface XuesenDB extends DBSchema {
       'by-updated': string;
     };
   };
+  /** 按文件持久化的 AI 问答消息（v11） */
+  qaMessages: {
+    key: string;
+    value: QaMessage;
+    indexes: {
+      'by-file': string;
+      'by-created': string;
+    };
+  };
 }
 
 const DB_NAME = 'xuesen';
-/** v10：会话后整理、研究信号与待审阅线索 */
-const DB_VERSION = 10;
+/** v11：按文件持久化问答历史；v10 研究环境 stores 保持兼容 */
+const DB_VERSION = 11;
 
 let dbPromise: Promise<IDBPDatabase<XuesenDB>> | null = null;
 
@@ -276,6 +286,13 @@ export function getDb(): Promise<IDBPDatabase<XuesenDB>> {
           leads.createIndex('by-status', 'status');
           leads.createIndex('by-session', 'sessionId');
           leads.createIndex('by-updated', 'updatedAt');
+        }
+
+        // —— QA history（v11）——
+        if (!db.objectStoreNames.contains('qaMessages')) {
+          const messages = db.createObjectStore('qaMessages', { keyPath: 'id' });
+          messages.createIndex('by-file', 'fileId');
+          messages.createIndex('by-created', 'createdAt');
         }
       },
     });

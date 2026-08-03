@@ -5,26 +5,24 @@
  *
  * 折叠入口仅保留 TopBar 的侧栏按钮，避免与「整理习得」旁重复
  */
-import { useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Loader2, Sparkles, X } from 'lucide-react';
-import { Button, IconButton, Tooltip, toast } from '../../../components/common';
+import { Sparkles, X } from 'lucide-react';
+import { Button, IconButton, Tooltip } from '../../../components/common';
 import {
   useHorizontalResize,
   useVerticalResize,
 } from '../../../hooks/usePanelResize';
-import { useAnnotationStore } from '../../../stores/annotationStore';
 import { useFileStore } from '../../../stores/fileStore';
 import { useReaderStore } from '../../../stores/readerStore';
-import { useUiStore } from '../../../stores/uiStore';
-import { runDigest } from '../../../utils/runDigest';
+import { useResearchArtifactStore } from '../../../stores/researchArtifactStore';
 import { DigestDialog } from '../DigestDialog';
 import { AnnotationPanel } from './AnnotationPanel';
 import { QAPanel } from './QAPanel';
 import styles from './SidePanel.module.css';
 
 /**
- * SidePanel - 可折叠、可拖宽；上下区由分隔条调节；整理习得接 AI
+ * SidePanel - 可折叠、可拖宽；上下区由分隔条调节；整理结果在会话边界后查看
  */
 export function SidePanel() {
   const open = useReaderStore((s) => s.sideOpen);
@@ -39,16 +37,15 @@ export function SidePanel() {
   /** 拖拽中关闭 width 过渡，保证右缘贴窗 */
   const [dragging, setDragging] = useState(false);
 
-  const isOnline = useUiStore((s) => s.isOnline);
-  const aiSettings = useUiStore((s) => s.aiSettings);
-  const openSettings = useUiStore((s) => s.openSettings);
-  const annotations = useAnnotationStore(useShallow((s) => s.items));
+  const loadArtifacts = useResearchArtifactStore((s) => s.loadArtifacts);
+  const digests = useResearchArtifactStore(useShallow((s) => s.digests));
   const files = useFileStore(useShallow((s) => s.files));
 
-  const [digesting, setDigesting] = useState(false);
   const [digestOpen, setDigestOpen] = useState(false);
-  const [digestMarkdown, setDigestMarkdown] = useState('');
-  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    void loadArtifacts();
+  }, [loadArtifacts]);
 
   const hResize = useHorizontalResize((dx) => {
     // 手柄在左侧：向右拖应减小宽度
@@ -68,53 +65,12 @@ export function SidePanel() {
     ? files.find((f) => f.id === fileId && f.deletedAt === null)
     : undefined;
 
-  const handleDigest = async () => {
-    if (digesting) return;
-    if (!isOnline) {
-      toast.warning('需要连接 AI 服务');
-      return;
-    }
-    if (!aiSettings.apiKey.trim()) {
-      toast.warning('请先在设置中配置 API Key');
-      openSettings();
-      return;
-    }
-    if (!file || !fileId) {
-      toast.error('未打开文件');
-      return;
-    }
-
-    const meaningful = annotations.filter(
-      (a) => a.body.trim() || (a.quotedText?.trim() ?? ''),
-    );
-    if (meaningful.length === 0) {
-      toast.show('暂无可整理的批注或问答');
-      return;
-    }
-
-    abortRef.current?.abort();
-    const ac = new AbortController();
-    abortRef.current = ac;
-    setDigesting(true);
-    try {
-      const result = await runDigest({
-        file,
-        annotations: meaningful,
-        ai: aiSettings,
-        signal: ac.signal,
-      });
-      setDigestMarkdown(result.markdown);
-      setDigestOpen(true);
-      if (!result.usedTranscript && file.type === 'pdf') {
-        toast.warning('未能提取 PDF 文字层，已仅依据批注整理');
-      }
-    } catch (e) {
-      if ((e as Error).name === 'AbortError') return;
-      toast.error(e instanceof Error ? e.message : '整理习得失败');
-    } finally {
-      setDigesting(false);
-    }
-  };
+  const latestDigest = fileId
+    ? [...digests]
+        .filter((digest) => digest.fileId === fileId)
+        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]
+    : undefined;
+  const hasDigest = Boolean(latestDigest?.markdown);
 
   return (
     <aside
@@ -147,37 +103,26 @@ export function SidePanel() {
 
       <div className={styles.inner}>
         <header className={styles.header}>
-          {isOnline && aiSettings.apiKey.trim() ? (
+          {hasDigest ? (
             <Button
-              aria-label={digesting ? '整理中' : '整理习得'}
+              aria-label="查看最近整理"
               variant="secondary"
               size="sm"
-              leftIcon={
-                digesting ? (
-                  <Loader2
-                    className={styles.spin}
-                    size={16}
-                    strokeWidth={1.5}
-                  />
-                ) : (
-                  <Sparkles size={16} strokeWidth={1.5} />
-                )
-              }
-              disabled={digesting || !fileId}
-              onClick={() => void handleDigest()}
+              leftIcon={<Sparkles size={16} strokeWidth={1.5} />}
+              onClick={() => setDigestOpen(true)}
             >
-              {digesting ? '整理中…' : '整理习得'}
+              查看最近整理
             </Button>
           ) : (
-            <Tooltip content="需要连接 AI 服务" aria-label="整理习得不可用说明">
+            <Tooltip content="离开阅读后自动整理；阅读中不发起新 AI 请求" aria-label="整理习得边界说明">
               <Button
-                aria-label="整理习得"
+                aria-label="会话结束后整理"
                 variant="secondary"
                 size="sm"
                 leftIcon={<Sparkles size={16} strokeWidth={1.5} />}
                 disabled
               >
-                整理习得
+                会话结束后整理
               </Button>
             </Tooltip>
           )}
@@ -251,7 +196,8 @@ export function SidePanel() {
       <DigestDialog
         open={digestOpen}
         fileName={file?.name ?? '文献'}
-        markdown={digestMarkdown}
+        markdown={latestDigest?.markdown ?? ''}
+        structured={latestDigest?.structured ?? null}
         onClose={() => setDigestOpen(false)}
       />
     </aside>

@@ -2,7 +2,7 @@
   "schema": "xuesen.graph-engineering/v1",
   "project": "xuesen",
   "title": "学森 AI 时代科研环境迭代图",
-  "updatedAt": "2026-08-02",
+  "updatedAt": "2026-08-03",
   "purpose": "把产品目标、科研工作流、代码触点、数据合同和验证门组织成可执行的迭代图，供 Codex 恢复上下文并选择下一步。",
   "notThis": [
     "论文知识图谱",
@@ -10,17 +10,21 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4"],
-    "next": ["KG-05", "KG-06", "AI-03", "MON-02", "READ-04", "UX-06"],
+    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03"],
+    "next": ["KG-06", "UX-06", "P4"],
     "blocked": [],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口。",
-    "lastVerified": "2026-08-02",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆。",
+    "lastVerified": "2026-08-03",
     "evidence": [
       "npm run build",
       "npm run lint",
       "git diff --check",
-      "Codex in-app browser: /, /library, /knowledge-graph, /evidence-matrix, /read/:fileId"
+      "node scripts/probe-evidence-matrix.mjs",
+      "Node strip-types KG-05 fixture probe",
+      "curl route shell checks for /, /knowledge-graph, /read/:fileId, /evidence-matrix",
+      "Node strip-types digest structure fixture probe",
+      "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending"
     ]
   },
   "edgeTypes": {
@@ -228,14 +232,15 @@
       "type": "capability",
       "layer": "next",
       "title": "图谱到证据锚点与 Reader 回读",
-      "status": "next",
+      "status": "in_progress",
       "priority": 1,
       "goal": "选中图谱节点后，可查看证据锚点、locator、摘录、匹配方式和核验状态，并回读原文。",
       "dependsOn": ["C4", "C5", "R1"],
       "touchpoints": ["src/features/knowledge-graph/GraphInspector.tsx", "src/features/reader", "src/utils/evidenceMatch.ts", "src/types/index.ts"],
       "contracts": ["locator remains source of truth", "unresolved source disables jump/copy", "graph edge stays read-only"],
       "acceptance": ["graph node -> evidence anchor -> reader locator works", "missing source is explicit and non-copyable", "return path restores selected context"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "Codex browser at 390/768/1280", "keyboard Escape/focus return"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "Node fixture probe for locator/source/dedupe gates", "Codex browser at 390/768/1280 (blocked: no browser instance)", "keyboard Escape/focus return (implemented via useFocusTrap; browser evidence pending)"],
+      "blocker": "Browser runtime has no available instance; keep KG-05 in_progress until real PDF/EPUB and responsive interaction evidence is collected.",
       "rollback": "Keep relation and show 来源未记录/待核对; do not delete old graph records.",
       "next": ["KG-06", "UX-06"]
     },
@@ -260,14 +265,15 @@
       "type": "capability",
       "layer": "next",
       "title": "真实 QA 与结构化整理习得",
-      "status": "next",
+      "status": "in_progress",
       "priority": 3,
       "goal": "用当前文件的批注、问答和 locator 生成结构化摘要，且仅在会话边界运行。",
       "dependsOn": ["C2", "C3", "D2"],
-      "touchpoints": ["src/features/reader/panels/QAPanel.tsx", "src/stores/qaStore.ts", "src/utils/aiClient.ts", "src/utils/runDigest.ts"],
-      "contracts": ["OpenAI-compatible baseUrl", "offline disables new AI actions", "one file one QA session", "autoCite uses locators"],
+      "touchpoints": ["src/features/reader/panels/QAPanel.tsx", "src/stores/qaStore.ts", "src/utils/aiChat.ts", "src/utils/runDigest.ts"],
+      "contracts": ["OpenAI-compatible baseUrl", "offline disables new AI actions", "one file one QA session", "autoCite uses locators", "persistence failure never blocks reading", "clear invalidates queued stream writes", "structured projection requires the agreed headings", "digest remains working memory, not citation-ready"],
       "acceptance": ["streaming assistant state persists by file", "digest has structured sections and Markdown export", "AI failure never blocks reading or corrupts annotations"],
-      "verification": ["build/lint", "offline UI", "stream cancel/stale file switch", "reader browser flow"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "node scripts/probe-blank.mjs (skipped: no Chromium executable)", "Node digest parser fixture", "offline and missing-key state review", "stream cancel/stale file switch", "clear-AI stream invalidation review", "StrictMode session lifecycle and atomic line update review", "reader browser flow (blocked: no browser instance)"],
+      "blocker": "Browser runtime has no available instance; keep AI-03 in_progress until real QA, digest, offline, keyboard and responsive reader evidence is collected.",
       "rollback": "Retain existing shell and local annotations; disable network action without removing saved material.",
       "next": ["P4"]
     },

@@ -5,7 +5,7 @@
  *
  * 统一提交文献全文；有划词引用时在提问中重点指出选中片段。
  */
-import { MessageCircle, X } from 'lucide-react';
+import { MessageCircle, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, EmptyState, IconButton, toast } from '../../../components/common';
@@ -24,14 +24,18 @@ export function QAPanel() {
   const pendingQaQuote = useReaderStore((s) => s.pendingQaQuote);
   const setPendingQaQuote = useReaderStore((s) => s.setPendingQaQuote);
   const ensureFile = useQaStore((s) => s.ensureFile);
+  const stop = useQaStore((s) => s.stop);
   const send = useQaStore((s) => s.send);
   const sending = useQaStore((s) => s.sending);
+  const loading = useQaStore((s) => s.loading);
+  const errorMessage = useQaStore((s) => s.errorMessage);
   const messages = useQaStore(useShallow((s) => s.messages));
   const aiSettings = useUiStore((s) => s.aiSettings);
   const files = useFileStore(useShallow((s) => s.files));
 
   const [draft, setDraft] = useState('');
   const [quote, setQuote] = useState<string | null>(null);
+  const [quotePage, setQuotePage] = useState<number | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -42,14 +46,23 @@ export function QAPanel() {
 
   // 按当前阅读文件切换独立对话
   useEffect(() => {
+    setDraft('');
+    setQuote(null);
+    setQuotePage(null);
     if (!fileId) return;
-    ensureFile(fileId);
+    void ensureFile(fileId);
+    return () => {
+      if (useQaStore.getState().fileId === fileId) {
+        useQaStore.getState().stop();
+      }
+    };
   }, [fileId, ensureFile]);
 
   // 划词提问：填入引用块并聚焦输入框（§8.7）
   useEffect(() => {
     if (!pendingQaQuote) return;
-    setQuote(pendingQaQuote);
+    setQuote(pendingQaQuote.text);
+    setQuotePage(pendingQaQuote.page);
     setPendingQaQuote(null);
     inputRef.current?.focus();
   }, [pendingQaQuote, setPendingQaQuote]);
@@ -62,7 +75,12 @@ export function QAPanel() {
   }, [messages]);
 
   const canSend =
-    isOnline && !sending && Boolean(draft.trim()) && Boolean(activeFile);
+    isOnline &&
+    aiSettings.apiKey.trim().length > 0 &&
+    !sending &&
+    !loading &&
+    Boolean(draft.trim()) &&
+    Boolean(activeFile);
 
   const handleSend = async () => {
     if (!canSend || !activeFile) return;
@@ -74,11 +92,13 @@ export function QAPanel() {
     const quotedText = quote;
     setDraft('');
     setQuote(null);
+    const quotedPage = quotePage;
+    setQuotePage(null);
     // 全文在 store 内装入 system；选中片段在 API user 中重点指出
     await send({
       content,
       quotedText,
-      quotedPage: null,
+      quotedPage,
       file: activeFile,
       settings: aiSettings,
     });
@@ -86,6 +106,12 @@ export function QAPanel() {
 
   return (
     <div className={styles.root} aria-label="AI 问答">
+      <div className={styles.status} aria-live="polite">
+        {loading ? '正在恢复本文件的问答…' : null}
+        {!loading && !isOnline ? '离线状态下保留历史，暂不能发起新问答' : null}
+        {!loading && isOnline && !aiSettings.apiKey.trim() ? '请先配置 API Key' : null}
+        {errorMessage ? errorMessage : null}
+      </div>
       <div ref={listRef} className={styles.messages}>
         {messages.length === 0 ? (
           <EmptyState
@@ -114,7 +140,7 @@ export function QAPanel() {
                 </p>
                 {m.status === 'error' ? (
                   <p className={styles.bubbleError} role="alert">
-                    请求失败
+                    本次问答未完成
                   </p>
                 ) : null}
               </li>
@@ -132,7 +158,10 @@ export function QAPanel() {
             <IconButton
               aria-label="移除引用"
               className={styles.quoteRemove}
-              onClick={() => setQuote(null)}
+              onClick={() => {
+                setQuote(null);
+                setQuotePage(null);
+              }}
             >
               <X size={16} strokeWidth={1.5} />
             </IconButton>
@@ -145,13 +174,15 @@ export function QAPanel() {
             aria-label="问题输入"
             rows={1}
             value={draft}
-            disabled={!isOnline || sending}
+            disabled={!isOnline || sending || loading || !aiSettings.apiKey.trim()}
             placeholder={
-              isOnline
-                ? quote
-                  ? '针对选中片段提问（仍附带全文）…'
-                  : '输入问题（将附带文献全文）…'
-                : '离线状态下暂不可用'
+              !isOnline
+                ? '离线状态下暂不可用'
+                : !aiSettings.apiKey.trim()
+                  ? '请先在设置中配置 API Key'
+                  : quote
+                    ? '针对选中片段提问（仍附带全文）…'
+                    : '输入问题（将附带文献全文）…'
             }
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -162,15 +193,21 @@ export function QAPanel() {
               }
             }}
           />
-          <Button
-            aria-label="发送问题"
-            variant="primary"
-            size="sm"
-            disabled={!canSend}
-            onClick={() => void handleSend()}
-          >
-            {sending ? '…' : '发送'}
-          </Button>
+          {sending ? (
+            <IconButton aria-label="停止生成" onClick={stop}>
+              <Square size={16} strokeWidth={1.5} />
+            </IconButton>
+          ) : (
+            <Button
+              aria-label="发送问题"
+              variant="primary"
+              size="sm"
+              disabled={!canSend}
+              onClick={() => void handleSend()}
+            >
+              发送
+            </Button>
+          )}
         </div>
       </div>
     </div>

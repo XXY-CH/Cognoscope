@@ -1,13 +1,19 @@
 /**
- * runDigest.ts - 整理习得编排：批注 + PDF 文字稿 → AI Markdown
+ * runDigest.ts - 整理习得编排：批注 + 问答 + 本地文字稿 → 结构化 Markdown
  * 所属：E · 阅读界面 > SidePanel
  * 规范参考：UI_spec.md §8.9；HANDOFF.md §5
  */
-import type { Annotation, FileNode } from '../types';
+import type {
+  Annotation,
+  FileNode,
+  QaMessage,
+  ResearchDigestStructure,
+} from '../types';
 import type { AiSettingsDraft } from '../stores/uiStore';
 import { chatCompletion } from './aiChat';
 import { buildDigestMessages } from './digestPrompt';
 import { loadDocumentTranscript } from './loadDocumentTranscript';
+import { parseDigestMarkdown } from './digestStructure';
 import {
   evaluateAnnotationArtifacts,
   type ResearchArtifactGateSummary,
@@ -16,12 +22,14 @@ import {
 export interface RunDigestInput {
   file: FileNode;
   annotations: Annotation[];
+  qaMessages?: QaMessage[];
   ai: AiSettingsDraft;
   signal?: AbortSignal;
 }
 
 export interface RunDigestResult {
   markdown: string;
+  structured: ResearchDigestStructure;
   /** 是否成功附上 PDF 文字稿 */
   usedTranscript: boolean;
   /** 仅基于本地摘录/定位的可解释门槛结果。 */
@@ -34,11 +42,14 @@ export interface RunDigestResult {
 export async function runDigest(
   input: RunDigestInput,
 ): Promise<RunDigestResult> {
-  const { file, annotations, ai, signal } = input;
+  const { file, annotations, qaMessages = [], ai, signal } = input;
   const meaningful = annotations.filter(
     (a) => a.body.trim() || (a.quotedText?.trim() ?? ''),
   );
-  if (meaningful.length === 0) {
+  const meaningfulQa = qaMessages.filter(
+    (message) => message.status === 'done' && message.content.trim(),
+  );
+  if (meaningful.length === 0 && meaningfulQa.length === 0) {
     throw new Error('暂无可整理的批注或问答');
   }
 
@@ -49,6 +60,7 @@ export async function runDigest(
     transcript: transcript.text,
     transcriptTruncated: transcript.truncated,
     answerLanguage: ai.answerLanguage,
+    qaMessages: meaningfulQa,
   });
 
   const markdown = await chatCompletion({
@@ -60,6 +72,7 @@ export async function runDigest(
 
   return {
     markdown,
+    structured: parseDigestMarkdown(markdown),
     usedTranscript: transcript.text.length > 0,
     artifactGate: evaluateAnnotationArtifacts({
       file,

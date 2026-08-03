@@ -44,6 +44,22 @@ export async function putSession(session: ReadingSession): Promise<void> {
   await db.put('sessions', session);
 }
 
+/** 仅在会话仍进行中时原子地推进已读行数，避免与结束写互相复活。 */
+export async function updateSessionLines(
+  id: string,
+  linesRead: number,
+): Promise<void> {
+  const db = await getDb();
+  const tx = db.transaction('sessions', 'readwrite');
+  const session = await tx.store.get(id);
+  if (!session || session.endedAt || session.linesRead >= linesRead) {
+    await tx.done;
+    return;
+  }
+  await tx.store.put({ ...session, linesRead });
+  await tx.done;
+}
+
 /**
  * 批量写入
  */

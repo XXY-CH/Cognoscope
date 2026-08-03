@@ -374,6 +374,25 @@ export interface ResearchLead {
 /** 会话结束后的 AI 整理结果；Markdown 是展示/导出视图，不是 citation-ready 事实。 */
 export type ResearchDigestStatus = 'waiting' | 'generating' | 'ready' | 'error';
 
+/** Markdown 整理的可扫描投影状态；解析失败时仍保留原 Markdown 草稿。 */
+export type ResearchDigestParseStatus = 'structured' | 'markdown-only';
+
+export interface ResearchDigestSection {
+  /** 稳定的展示 key，不承担证据身份。 */
+  id: string;
+  /** Markdown 二级标题或回退标题。 */
+  title: string;
+  /** 非列表正文，保留模型输出的上下文。 */
+  body: string;
+  /** 从 Markdown 列表投影出的条目。 */
+  items: string[];
+}
+
+export interface ResearchDigestStructure {
+  parseStatus: ResearchDigestParseStatus;
+  sections: ResearchDigestSection[];
+}
+
 export interface ResearchDigest {
   id: string;
   sessionId: string;
@@ -387,6 +406,8 @@ export interface ResearchDigest {
   reviewCount: number;
   directSaveReasons: string[];
   reviewReasons: string[];
+  /** 可选以兼容 v10 已保存的 Markdown-only 记录。 */
+  structured?: ResearchDigestStructure | null;
   createdAt: string;
   updatedAt: string;
 }

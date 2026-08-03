@@ -4,15 +4,38 @@
 import puppeteer from 'puppeteer-core';
 import fs from 'node:fs';
 
-const edge =
-  process.env.EDGE_PATH ||
-  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const executableCandidates = [
+  process.env.EDGE_PATH,
+  process.env.CHROME_PATH,
+  process.env.PUPPETEER_EXECUTABLE_PATH,
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/usr/bin/microsoft-edge',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+].filter((candidate) => candidate && fs.existsSync(candidate));
+
+const executablePath = executableCandidates[0];
+if (!executablePath) {
+  const skipped = {
+    skipped: true,
+    reason: 'No Chromium-compatible browser executable was found.',
+    configureWith: 'EDGE_PATH, CHROME_PATH, or PUPPETEER_EXECUTABLE_PATH',
+  };
+  fs.writeFileSync('probe-blank-result.json', JSON.stringify(skipped, null, 2));
+  console.log(JSON.stringify(skipped, null, 2));
+  process.exit(0);
+}
 
 const errors = [];
 const logs = [];
 
 const browser = await puppeteer.launch({
-  executablePath: edge,
+  executablePath,
   headless: true,
   args: ['--no-sandbox', '--disable-gpu'],
 });

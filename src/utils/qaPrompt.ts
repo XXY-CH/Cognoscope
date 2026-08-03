@@ -60,15 +60,17 @@ export function buildQaSystemPrompt(input: QaSystemPromptInput): string {
 export function buildQaUserContent(
   question: string,
   quotedText: string | null,
+  quotedPage: number | null = null,
 ): string {
   const q = question.trim();
   const quote = quotedText?.trim();
-  if (!quote) return q;
+  if (!quote && quotedPage == null) return q;
 
   return [
     '【重点关注】用户在全文中选中了以下片段，请优先围绕该片段理解与作答，并结合全文：',
     '-----',
-    quote,
+    quote || '（未保存选中文本）',
+    quotedPage == null ? '' : `来源位置：第 ${quotedPage} 页/节`,
     '-----',
     '',
     '【用户问题】',
@@ -85,15 +87,16 @@ export function toApiChatMessages(
     role: 'user' | 'assistant';
     content: string;
     quotedText: string | null;
+    quotedPage?: number | null;
   }>,
 ): ChatMessage[] {
   return [
     { role: 'system', content: systemPrompt },
     ...history.map((m) => ({
-      role: m.role,
-      content:
-        m.role === 'user'
-          ? buildQaUserContent(m.content, m.quotedText)
+        role: m.role,
+        content:
+          m.role === 'user'
+          ? buildQaUserContent(m.content, m.quotedText, m.quotedPage ?? null)
           : m.content,
     })),
   ];
