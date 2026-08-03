@@ -21,6 +21,12 @@ import { parseEvidenceAnalysis } from '../utils/evidenceAnalysisParse';
 import { chatCompletion } from '../utils/aiChat';
 import { createId } from '../utils/id';
 import { normalizeEvidenceText } from '../utils/evidenceMatch';
+import {
+  hasAvailableEvidenceSources,
+  isCitationReadyEvidenceRow,
+} from '../utils/evidenceCitation';
+import { reconcileSourceRecords } from '../utils/sourceInvalidation';
+import { subscribeSourceInvalidation } from '../utils/sourceInvalidationEvents';
 import { useFileStore } from './fileStore';
 import { useUiStore } from './uiStore';
 
@@ -82,13 +88,13 @@ function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
 }
 
-function rowCanVerify(row: EvidenceRow): boolean {
+function rowCanVerify(row: EvidenceRow, files: ReturnType<typeof useFileStore.getState>['files']): boolean {
   return row.evidence.length > 0 && row.evidence.every(
     (item) =>
       item.quotedText.trim().length > 0 &&
       item.match !== 'none' &&
       item.locator.kind !== 'unresolved',
-  );
+  ) && hasAvailableEvidenceSources(row, files);
 }
 
 interface EvidenceMatrixState {
@@ -177,12 +183,15 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       get().analysis?.updatedAt === analysisUpdatedAt &&
       get().analysisRequestId === requestAtStart &&
       navigationAtStart === navigationEpoch;
+    let persisted = next;
     await enqueuePersistence(
       matrixPersistenceKey(analysis.matrixId),
-      () => evidenceAnalysesDb.putEvidenceAnalysis(next),
+      async () => {
+        persisted = await evidenceAnalysesDb.putEvidenceAnalysis(next);
+      },
       isCurrent,
     );
-    if (isCurrent()) set({ analysis: next });
+    if (isCurrent()) set({ analysis: persisted });
   };
 
   const persistMatrix = async (
@@ -301,7 +310,9 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         if (normalizedAnalysis && normalizedAnalysis !== analysis) {
           await enqueuePersistence(
             matrixPersistenceKey(normalizedAnalysis.matrixId),
-            () => evidenceAnalysesDb.putEvidenceAnalysis(normalizedAnalysis),
+            async () => {
+              await evidenceAnalysesDb.putEvidenceAnalysis(normalizedAnalysis);
+            },
             () => currentNavigationEpoch === navigationEpoch,
           );
         }
@@ -424,7 +435,7 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         const previousRows = await evidenceRowsDb.listEvidenceRowsByMatrix(matrix.id);
         const previousVerified = previousRows.filter((row) => row.verification === 'verified');
         const previousKeys = new Set(previousVerified.map((row) => normalizeEvidenceText(row.conclusion)));
-        const nextRows = [
+        let persistedRows = [
           ...previousVerified,
           ...parsedRows.filter((row) => !previousKeys.has(normalizeEvidenceText(row.conclusion))),
         ];
@@ -432,7 +443,7 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
           matrixPersistenceKey(matrix.id),
           async () => {
             await evidenceRowsDb.deleteEvidenceRowsByMatrix(matrix.id);
-            await evidenceRowsDb.putEvidenceRows(nextRows);
+            persistedRows = await evidenceRowsDb.putEvidenceRows(persistedRows);
           },
           isCurrentRequest,
         );
@@ -443,7 +454,7 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
             ? parsed.warnings.join('；')
             : bundle.truncated
               ? '部分本地输入已截断，请核对原文'
-              : null,
+            : null,
           updatedAt: now(),
         };
         await enqueuePersistence(
@@ -454,7 +465,7 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         if (isCurrentRequest()) {
           set({
             activeMatrix: ready,
-            rows: nextRows,
+            rows: persistedRows,
             requestId: null,
             errorMessage: null,
           });
@@ -491,7 +502,10 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       const matrix = get().activeMatrix;
       if (!matrix) return;
       abortPendingAnalysis();
-      const verifiedRows = get().rows.filter((row) => row.verification === 'verified');
+      const verifiedRows = get().rows.filter(
+        (row) =>
+          isCitationReadyEvidenceRow(row, useFileStore.getState().files),
+      );
       if (verifiedRows.length === 0) {
         set({ errorMessage: '请先确认至少一条证据结论，再生成研究分析' });
         return;
@@ -531,7 +545,9 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       try {
         await enqueuePersistence(
           matrixPersistenceKey(matrix.id),
-          () => evidenceAnalysesDb.putEvidenceAnalysis(started),
+          async () => {
+            await evidenceAnalysesDb.putEvidenceAnalysis(started);
+          },
           isCurrentAnalysis,
         );
         const files = useFileStore.getState().files.filter(
@@ -576,13 +592,16 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
           extractionError: parsed.warnings.length > 0 ? parsed.warnings.join('；') : null,
           updatedAt: now(),
         };
+        let persistedReady = ready;
         await enqueuePersistence(
           matrixPersistenceKey(matrix.id),
-          () => evidenceAnalysesDb.putEvidenceAnalysis(ready),
+          async () => {
+            persistedReady = await evidenceAnalysesDb.putEvidenceAnalysis(ready);
+          },
           isCurrentAnalysis,
         );
         if (isCurrentAnalysis()) {
-          set({ analysis: ready, analysisRequestId: null, errorMessage: null });
+          set({ analysis: persistedReady, analysisRequestId: null, errorMessage: null });
         }
       } catch (error) {
         const aborted = isAbortError(error) || controller.signal.aborted;
@@ -599,7 +618,9 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
           };
           await enqueuePersistence(
             matrixPersistenceKey(matrix.id),
-            () => evidenceAnalysesDb.putEvidenceAnalysis(failed),
+            async () => {
+              await evidenceAnalysesDb.putEvidenceAnalysis(failed);
+            },
             isCurrentAnalysis,
           );
           if (isCurrentAnalysis()) {
@@ -627,7 +648,9 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         get().activeMatrix?.id === analysis.matrixId && get().analysisRequestId === null;
       await enqueuePersistence(
         matrixPersistenceKey(analysis.matrixId),
-        () => evidenceAnalysesDb.putEvidenceAnalysis(cancelled),
+        async () => {
+          await evidenceAnalysesDb.putEvidenceAnalysis(cancelled);
+        },
         isCancelledStateCurrent,
       );
       if (isCancelledStateCurrent()) set({ analysis: cancelled, errorMessage: null });
@@ -674,13 +697,16 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       };
       const isCurrent = (): boolean =>
         currentNavigationEpoch === navigationEpoch && get().activeMatrix?.id === row.matrixId;
+      let persisted = next;
       await enqueuePersistence(
         matrixPersistenceKey(row.matrixId),
-        () => evidenceRowsDb.putEvidenceRow(next),
+        async () => {
+          persisted = await evidenceRowsDb.putEvidenceRow(next);
+        },
         isCurrent,
       );
       if (isCurrent()) {
-        set({ rows: get().rows.map((item) => (item.id === rowId ? next : item)) });
+        set({ rows: get().rows.map((item) => (item.id === rowId ? persisted : item)) });
       }
       if (!isCurrent()) return;
       await markAnalysisStale('矩阵行已编辑，请重新核对引用它的研究分析', [rowId]);
@@ -705,13 +731,16 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       };
       const isCurrent = (): boolean =>
         currentNavigationEpoch === navigationEpoch && get().activeMatrix?.id === row.matrixId;
+      let persisted = next;
       await enqueuePersistence(
         matrixPersistenceKey(row.matrixId),
-        () => evidenceRowsDb.putEvidenceRow(next),
+        async () => {
+          persisted = await evidenceRowsDb.putEvidenceRow(next);
+        },
         isCurrent,
       );
       if (isCurrent()) {
-        set({ rows: get().rows.map((item) => (item.id === rowId ? next : item)) });
+        set({ rows: get().rows.map((item) => (item.id === rowId ? persisted : item)) });
       }
       if (!isCurrent()) return;
       await markAnalysisStale('证据备注已编辑，请重新核对引用它的研究分析', [rowId]);
@@ -723,7 +752,7 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       abortPendingRequest();
       abortPendingAnalysis();
       const currentNavigationEpoch = navigationEpoch;
-      if (state === 'verified' && !rowCanVerify(row)) {
+      if (state === 'verified' && !rowCanVerify(row, useFileStore.getState().files)) {
         set({ errorMessage: '该行的摘录或定位尚未通过本地证据核对' });
         return false;
       }
@@ -732,12 +761,14 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         ...item,
         verification: state,
       }));
-      const persisted = { ...next, evidence: nextEvidence };
       const isCurrent = (): boolean =>
         currentNavigationEpoch === navigationEpoch && get().activeMatrix?.id === row.matrixId;
+      let persisted: EvidenceRow = { ...next, evidence: nextEvidence };
       await enqueuePersistence(
         matrixPersistenceKey(row.matrixId),
-        () => evidenceRowsDb.putEvidenceRow(persisted),
+        async () => {
+          persisted = await evidenceRowsDb.putEvidenceRow(persisted);
+        },
         isCurrent,
       );
       if (isCurrent()) {
@@ -769,13 +800,16 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         currentNavigationEpoch === navigationEpoch &&
         get().activeMatrix?.id === analysis.matrixId &&
         get().analysis?.id === analysis.id;
+      let persisted = next;
       await enqueuePersistence(
         matrixPersistenceKey(analysis.matrixId),
-        () => evidenceAnalysesDb.putEvidenceAnalysis(next),
+        async () => {
+          persisted = await evidenceAnalysesDb.putEvidenceAnalysis(next);
+        },
         isCurrent,
       );
       if (isCurrent()) {
-        set({ analysis: next });
+        set({ analysis: persisted });
       }
     },
 
@@ -786,8 +820,20 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       abortPendingAnalysis();
       const currentNavigationEpoch = navigationEpoch;
       if (state === 'verified') {
-        const rowIds = new Set(get().rows.filter((row) => row.verification === 'verified').map((row) => row.id));
-        if (item.rowIds.length === 0 || item.rowIds.some((rowId) => !rowIds.has(rowId))) {
+        const files = useFileStore.getState().files;
+        const validRows = new Set(
+          get()
+            .rows
+            .filter(
+              (row) =>
+                isCitationReadyEvidenceRow(row, files),
+            )
+            .map((row) => row.id),
+        );
+        if (
+          item.rowIds.length === 0 ||
+          item.rowIds.some((rowId) => !validRows.has(rowId))
+        ) {
           set({ errorMessage: '该分析项缺少有效的已确认矩阵行引用' });
           return false;
         }
@@ -798,13 +844,16 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
         currentNavigationEpoch === navigationEpoch &&
         get().activeMatrix?.id === analysis.matrixId &&
         get().analysis?.id === analysis.id;
+      let persisted = next;
       await enqueuePersistence(
         matrixPersistenceKey(analysis.matrixId),
-        () => evidenceAnalysesDb.putEvidenceAnalysis(next),
+        async () => {
+          persisted = await evidenceAnalysesDb.putEvidenceAnalysis(next);
+        },
         isCurrent,
       );
       if (isCurrent()) {
-        set({ analysis: next, errorMessage: null });
+        set({ analysis: persisted, errorMessage: null });
       }
       return true;
     },
@@ -849,4 +898,26 @@ export const useEvidenceMatrixStore = create<EvidenceMatrixState>((set, get) => 
       set({ activeMatrix: null, rows: [], analysis: null, selectedRowIds: [], requestId: null, analysisRequestId: null });
     },
   };
+});
+
+subscribeSourceInvalidation((fileIds) => {
+  for (const controller of requestControllers.values()) controller.abort();
+  requestControllers.clear();
+  for (const controller of analysisControllers.values()) controller.abort();
+  analysisControllers.clear();
+  navigationEpoch += 1;
+  const state = useEvidenceMatrixStore.getState();
+  const result = reconcileSourceRecords({
+    fileIds,
+    rows: state.rows,
+    analyses: state.analysis ? [state.analysis] : [],
+    signals: [],
+    leads: [],
+  });
+  useEvidenceMatrixStore.setState({
+    rows: result.rows,
+    analysis: result.analyses[0] ?? state.analysis,
+    requestId: null,
+    analysisRequestId: null,
+  });
 });

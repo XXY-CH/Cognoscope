@@ -1,6 +1,6 @@
 /** ResearchLeadReview - 当前研究状态中的待审阅线索队列。 */
 import { ArrowRight, Check, CircleX, ExternalLink } from 'lucide-react';
-import { Button } from '../../components/common';
+import { Badge, Button } from '../../components/common';
 import type { ResearchLead } from '../../types';
 import styles from './ResearchLeadReview.module.css';
 
@@ -33,7 +33,14 @@ export function ResearchLeadReview({
         {leads.map((lead) => (
           <article className={styles.item} key={lead.id}>
             <div className={styles.itemCopy}>
-              <h3>{lead.title}</h3>
+              <h3>
+                {lead.title}
+                {lead.status === 'stale' ? (
+                  <Badge aria-label="来源失效" tone="warning" soft>
+                    来源失效
+                  </Badge>
+                ) : null}
+              </h3>
               <p>{lead.explanation}</p>
               <ul>
                 {lead.reasons.slice(0, 2).map((reason) => (
@@ -47,6 +54,7 @@ export function ResearchLeadReview({
                 variant="secondary"
                 size="sm"
                 leftIcon={<Check size={15} strokeWidth={1.6} />}
+                disabled={lead.status === 'stale'}
                 onClick={() => onAccept(lead.id)}
               >
                 接受线索
@@ -56,6 +64,7 @@ export function ResearchLeadReview({
                 variant="ghost"
                 size="sm"
                 leftIcon={<CircleX size={15} strokeWidth={1.6} />}
+                disabled={lead.status === 'stale'}
                 onClick={() => onDismiss(lead.id)}
               >
                 忽略
@@ -65,6 +74,7 @@ export function ResearchLeadReview({
                 variant="ghost"
                 size="sm"
                 rightIcon={<ExternalLink size={15} strokeWidth={1.6} />}
+                disabled={lead.status === 'stale'}
                 onClick={() => onReadSource(lead)}
               >
                 回读来源

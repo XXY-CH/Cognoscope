@@ -1,25 +1,31 @@
 {
   "schema": "xuesen.agent-run-state/v1",
-  "runId": "run_2026-08-03_ai03",
-  "objective": "在既有 Interview、Apple Design 合同和 AI-03 计划边界内，完成按文件持久化 QA、会话边界结构化整理和本地失败隔离；保留证据矩阵作为唯一可引用核验入口，并记录浏览器验收阻塞。",
+  "runId": "run_2026-08-03_kg06",
+  "objective": "在既有 Interview、Apple Design 合同和 KG-06 计划边界内，完成来源软删除的行级失效传播、citation-ready 门禁、跨标签页状态同步和持久化竞态隔离；保留证据矩阵作为唯一可引用核验入口，并记录浏览器验收阻塞。",
   "scope": [
-    "AI-03",
-    "src/db/index.ts",
-    "src/db/qaMessages.ts",
-    "src/stores/qaStore.ts",
-    "src/utils/aiChat.ts",
-    "src/utils/digestPrompt.ts",
-    "src/utils/digestStructure.ts",
-    "src/utils/runDigest.ts",
+    "D3",
+    "KG-06",
+    "src/stores/fileStore.ts",
+    "src/stores/evidenceMatrixStore.ts",
     "src/stores/researchArtifactStore.ts",
-    "src/hooks/useReadingSession.ts",
-    "src/features/reader/panels/QAPanel.tsx",
-    "src/features/reader/DigestDialog.tsx",
-    "src/features/research-state/PostReadingSummary.tsx",
-    "src/components/layout/settings/DataPanel.tsx",
-    ".omx/specs/deep-interview-frontend-research-environment.md",
-    ".omx/plans/ai-era-research-environment-frontend.md",
-    ".omx/plans/ai03-plan-2026-08-03.md"
+    "src/db/sourceInvalidation.ts",
+    "src/db/evidenceRows.ts",
+    "src/db/evidenceAnalyses.ts",
+    "src/db/researchSignals.ts",
+    "src/db/researchLeads.ts",
+    "src/utils/sourceInvalidation.ts",
+    "src/utils/sourceInvalidationEvents.ts",
+    "src/utils/evidenceCitation.ts",
+    "src/utils/evidenceAnalysisCitation.ts",
+    "src/utils/currentResearchState.ts",
+    "src/features/evidence-matrix/EvidenceMatrixPage.tsx",
+    "src/features/evidence-matrix/EvidenceRowEditor.tsx",
+    "src/features/research-state/CurrentResearchStatePage.tsx",
+    "src/features/research-state/ResearchLeadReview.tsx",
+    "scripts/probe-source-invalidation.mjs",
+    "scripts/probe-evidence-matrix.mjs",
+    ".omx/plans/kg06-plan-2026-08-03.md",
+    ".omx/specs/deep-interview-frontend-research-environment.md"
   ],
   "active": ["AG-QA"],
   "done": [
@@ -34,10 +40,10 @@
     "AG-REVIEW",
     "AG-INTEGRATION"
   ],
-  "blocked": ["AG-QA: browser runtime unavailable for real 390/768/1280 PDF/EPUB interaction evidence"],
+  "blocked": ["AG-QA: browser runtime unavailable for source deletion/restore and real 390/768/1280 PDF/EPUB interaction evidence"],
   "attempts": {
-    "AG-REVIEW": 2,
-    "AG-QA": 2,
+    "AG-REVIEW": 3,
+    "AG-QA": 1,
     "AG-INTEGRATION": 1
   },
   "artifacts": [
@@ -45,15 +51,9 @@
     "docs/graph-engineering.json",
     "docs/AGENT_DEPENDENCY_GRAPH.md",
     "docs/agent-dependency-graph.json",
-    ".omx/specs/deep-interview-frontend-research-environment.md",
-    ".omx/plans/ai-era-research-environment-frontend.md",
-    ".omx/plans/ai03-plan-2026-08-03.md",
-    ".omx/plans/ai03-arch-contract-2026-08-03.md",
-    ".omx/plans/ai03-ux-contract-2026-08-03.md",
-    ".omx/plans/ai03-data-contract-2026-08-03.md",
-    ".omx/plans/ai03-research-rubric-2026-08-03.md",
-    ".omx/plans/ai03-state-2026-08-03.md",
+    ".omx/plans/kg06-plan-2026-08-03.md",
     ".omx/plans/kg05-review-2026-08-03.md",
+    "scripts/probe-source-invalidation.mjs",
     "scripts/probe-evidence-matrix.mjs"
   ],
   "localAgentGraph": [
@@ -61,26 +61,25 @@
     "docs/agent-dependency-graph.json"
   ],
   "findings": [
-    "AI-03 implementation adds IndexedDB v11 qaMessages with by-file/by-created indexes, file hard-delete cascade, and data-clear cleanup.",
-    "QA streams are guarded by request/file generations; cancel and file switch cannot update the active file, and failed local writes surface without blocking reading.",
-    "Clearing AI data cancels the active QA stream and invalidates queued persistence writes before the object store is cleared.",
-    "QA history normalization now uses the same persistence generation, file changes clear the local draft/quote, and clearing notes/bookmarks refreshes in-memory stores after IndexedDB succeeds.",
-    "Digest consumes annotations, completed QA, and local transcript; required headings gate structured projection while the original Markdown is retained.",
-    "StrictMode/session lifecycle now reuses same-file setup, waits for session creation, and atomically updates lines before ending superseded file sessions without duplicate digest runs.",
-    "Digest and QA outputs remain working memory; verified evidence rows remain the citation-ready boundary.",
-    "Browser runtime has no available instance; real QA, PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending."
+    "Soft delete and dependent evidence/analysis/signal/lead reconciliation share one IndexedDB transaction; hard purge semantics remain explicit and unchanged.",
+    "Reconciliation is row-level: only evidence items referencing deleted sources become unresolved, and unaffected rows retain their identity and verification.",
+    "Citation-ready output requires verified rows, verified evidence items, matched excerpts, resolvable locators and active files; mixed legacy rows are rejected.",
+    "Open matrix, research artifact and file projections receive local and BroadcastChannel invalidation events; stale lead actions are disabled and rejected at the store boundary.",
+    "Evidence row, analysis, signal, and lead writes re-read current files/rows/signals inside IndexedDB transactions; non-citation-ready row IDs prevent an async or cross-tab old snapshot from reviving citation-ready state.",
+    "The bundled fixture covers pure reconciliation, restore navigation semantics, mixed legacy citation rejection and no-op idempotence; transaction execution is recorded as a static contract/manual gate because no browser-backed IDB runner is installed.",
+    "Browser runtime has no available instance; source deletion/restore, real PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending."
   ],
   "lastVerification": [
     "npm run build (pass)",
     "npm run lint (pass; three pre-existing warnings)",
-    "git diff --check (pass after documentation whitespace cleanup)",
-    "node scripts/probe-evidence-matrix.mjs (pass; v11, QA invalidation, file-switch reset, atomic session lines, StrictMode, digest provenance markers)",
+    "git diff --check (pass)",
+    "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs (pass)",
+    "esbuild-bundled source invalidation fixture (pass)",
     "node scripts/probe-blank.mjs (skipped; no Chromium-compatible executable found)",
-    "Node strip-types digest structure fixture (required headings, malformed Markdown fallback, preamble preservation)",
-    "AG-REVIEW adversarial findings fixed and dispositioned",
+    "AG-REVIEW cross-tab race and citation-gate findings fixed; transaction fixture gap documented",
     "browser runtime discovery and retry (agent.browsers.list returned [])"
   ],
   "next": ["AG-QA"],
   "iteration": 1,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> AG-QA -> AG-INTEGRATION completed static/data gates; AG-QA remains the retry point until a browser runtime is available."
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> AG-QA static/data gates -> AG-INTEGRATION; AG-QA remains the retry point until a browser runtime is available for source deletion/restore and real documents."
 }

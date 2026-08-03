@@ -1,5 +1,6 @@
 /** evidenceAnalysisCitation - 将已确认的二次分析复制为带矩阵回指的 Markdown。 */
 import type { EvidenceAnalysis, EvidenceRow, FileNode } from '../types';
+import { isCitationReadyEvidenceRow } from './evidenceCitation';
 
 const SECTION_LABELS: Record<EvidenceAnalysis['items'][number]['section'], string> = {
   findings: '研究结论与证据',
@@ -39,9 +40,16 @@ export function formatEvidenceAnalysisCitation(
         item,
         references: item.rowIds
           .map((rowId) => rowById.get(rowId))
-          .filter((row): row is EvidenceRow => row != null && row.verification === 'verified'),
+          .filter(
+            (row): row is EvidenceRow =>
+              row != null &&
+              isCitationReadyEvidenceRow(row, files),
+          ),
       }))
-      .filter(({ references }) => references.length > 0)
+      .filter(
+        ({ item, references }) =>
+          references.length > 0 && references.length === item.rowIds.length,
+      )
       .map(({ item, references }) => {
         const referenceText = references.map((row) => {
             const excerpts = row.evidence

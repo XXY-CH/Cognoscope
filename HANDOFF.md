@@ -253,6 +253,20 @@ interface GraphEdge {
 
 见 [附录 B](#附录-b--知识图谱文件清单)。安装 **`react-force-graph-2d`**，禁止伞包 `react-force-graph`。
 
+### 6.5 KG-06 来源失效边界
+
+文件进入回收站时，`src/db/sourceInvalidation.ts` 会在同一个 IndexedDB
+事务内更新 `FileNode` 与所有受影响的证据行、分析项、研究信号和研究线索。
+证据按实际 `EvidenceItem.fileId` 行级降级：来源项变为 `unresolved`，引用它的行和分析项同步降级；信号/线索变为 `stale`，保留原始 ID 和来源引用。
+
+恢复文件只恢复 Reader 的导航能力，不自动恢复 `verified`。最终复制边界使用
+`isCitationReadyEvidenceRow`，要求行、每条 evidence item、匹配结果、locator 和
+active `FileNode` 都仍然可核验。跨标签页软删除通过 `BroadcastChannel` 刷新文件和
+研究投影；IndexedDB 写入也会在事务内重新读取来源，防止异步旧结果把核验状态复活。
+
+当前静态/数据探针已通过；真实 PDF/EPUB 删除-恢复、多视口和键盘验收仍因本机没有
+Chromium-compatible browser runtime 而阻塞，不能把该浏览器证据写成已完成。
+
 ---
 
 ## 7. 建议实现顺序与 API 约定

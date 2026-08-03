@@ -13,6 +13,8 @@ import type {
   ResearchLead,
   ResearchSignal,
 } from '../types';
+import { isCitationReadyEvidenceRow } from './evidenceCitation';
+import { isResolvableLocator } from './graphEvidence';
 
 export interface CurrentResearchStateInput {
   files: FileNode[];
@@ -42,9 +44,12 @@ export interface CurrentResearchStateSnapshot {
   pendingRowCount: number;
   disputedRowCount: number;
   verifiedRowCount: number;
+  staleSourceCount: number;
   hasLibrary: boolean;
   latestDigest: ResearchDigest | null;
   pendingLeadCount: number;
+  staleLeadCount: number;
+  staleSignalCount: number;
   acceptedSignalCount: number;
 }
 
@@ -115,14 +120,32 @@ export function buildCurrentResearchState(
   const disputedRowCount = input.rows.filter(
     (row) => row.verification === 'disputed',
   ).length;
+  const staleSourceCount = input.rows.filter((row) =>
+    row.evidence.some((item) => {
+      const file = input.files.find((candidate) => candidate.id === item.fileId);
+      return (
+        !file ||
+        file.deletedAt !== null ||
+        file.type === 'folder' ||
+        !isResolvableLocator(item.locator, file.type)
+      );
+    }),
+  ).length;
   const verifiedRowCount = input.rows.filter(
-    (row) => row.verification === 'verified',
+    (row) =>
+      isCitationReadyEvidenceRow(row, input.files),
   ).length;
   const latestDigest = [...input.digests].sort((a, b) =>
     b.updatedAt.localeCompare(a.updatedAt),
   )[0] ?? null;
   const pendingLeadCount = input.leads.filter(
     (lead) => lead.status === 'proposed',
+  ).length;
+  const staleLeadCount = input.leads.filter(
+    (lead) => lead.status === 'stale',
+  ).length;
+  const staleSignalCount = input.signals.filter(
+    (signal) => signal.status === 'stale',
   ).length;
   const acceptedSignalCount = input.signals.filter(
     (signal) => signal.status === 'accepted',
@@ -138,9 +161,12 @@ export function buildCurrentResearchState(
     pendingRowCount,
     disputedRowCount,
     verifiedRowCount,
+    staleSourceCount,
     hasLibrary: activeFiles.length > 0,
     latestDigest,
     pendingLeadCount,
+    staleLeadCount,
+    staleSignalCount,
     acceptedSignalCount,
   };
 }

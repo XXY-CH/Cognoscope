@@ -24,6 +24,7 @@ import { useGraphStore } from '../../stores/graphStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { useResearchArtifactStore } from '../../stores/researchArtifactStore';
 import { formatFriendlyTime } from '../../utils/format';
+import { subscribeSourceInvalidation } from '../../utils/sourceInvalidationEvents';
 import {
   buildCurrentResearchState,
   type CurrentResearchStateSnapshot,
@@ -45,7 +46,10 @@ function statusLabel(snapshot: CurrentResearchStateSnapshot): string {
   if (
     snapshot.pendingRowCount > 0 ||
     snapshot.disputedRowCount > 0 ||
-    snapshot.pendingLeadCount > 0
+    snapshot.pendingLeadCount > 0 ||
+    snapshot.staleSourceCount > 0 ||
+    snapshot.staleLeadCount > 0 ||
+    snapshot.staleSignalCount > 0
   ) {
     return '有证据或研究线索需要回读和判断';
   }
@@ -76,6 +80,11 @@ export function CurrentResearchStatePage() {
   const [rows, setRows] = useState<EvidenceRow[]>([]);
   const [analyses, setAnalyses] = useState<EvidenceAnalysis[]>([]);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [sourceEpoch, setSourceEpoch] = useState(0);
+  const fileSnapshot = files
+    .map((file) => `${file.id}:${file.deletedAt ?? ''}`)
+    .sort()
+    .join('|');
 
   const handleImport = () => {
     // ImportDialog 挂在资料库页；先打开状态，再导航让对话框在同一 store 状态下出现。
@@ -90,6 +99,11 @@ export function CurrentResearchStatePage() {
     void loadGraph();
     void loadArtifacts();
   }, [loadArtifacts, loadFiles, loadGraph, loadMatrices, loadSessions]);
+
+  useEffect(
+    () => subscribeSourceInvalidation(() => setSourceEpoch((epoch) => epoch + 1)),
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -127,7 +141,7 @@ export function CurrentResearchStatePage() {
     return () => {
       cancelled = true;
     };
-  }, [matrices]);
+  }, [fileSnapshot, matrices, sourceEpoch]);
 
   const snapshot = useMemo(
     () =>
@@ -302,6 +316,15 @@ export function CurrentResearchStatePage() {
               </strong>
               <small>证据和线索，保留判断权</small>
             </div>
+            <div className={styles.metric}>
+              <span>来源失效</span>
+              <strong>{snapshot.staleSourceCount}</strong>
+                <small>
+                  {snapshot.staleLeadCount + snapshot.staleSignalCount > 0
+                    ? `${snapshot.staleLeadCount} 条线索 · ${snapshot.staleSignalCount} 条立场待复核`
+                    : '恢复后仍需重新核对'}
+                </small>
+            </div>
           </section>
 
           {snapshot.latestDigest ? (
@@ -327,7 +350,21 @@ export function CurrentResearchStatePage() {
           ) : null}
 
           <ResearchLeadReview
-            leads={leads.filter((lead) => lead.status === 'proposed').slice(0, 4)}
+            leads={leads
+              .filter(
+                (lead) =>
+                  lead.status === 'stale' ||
+                  (lead.status === 'proposed' &&
+                    lead.fileIds.some((fileId) =>
+                      files.some(
+                        (file) =>
+                          file.id === fileId &&
+                          file.deletedAt === null &&
+                          file.type !== 'folder',
+                      ),
+                    )),
+              )
+              .slice(0, 4)}
             onAccept={(leadId) => {
               void setLeadStatus(leadId, 'accepted');
             }}
@@ -392,14 +429,18 @@ export function CurrentResearchStatePage() {
 
           <section className={styles.statusStrip} aria-label="研究状态说明">
             <span className={styles.statusStripIcon} aria-hidden="true">
-              {snapshot.disputedRowCount > 0 ? (
+              {snapshot.disputedRowCount > 0 || snapshot.staleSourceCount > 0 ? (
                 <TriangleAlert size={18} strokeWidth={1.5} />
               ) : (
                 <CheckCircle2 size={18} strokeWidth={1.5} />
               )}
             </span>
             <span>
-              {snapshot.disputedRowCount > 0
+              {snapshot.staleSourceCount > 0 ||
+              snapshot.staleLeadCount > 0 ||
+              snapshot.staleSignalCount > 0
+                ? `有 ${snapshot.staleSourceCount} 条证据来源失效，另有 ${snapshot.staleLeadCount + snapshot.staleSignalCount} 条研究记录待复核。`
+                : snapshot.disputedRowCount > 0
                 ? `有 ${snapshot.disputedRowCount} 条证据存在冲突，系统保留它们供你判断。`
                 : '本地阅读、批注和已确认证据会持续留在研究空间里。'}
             </span>

@@ -3,6 +3,7 @@
  * 这里只读本地已确认内容，不触发 AI 请求。
  */
 import type { EvidenceRow, FileNode } from '../types';
+import { isResolvableLocator } from './graphEvidence';
 
 function locatorLabel(item: EvidenceRow['evidence'][number], fileById: Map<string, FileNode>): string {
   const source = fileById.get(item.fileId);
@@ -17,6 +18,40 @@ function locatorLabel(item: EvidenceRow['evidence'][number], fileById: Map<strin
   return `${fileLabel}，${locator.reason}`;
 }
 
+function isAvailableFile(file: FileNode | undefined): boolean {
+  return file?.deletedAt === null && file.type !== 'folder';
+}
+
+/** 只有所有来源仍可回读时，证据行才有资格进入 citation-ready 输出。 */
+export function hasAvailableEvidenceSources(
+  row: EvidenceRow,
+  files: FileNode[],
+): boolean {
+  const fileById = new Map(files.map((file) => [file.id, file]));
+  return row.evidence.length > 0 && row.evidence.every((item) =>
+    isAvailableFile(fileById.get(item.fileId)) &&
+    isResolvableLocator(item.locator, fileById.get(item.fileId)?.type),
+  );
+}
+
+/** 最终可复制边界：来源、定位、匹配和每条证据都必须仍然已确认。 */
+export function isCitationReadyEvidenceRow(
+  row: EvidenceRow,
+  files: FileNode[],
+): boolean {
+  return (
+    row.verification === 'verified' &&
+    row.evidence.length > 0 &&
+    row.evidence.every(
+      (item) =>
+        item.verification === 'verified' &&
+        item.quotedText.trim().length > 0 &&
+        item.match !== 'none',
+    ) &&
+    hasAvailableEvidenceSources(row, files)
+  );
+}
+
 /** 生成稳定的 citation-ready Markdown。 */
 export function formatEvidenceCitation(
   rows: EvidenceRow[],
@@ -24,7 +59,7 @@ export function formatEvidenceCitation(
 ): string {
   const fileById = new Map(files.map((file) => [file.id, file]));
   return rows
-    .filter((row) => row.verification === 'verified')
+    .filter((row) => isCitationReadyEvidenceRow(row, files))
     .map((row) => {
       if (row.evidence.length === 0) return '';
       const evidenceText = row.evidence

@@ -2,8 +2,9 @@
  * evidenceRows - 证据矩阵结论行持久化
  * 所属：文献综述证据层
  */
-import type { EvidenceRow } from '../types';
+import type { EvidenceRow, FileNode } from '../types';
 import { getDb } from './index';
+import { reconcileEvidenceRowForFiles } from '../utils/sourceInvalidation';
 
 export async function listEvidenceRowsByMatrix(
   matrixId: string,
@@ -40,17 +41,33 @@ export async function getEvidenceRow(
   return db.get('evidenceRows', id);
 }
 
-export async function putEvidenceRow(row: EvidenceRow): Promise<void> {
+export async function putEvidenceRow(row: EvidenceRow): Promise<EvidenceRow> {
   const db = await getDb();
-  await db.put('evidenceRows', row);
+  const tx = db.transaction(['files', 'evidenceRows'], 'readwrite');
+  const fileIds = [...new Set(row.evidence.map((item) => item.fileId))];
+  const files = (
+    await Promise.all(fileIds.map((fileId) => tx.objectStore('files').get(fileId)))
+  ).filter((file): file is FileNode => file != null);
+  const persisted = reconcileEvidenceRowForFiles(row, files);
+  await tx.objectStore('evidenceRows').put(persisted);
+  await tx.done;
+  return persisted;
 }
 
-export async function putEvidenceRows(rows: EvidenceRow[]): Promise<void> {
-  if (rows.length === 0) return;
+export async function putEvidenceRows(rows: EvidenceRow[]): Promise<EvidenceRow[]> {
+  if (rows.length === 0) return [];
   const db = await getDb();
-  const tx = db.transaction('evidenceRows', 'readwrite');
-  await Promise.all(rows.map((row) => tx.store.put(row)));
+  const tx = db.transaction(['files', 'evidenceRows'], 'readwrite');
+  const fileIds = [
+    ...new Set(rows.flatMap((row) => row.evidence.map((item) => item.fileId))),
+  ];
+  const files = (
+    await Promise.all(fileIds.map((fileId) => tx.objectStore('files').get(fileId)))
+  ).filter((file): file is FileNode => file != null);
+  const persistedRows = rows.map((row) => reconcileEvidenceRowForFiles(row, files));
+  await Promise.all(persistedRows.map((row) => tx.objectStore('evidenceRows').put(row)));
   await tx.done;
+  return persistedRows;
 }
 
 export async function deleteEvidenceRow(id: string): Promise<void> {

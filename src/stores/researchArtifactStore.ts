@@ -20,6 +20,8 @@ import type { AiSettingsDraft } from './uiStore';
 import { loadDocumentTranscript } from '../utils/loadDocumentTranscript';
 import { evaluateAnnotationArtifacts } from '../utils/researchArtifactGate';
 import { runDigest } from '../utils/runDigest';
+import { reconcileSourceRecords } from '../utils/sourceInvalidation';
+import { subscribeSourceInvalidation } from '../utils/sourceInvalidationEvents';
 
 type ArtifactLoadStatus = 'idle' | 'loading' | 'error';
 
@@ -192,8 +194,8 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
             createdAt: annotation.createdAt,
             updatedAt: timestamp,
           };
-          await researchSignalsDb.putResearchSignal(signal);
-          set({ signals: upsertById(get().signals, signal) });
+          const persistedSignal = await researchSignalsDb.putResearchSignal(signal);
+          set({ signals: upsertById(get().signals, persistedSignal) });
         } else {
           const lead: ResearchLead = {
             id: leadId(sessionId, annotation.id),
@@ -210,8 +212,8 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
             createdAt: timestamp,
             updatedAt: timestamp,
           };
-          await researchLeadsDb.putResearchLead(lead);
-          set({ leads: upsertById(get().leads, lead) });
+          const persistedLead = await researchLeadsDb.putResearchLead(lead);
+          set({ leads: upsertById(get().leads, persistedLead) });
         }
       }
 
@@ -298,10 +300,25 @@ export const useResearchArtifactStore = create<ResearchArtifactState>(
 
     setLeadStatus: async (leadIdValue, status) => {
       const lead = get().leads.find((item) => item.id === leadIdValue);
-      if (!lead) return;
+      if (!lead || lead.status === 'stale') return;
       const next: ResearchLead = { ...lead, status, updatedAt: now() };
-      await researchLeadsDb.putResearchLead(next);
-      set({ leads: get().leads.map((item) => (item.id === next.id ? next : item)) });
+      const persisted = await researchLeadsDb.putResearchLead(next);
+      set({ leads: get().leads.map((item) => (item.id === persisted.id ? persisted : item)) });
     },
   }),
 );
+
+subscribeSourceInvalidation((fileIds) => {
+  const state = useResearchArtifactStore.getState();
+  const result = reconcileSourceRecords({
+    fileIds,
+    rows: [],
+    analyses: [],
+    signals: state.signals,
+    leads: state.leads,
+  });
+  useResearchArtifactStore.setState({
+    signals: result.signals,
+    leads: result.leads,
+  });
+});

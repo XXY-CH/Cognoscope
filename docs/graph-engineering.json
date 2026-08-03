@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03"],
+    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06"],
     "next": ["KG-06", "UX-06", "P4"],
-    "blocked": [],
+    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联。",
     "lastVerified": "2026-08-03",
     "evidence": [
       "npm run build",
@@ -24,6 +24,9 @@
       "Node strip-types KG-05 fixture probe",
       "curl route shell checks for /, /knowledge-graph, /read/:fileId, /evidence-matrix",
       "Node strip-types digest structure fixture probe",
+      "esbuild-bundled source invalidation fixture",
+      "source invalidation transaction and citation gate contract probe",
+      "cross-tab BroadcastChannel invalidation and IndexedDB write guards",
       "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending"
     ]
   },
@@ -249,15 +252,16 @@
       "type": "capability",
       "layer": "next",
       "title": "失效来源与状态传播",
-      "status": "next",
+      "status": "in_progress",
       "priority": 2,
       "goal": "来源删除、locator 失效或矩阵行编辑后，图谱、矩阵和当前研究状态一起降级。",
       "dependsOn": ["KG-05", "D3"],
-      "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/stores/researchLeadStore.ts", "src/db"],
-      "contracts": ["soft delete", "stale invalidation", "no orphaned source action"],
+      "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/db/sourceInvalidation.ts", "src/db/evidenceRows.ts", "src/db/evidenceAnalyses.ts", "src/db/researchSignals.ts", "src/db/researchLeads.ts", "src/utils/sourceInvalidation.ts", "src/utils/sourceInvalidationEvents.ts", "src/utils/evidenceCitation.ts", "src/utils/evidenceAnalysisCitation.ts", "src/utils/currentResearchState.ts"],
+      "contracts": ["soft delete", "stale invalidation", "no orphaned source action", "restore requires re-verification", "hard purge remains explicit irreversible cascade"],
       "acceptance": ["dependent items show unresolved/stale", "verified/citation-ready is revoked when source is unavailable", "restore can recover navigability where supported"],
-      "verification": ["evidence probe", "IndexedDB migration/reload", "browser source deletion and restore flow"],
-      "rollback": "Preserve unresolved records and source IDs; never silently purge evidence links.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs", "esbuild-bundled source invalidation fixture", "IndexedDB write guard contract probe", "browser source deletion and restore flow (blocked: no browser instance)"],
+      "blocker": "Static/data gates pass; browser runtime is unavailable for source deletion/restore and real PDF/EPUB interaction. Bundled fixture covers pure reconciliation; transaction execution remains a manual/browser gate.",
+      "rollback": "Soft delete preserves unresolved records and source IDs; hard purge remains an explicit irreversible cascade.",
       "next": ["P4"]
     },
     {
@@ -354,11 +358,12 @@
       "type": "data",
       "layer": "data",
       "title": "来源失效与 stale invalidation",
-      "status": "in_progress",
+      "status": "done",
       "goal": "文件、locator、证据行变化时，所有引用方得到可解释的降级状态。",
-      "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/db/index.ts"],
-      "contracts": ["soft delete", "additive migration", "no orphaned navigable actions"],
-      "acceptance": ["row edit invalidates analysis", "source deletion invalidates dependent evidence"],
+      "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/db/sourceInvalidation.ts", "src/db/evidenceRows.ts", "src/db/evidenceAnalyses.ts", "src/db/researchSignals.ts", "src/db/researchLeads.ts", "src/utils/sourceInvalidation.ts", "src/utils/sourceInvalidationEvents.ts", "src/utils/evidenceCitation.ts", "src/utils/evidenceAnalysisCitation.ts"],
+      "contracts": ["soft delete", "additive migration", "no orphaned navigable actions", "restore requires re-verification"],
+      "acceptance": ["row edit invalidates analysis", "source deletion invalidates dependent evidence", "citation gate rejects unavailable or malformed sources"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "esbuild-bundled source invalidation fixture", "node scripts/probe-evidence-matrix.mjs"],
       "next": ["KG-06"]
     },
     {

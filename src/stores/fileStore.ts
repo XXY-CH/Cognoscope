@@ -15,6 +15,11 @@ import {
 } from '../utils/fileType';
 import { useFileDocMetaStore } from './fileDocMetaStore';
 import { useGraphStore } from './graphStore';
+import { invalidateSourceReferences } from '../db/sourceInvalidation';
+import {
+  emitSourceInvalidation,
+  subscribeSourceInvalidation,
+} from '../utils/sourceInvalidationEvents';
 
 export type FileSortKey = 'name' | 'updatedAt' | 'sizeBytes';
 export type SortDirection = 'asc' | 'desc';
@@ -361,12 +366,17 @@ export const useFileStore = create<FileState>((set, get) => ({
           }
         : f,
     );
-    await filesDb.putFiles(next.filter((f) => toDelete.has(f.id)));
+    // 来源仍保留在回收站，但所有可引用派生物必须先撤销核验状态。
+    await invalidateSourceReferences(
+      idList,
+      next.filter((f) => toDelete.has(f.id)),
+    );
     set({
       files: next,
       selectedIds: [],
       deleteConfirmIds: [],
     });
+    emitSourceInvalidation(idList);
     // 移入回收站即从知识图谱摘除（还原后需重新入图）
     await useGraphStore.getState().removeFilesFromGraph(idList);
     return idList;
@@ -602,6 +612,11 @@ export const useFileStore = create<FileState>((set, get) => ({
   openDeleteConfirm: (ids) => set({ deleteConfirmIds: ids }),
   closeDeleteConfirm: () => set({ deleteConfirmIds: [] }),
 }));
+
+// 另一标签页软删除来源后，刷新本地文件投影，避免继续展示可回读入口。
+subscribeSourceInvalidation(() => {
+  void useFileStore.getState().loadFiles();
+});
 
 /**
  * 从 store 派生：当前目录可见列表（未删除 + 搜索 + 类型 + 排序）

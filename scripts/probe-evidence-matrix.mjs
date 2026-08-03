@@ -20,7 +20,7 @@ if (!html.includes('<div id="root"></div>')) {
   throw new Error('矩阵路由没有返回 React 根节点');
 }
 
-const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource] = await Promise.all([
+const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource, invalidationSource, citationSource, currentStateSource, fileStoreSource, matrixPageSource, rowEditorSource, eventSource, leadReviewSource, evidenceRowsDbSource, evidenceAnalysisDbSource, researchSignalsDbSource, researchLeadsDbSource] = await Promise.all([
   fs.readFile(new URL('../src/App.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/db/index.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/stores/evidenceMatrixStore.ts', import.meta.url), 'utf8'),
@@ -34,6 +34,18 @@ const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPan
   fs.readFile(new URL('../src/features/research-state/PostReadingSummary.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/reader/DigestDialog.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/reader/panels/QAPanel.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/sourceInvalidation.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/utils/evidenceCitation.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/utils/currentResearchState.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/stores/fileStore.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixPage.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/evidence-matrix/EvidenceRowEditor.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/utils/sourceInvalidationEvents.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/research-state/ResearchLeadReview.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/evidenceRows.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/evidenceAnalyses.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/researchSignals.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/researchLeads.ts', import.meta.url), 'utf8'),
 ]);
 for (const [label, source, marker] of [
   ['App 路由', appSource, "path: 'evidence-matrix'"],
@@ -62,6 +74,25 @@ for (const [label, source, marker] of [
   ['整理弹窗工作记忆边界', digestDialogSource, '不是引用材料'],
   ['文件切换清理 QA 草稿', qaPanelSource, 'setQuotePage(null)'],
   ['清除批注书签内存状态', dataPanelSource, 'clearAnnotationState();'],
+  ['来源失效事务', invalidationSource, 'invalidateSourceReferences'],
+  ['来源失效降级纯函数', invalidationSource, 'reconcileSourceRecords'],
+  ['引用来源可用性门禁', citationSource, 'isCitationReadyEvidenceRow'],
+  ['证据行写入来源复核', evidenceRowsDbSource, "['files', 'evidenceRows']"],
+  ['分析写入来源复核', evidenceAnalysisDbSource, "['files', 'evidenceRows', 'evidenceAnalyses']"],
+  ['当前状态来源失效计数', currentStateSource, 'staleSourceCount'],
+  ['当前状态 stale 研究记录计数', currentStateSource, 'staleLeadCount'],
+  ['软删除调用来源失效', fileStoreSource, 'invalidateSourceReferences('],
+  ['矩阵复制来源门禁', matrixPageSource, 'isCitationReadyEvidenceRow(row, files)'],
+  ['矩阵回读 locator 门禁', matrixPageSource, 'isResolvableLocator(item.locator, file.type)'],
+  ['证据行来源失效状态', rowEditorSource, '来源失效'],
+  ['来源失效内存通知', eventSource, 'emitSourceInvalidation'],
+  ['跨标签页来源失效广播', eventSource, 'BroadcastChannel'],
+  ['stale 线索不可操作', leadReviewSource, "lead.status === 'stale'"],
+  ['分析写入依赖复核', evidenceAnalysisDbSource, 'nonCitationReadyRowIds'],
+  ['信号写入间接依赖复核', researchSignalsDbSource, 'nonCitationReadyRowIds'],
+  ['线索写入间接依赖复核', researchLeadsDbSource, 'nonCitationReadyRowIds'],
+  ['直接 locator 来源复核', researchSignalsDbSource, 'unavailableSourceIdsForReferences'],
+  ['线索直接 locator 来源复核', researchLeadsDbSource, 'unavailableSourceIdsForReferences'],
 ]) {
   if (!source.includes(marker)) throw new Error(`${label}缺少契约标记：${marker}`);
 }
@@ -90,6 +121,11 @@ console.log(JSON.stringify({
     'atomic-session-line-update',
     'file-switch-draft-reset',
     'notes-clear-memory-refresh',
+    'source-invalidation-transaction',
+    'source-invalidation-reconciliation',
+    'cross-tab-write-guards',
+    'citation-source-gate',
+    'current-state-stale-source-count',
     'digest-heading-gate',
     'digest-provenance-warning',
   ],

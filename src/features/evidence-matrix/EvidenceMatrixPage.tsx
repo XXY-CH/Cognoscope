@@ -10,7 +10,12 @@ import { useFileStore } from '../../stores/fileStore';
 import { useEvidenceMatrixStore } from '../../stores/evidenceMatrixStore';
 import { useUiStore } from '../../stores/uiStore';
 import { useReaderStore } from '../../stores/readerStore';
-import { copyEvidenceCitation, formatEvidenceCitation } from '../../utils/evidenceCitation';
+import {
+  copyEvidenceCitation,
+  formatEvidenceCitation,
+  isCitationReadyEvidenceRow,
+} from '../../utils/evidenceCitation';
+import { isResolvableLocator } from '../../utils/graphEvidence';
 import { formatEvidenceAnalysisCitation } from '../../utils/evidenceAnalysisCitation';
 import type { EvidenceItem } from '../../types';
 import { EvidenceAnalysisPanel } from './EvidenceAnalysisPanel';
@@ -107,8 +112,13 @@ export function EvidenceMatrixPage() {
     [files, activeMatrix?.fileIds],
   );
   const selectedRows = useMemo(
-    () => rows.filter((row) => selectedRowIds.includes(row.id) && row.verification === 'verified'),
-    [rows, selectedRowIds],
+    () =>
+      rows.filter(
+        (row) =>
+          selectedRowIds.includes(row.id) &&
+          isCitationReadyEvidenceRow(row, files),
+      ),
+    [files, rows, selectedRowIds],
   );
 
   const onQuestionBlur = () => {
@@ -140,8 +150,13 @@ export function EvidenceMatrixPage() {
 
   const onOpenSource = (item: EvidenceItem, rowId: string) => {
     const file = files.find((candidate) => candidate.id === item.fileId);
-    if (!file || file.deletedAt !== null) {
-      toast.warning('来源不可用，请先从回收站恢复文件');
+    if (
+      !file ||
+      file.deletedAt !== null ||
+      file.type === 'folder' ||
+      !isResolvableLocator(item.locator, file.type)
+    ) {
+      toast.warning('来源或定位不可用，请恢复来源并重新核对');
       return;
     }
     if (!activeMatrix) return;

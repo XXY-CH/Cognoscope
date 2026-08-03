@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, BookOpen, Check, CircleHelp, Flag } from 'lucide-react';
 import { Badge, Button } from '../../components/common';
 import type { EvidenceItem, EvidenceRow, EvidenceVerificationState, FileNode } from '../../types';
+import { isResolvableLocator } from '../../utils/graphEvidence';
 import styles from './EvidenceRowEditor.module.css';
 
 interface EvidenceRowEditorProps {
@@ -62,6 +63,16 @@ export function EvidenceRowEditor({
   const [conclusion, setConclusion] = useState(row.conclusion);
   useEffect(() => setConclusion(row.conclusion), [row.conclusion]);
   const fileById = new Map(files.map((file) => [file.id, file]));
+  const sourceUnavailable = row.evidence.some((item) => {
+    const file = fileById.get(item.fileId);
+    return (
+      !file ||
+      file.deletedAt !== null ||
+      file.type === 'folder' ||
+      !isResolvableLocator(item.locator, file.type)
+    );
+  });
+  const displayState = sourceUnavailable ? 'unresolved' : row.verification;
 
   return (
     <article className={styles.root} aria-label={`证据结论：${row.conclusion}`}>
@@ -77,11 +88,11 @@ export function EvidenceRowEditor({
           <span>用于复制</span>
         </label>
         <Badge
-          aria-label={`结论状态：${verificationLabel(row.verification)}`}
-          tone={verificationTone(row.verification)}
+          aria-label={`结论状态：${sourceUnavailable ? '来源失效' : verificationLabel(row.verification)}`}
+          tone={sourceUnavailable ? 'warning' : verificationTone(row.verification)}
           soft
         >
-          {verificationLabel(row.verification)}
+          {sourceUnavailable ? '来源失效' : verificationLabel(displayState)}
         </Badge>
       </header>
 
@@ -108,7 +119,11 @@ export function EvidenceRowEditor({
         ) : (
           row.evidence.map((item) => {
             const file = fileById.get(item.fileId);
-            const unavailable = !file || file.deletedAt !== null;
+            const unavailable =
+              !file ||
+              file.deletedAt !== null ||
+              file.type === 'folder' ||
+              !isResolvableLocator(item.locator, file.type);
             return (
               <div className={styles.evidence} key={item.id}>
                 <div className={styles.evidenceHeader}>
@@ -132,7 +147,7 @@ export function EvidenceRowEditor({
                     )}
                   </div>
                   <Button
-                    aria-label={unavailable ? '来源不可用' : '打开来源位置'}
+                    aria-label={unavailable ? '来源或定位不可用' : '打开来源位置'}
                     variant="ghost"
                     size="sm"
                     leftIcon={<BookOpen size={14} strokeWidth={1.5} />}
@@ -150,7 +165,7 @@ export function EvidenceRowEditor({
                 {unavailable ? (
                   <p className={styles.unavailable}>
                     <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" />
-                    来源已移入回收站或不可用，恢复后再回读。
+                    来源已移入回收站或定位不可用，恢复来源并重新核对后再回读。
                   </p>
                 ) : null}
                 <blockquote className={styles.quote}>
@@ -176,7 +191,9 @@ export function EvidenceRowEditor({
 
       <footer className={styles.footer}>
         <div className={styles.footerHint}>
-          {row.verification === 'verified'
+          {sourceUnavailable
+            ? '来源失效：恢复后仍需重新核对'
+            : row.verification === 'verified'
             ? '已确认：可复制到文献综述'
             : row.verification === 'disputed'
               ? '请处理争议后再确认'
@@ -188,7 +205,7 @@ export function EvidenceRowEditor({
             variant="primary"
             size="sm"
             leftIcon={<Check size={14} strokeWidth={1.5} />}
-            disabled={row.verification === 'verified'}
+            disabled={row.verification === 'verified' || sourceUnavailable}
             onClick={() => onSetVerification('verified')}
           >
             确认
