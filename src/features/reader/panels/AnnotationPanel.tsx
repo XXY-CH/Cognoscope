@@ -4,6 +4,7 @@
  * 规范参考：UI_spec.md §8.6 / §14
  */
 import { useEffect, useState } from 'react';
+import { AlertTriangle, BookOpen } from 'lucide-react';
 import { Badge, Button } from '../../../components/common';
 import { useAnnotationStore } from '../../../stores/annotationStore';
 import { useReaderStore } from '../../../stores/readerStore';
@@ -11,14 +12,42 @@ import { formatFriendlyTime } from '../../../utils/format';
 import { AnnotationBodyField } from './AnnotationBodyField';
 import styles from './AnnotationPanel.module.css';
 
+function annotationJumpReason(
+  fileType: 'pdf' | 'epub' | 'md' | 'txt' | null,
+  anchor: string,
+  page: number,
+  runtimeReason: string | null,
+): string | null {
+  if (runtimeReason) return runtimeReason;
+  if (fileType === 'pdf') {
+    return Number.isFinite(page) && page > 0
+      ? null
+      : 'PDF 批注缺少有效页码定位';
+  }
+  if (fileType === 'epub') {
+    return /^epubcfi\(.+\)$/.test(anchor.trim())
+      ? null
+      : 'EPUB 批注缺少可重放的 CFI 定位';
+  }
+  return '该文件类型暂不支持原文回读';
+}
+
 /**
  * AnnotationPanel - 从 annotationStore 加载当前文件批注
  */
 export function AnnotationPanel() {
   const fileId = useReaderStore((s) => s.fileId);
+  const fileType = useReaderStore((s) => s.fileType);
   const currentPage = useReaderStore((s) => s.currentPage);
   const focusAnnotationId = useReaderStore((s) => s.focusAnnotationId);
   const setFocusAnnotationId = useReaderStore((s) => s.setFocusAnnotationId);
+  const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
+  const annotationLocatorStates = useReaderStore(
+    (s) => s.annotationLocatorStates,
+  );
+  const requestAnnotationJump = useReaderStore(
+    (s) => s.requestAnnotationJump,
+  );
   const items = useAnnotationStore((s) => s.items);
   const status = useAnnotationStore((s) => s.status);
   const loadForFile = useAnnotationStore((s) => s.loadForFile);
@@ -75,37 +104,79 @@ export function AnnotationPanel() {
         </p>
       ) : (
         <ul className={styles.list}>
-          {items.map((ann) => (
-            <li key={ann.id} className={styles.card} data-ann-id={ann.id}>
-              {ann.quotedText ? (
-                <p className={styles.quote}>{ann.quotedText}</p>
-              ) : null}
-              <AnnotationBodyField
-                annotationId={ann.id}
-                body={ann.body}
-                autoFocus={pendingFocusId === ann.id}
-                onCommit={(id, next) => {
-                  void updateBody(id, next);
-                  if (pendingFocusId === id) setPendingFocusId(null);
-                }}
-              />
-              <div className={styles.cardFooter}>
-                <span className={styles.meta}>
-                  第 {ann.page} 页 · {formatFriendlyTime(ann.updatedAt)}
-                </span>
-                <Button
-                  aria-label="删除批注"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    void remove(ann.id);
+          {items.map((ann) => {
+            const jumpReason = annotationJumpReason(
+              fileType,
+              ann.anchor,
+              ann.page,
+              annotationLocatorStates[ann.id]?.fileId === fileId &&
+                annotationLocatorStates[ann.id]?.status === 'unavailable'
+                ? annotationLocatorStates[ann.id]?.reason ?? '原文定位不可用'
+                : null,
+            );
+            return (
+              <li key={ann.id} className={styles.card} data-ann-id={ann.id}>
+                {ann.quotedText ? (
+                  <p className={styles.quote}>{ann.quotedText}</p>
+                ) : null}
+                <AnnotationBodyField
+                  annotationId={ann.id}
+                  body={ann.body}
+                  autoFocus={pendingFocusId === ann.id}
+                  onCommit={(id, next) => {
+                    void updateBody(id, next);
+                    if (pendingFocusId === id) setPendingFocusId(null);
                   }}
-                >
-                  删除
-                </Button>
-              </div>
-            </li>
-          ))}
+                />
+                <div className={styles.cardFooter}>
+                  <span className={styles.meta}>
+                    第 {ann.page} 页 · {formatFriendlyTime(ann.updatedAt)}
+                  </span>
+                  <Button
+                    aria-label={
+                      jumpReason
+                        ? `原文不可用：${jumpReason}`
+                        : `回到批注原文，第 ${ann.page} 页`
+                    }
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={
+                      jumpReason ? (
+                        <AlertTriangle size={14} strokeWidth={1.5} />
+                      ) : (
+                        <BookOpen size={14} strokeWidth={1.5} />
+                      )
+                    }
+                    disabled={Boolean(jumpReason)}
+                    onClick={() => {
+                      if (jumpReason) return;
+                      if (fileType === 'pdf') {
+                        setCurrentPage(Math.max(1, ann.page));
+                      }
+                      requestAnnotationJump(ann.id);
+                    }}
+                  >
+                    {jumpReason ? '原文不可用' : '回到原文'}
+                  </Button>
+                  <Button
+                    aria-label="删除批注"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      void remove(ann.id);
+                    }}
+                  >
+                    删除
+                  </Button>
+                </div>
+                {jumpReason ? (
+                  <span className={styles.meta}>
+                    原文不可用：{jumpReason}
+                  </span>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

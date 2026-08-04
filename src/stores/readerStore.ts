@@ -4,7 +4,7 @@
  * 规范参考：UI_spec.md §8
  */
 import { create } from 'zustand';
-import type { EvidenceLocator, PdfOutlineItem } from '../types';
+import type { EpubTocItem, EvidenceLocator, PdfOutlineItem } from '../types';
 
 export type PageMode = 'single' | 'double' | 'scroll';
 export type SideSplitPreset = 'half' | 'qa-only' | 'anno-only';
@@ -14,6 +14,17 @@ export interface ReaderLocatorHandoff {
   matrixId: string;
   rowId: string;
   locator: EvidenceLocator;
+}
+
+export interface ReaderLocatorUnavailableState {
+  handoff: ReaderLocatorHandoff;
+  reason: string;
+}
+
+export interface AnnotationLocatorState {
+  fileId: string;
+  status: 'available' | 'unavailable';
+  reason: string | null;
 }
 
 export interface PendingQaQuote {
@@ -64,6 +75,48 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 
+/**
+ * 只在同一份 handoff 仍然挂起时清除，避免旧异步回放吞掉新请求。
+ */
+export function sameReaderLocatorHandoff(
+  current: ReaderLocatorHandoff | null,
+  expected: ReaderLocatorHandoff,
+): boolean {
+  if (
+    !current ||
+    current.fileId !== expected.fileId ||
+    current.matrixId !== expected.matrixId ||
+    current.rowId !== expected.rowId ||
+    current.locator.kind !== expected.locator.kind
+  ) {
+    return false;
+  }
+
+  if (current.locator.kind === 'pdf-page' && expected.locator.kind === 'pdf-page') {
+    return (
+      current.locator.page === expected.locator.page &&
+      current.locator.anchor === expected.locator.anchor
+    );
+  }
+  if (
+    current.locator.kind === 'epub-cfi' &&
+    expected.locator.kind === 'epub-cfi'
+  ) {
+    return (
+      current.locator.cfi === expected.locator.cfi &&
+      current.locator.location === expected.locator.location &&
+      current.locator.sectionIndex === expected.locator.sectionIndex
+    );
+  }
+  if (
+    current.locator.kind === 'unresolved' &&
+    expected.locator.kind === 'unresolved'
+  ) {
+    return current.locator.reason === expected.locator.reason;
+  }
+  return false;
+}
+
 interface ReaderState {
   /** 当前打开的文件 id */
   fileId: string | null;
@@ -106,8 +159,22 @@ interface ReaderState {
   defaultFitWidth: boolean;
   /** 文本推断的 PDF 大纲；TocPanel 消费 */
   pdfOutline: PdfOutlineItem[];
+  /** EPUB navigation 目录；href 由 EpubRenderer 消费 */
+  epubToc: EpubTocItem[];
+  /** EPUB navigation 目录的异步读取状态；不阻塞正文加载 */
+  epubTocStatus: 'idle' | 'loading' | 'ready' | 'error';
+  /** TocPanel 请求 EPUB rendition 跳转的原始 href */
+  pendingEpubTocHref: string | null;
+  /** 批注面板请求 Reader 回到原文的批注 id */
+  annotationJumpId: string | null;
+  /** 批注定位在当前 Reader 会话中的可用性；不改写 authored annotation */
+  annotationLocatorStates: Record<string, AnnotationLocatorState>;
+  /** EPUB 当前展示的 spine href；供 TOC active state 使用 */
+  currentEpubHref: string | null;
   /** 从证据矩阵跳转到来源时暂存的定位信息 */
   pendingLocator: ReaderLocatorHandoff | null;
+  /** 最近一次来源定位失败；清除 handoff 后仍保留供 Reader 展示 */
+  pendingLocatorUnavailable: ReaderLocatorUnavailableState | null;
 
   openFile: (input: {
     id: string;
@@ -156,8 +223,33 @@ interface ReaderState {
   /** 使当前页适配画布宽度 */
   requestFitWidth: () => void;
   setPdfOutline: (items: PdfOutlineItem[]) => void;
+  setEpubToc: (items: EpubTocItem[]) => void;
+  setEpubTocStatus: (
+    status: 'idle' | 'loading' | 'ready' | 'error',
+  ) => void;
+  requestEpubTocHref: (href: string) => void;
+  clearEpubTocHref: (expected?: string) => void;
+  requestAnnotationJump: (annotationId: string) => void;
+  clearAnnotationJump: () => void;
+  clearAnnotationJumpIfCurrent: (
+    fileId: string,
+    annotationId: string,
+  ) => void;
+  setAnnotationLocatorState: (
+    fileId: string,
+    annotationId: string,
+    status: 'available' | 'unavailable',
+    reason?: string,
+  ) => void;
+  setCurrentEpubHref: (href: string | null) => void;
   setPendingLocator: (handoff: ReaderLocatorHandoff | null) => void;
-  clearPendingLocator: () => void;
+  retryPendingLocator: (handoff: ReaderLocatorHandoff) => void;
+  setPendingLocatorUnavailable: (
+    handoff: ReaderLocatorHandoff,
+    reason: string,
+  ) => void;
+  clearPendingLocatorUnavailable: (expected?: ReaderLocatorHandoff) => void;
+  clearPendingLocator: (expected?: ReaderLocatorHandoff) => void;
 }
 
 export const useReaderStore = create<ReaderState>((set, get) => ({
@@ -188,7 +280,14 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   // 缺省开启：多数论文 PDF 更适合适应页宽起步
   defaultFitWidth: readBool(DEFAULT_FIT_WIDTH_KEY, true),
   pdfOutline: [],
+  epubToc: [],
+  epubTocStatus: 'idle',
+  pendingEpubTocHref: null,
+  annotationJumpId: null,
+  annotationLocatorStates: {},
+  currentEpubHref: null,
   pendingLocator: null,
+  pendingLocatorUnavailable: null,
 
   openFile: ({ id, name, type }) =>
     set({
@@ -207,7 +306,14 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       fitWidthActive: false,
       zoomBeforeFit: null,
       pdfOutline: [],
+      epubToc: [],
+      epubTocStatus: type === 'epub' ? 'loading' : 'idle',
+      pendingEpubTocHref: null,
+      annotationJumpId: null,
+      annotationLocatorStates: {},
+      currentEpubHref: null,
       pendingLocator: null,
+      pendingLocatorUnavailable: null,
     }),
 
   // 不重置 linesRead：离开页时 clearFile 可能先于会话 cleanup，清零会覆盖 IndexedDB
@@ -225,7 +331,14 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
       findNonce: 0,
       findDirection: 'next',
       pdfOutline: [],
+      epubToc: [],
+      epubTocStatus: 'idle',
+      pendingEpubTocHref: null,
+      annotationJumpId: null,
+      annotationLocatorStates: {},
+      currentEpubHref: null,
       pendingLocator: null,
+      pendingLocatorUnavailable: null,
     }),
 
   toggleToc: () => {
@@ -422,6 +535,93 @@ export const useReaderStore = create<ReaderState>((set, get) => ({
   },
 
   setPdfOutline: (pdfOutline) => set({ pdfOutline }),
-  setPendingLocator: (pendingLocator) => set({ pendingLocator }),
-  clearPendingLocator: () => set({ pendingLocator: null }),
+  setEpubToc: (epubToc) => set({ epubToc }),
+  setEpubTocStatus: (epubTocStatus) => set({ epubTocStatus }),
+  requestEpubTocHref: (pendingEpubTocHref) => set({ pendingEpubTocHref }),
+  clearEpubTocHref: (expected) => {
+    if (
+      expected !== undefined &&
+      get().pendingEpubTocHref !== expected
+    ) {
+      return;
+    }
+    set({ pendingEpubTocHref: null });
+  },
+  requestAnnotationJump: (annotationJumpId) => set({ annotationJumpId }),
+  clearAnnotationJump: () => set({ annotationJumpId: null }),
+  clearAnnotationJumpIfCurrent: (fileId, annotationId) => {
+    const state = get();
+    if (state.fileId !== fileId || state.annotationJumpId !== annotationId) {
+      return;
+    }
+    set({ annotationJumpId: null });
+  },
+  setAnnotationLocatorState: (fileId, annotationId, status, reason) => {
+    if (get().fileId !== fileId) return;
+    set((state) => ({
+      annotationLocatorStates: {
+        ...state.annotationLocatorStates,
+        [annotationId]: {
+          fileId,
+          status,
+          reason: status === 'unavailable' ? reason ?? '原文定位不可用' : null,
+        },
+      },
+    }));
+  },
+  setCurrentEpubHref: (currentEpubHref) => set({ currentEpubHref }),
+  setPendingLocator: (pendingLocator) =>
+    set(
+      pendingLocator
+        ? { pendingLocator, pendingLocatorUnavailable: null }
+        : { pendingLocator: null },
+    ),
+  retryPendingLocator: (handoff) => {
+    if (
+      !sameReaderLocatorHandoff(
+        get().pendingLocatorUnavailable?.handoff ?? null,
+        handoff,
+      )
+    ) {
+      return;
+    }
+    set({
+      pendingLocator: handoff,
+      pendingLocatorUnavailable: null,
+    });
+  },
+  setPendingLocatorUnavailable: (handoff, reason) => {
+    const currentFileId = get().fileId;
+    if (
+      (currentFileId && currentFileId !== handoff.fileId) ||
+      !sameReaderLocatorHandoff(get().pendingLocator, handoff)
+    ) {
+      return;
+    }
+    set({
+      pendingLocatorUnavailable: {
+        handoff,
+        reason: reason.trim() || '来源定位不可用',
+      },
+    });
+  },
+  clearPendingLocatorUnavailable: (expected) => {
+    const current = get().pendingLocatorUnavailable;
+    if (
+      expected &&
+      (!current || !sameReaderLocatorHandoff(current.handoff, expected))
+    ) {
+      return;
+    }
+    set({ pendingLocatorUnavailable: null });
+  },
+  clearPendingLocator: (expected) => {
+    if (
+      expected &&
+      !sameReaderLocatorHandoff(get().pendingLocator, expected)
+    ) {
+      return;
+    }
+    set({ pendingLocator: null });
+  },
 }));

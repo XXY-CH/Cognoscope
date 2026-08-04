@@ -178,6 +178,24 @@ export interface PdfOutlineItem {
 }
 
 /**
+ * EpubTocItem - EPUB navigation 投影到 Reader 目录面板的条目
+ * 所属：E · 阅读界面 > TocPanel
+ * 说明：href 保留 epub.js 原始导航目标，不把章节地址伪装成 PDF 页码。
+ */
+export interface EpubTocItem {
+  /** 稳定的本地列表 id */
+  id: string;
+  /** 导航标题 */
+  title: string;
+  /** epub.js 可消费的章节 href（可含 fragment）；结构项为空字符串 */
+  href: string;
+  /** 层级 0=顶级，1=子项，… */
+  level: number;
+  /** 原始 navigation 父链，包含未展示的空 href 容器 id */
+  parentIds: string[];
+}
+
+/**
  * Annotation - 划词批注
  * 所属：E · 阅读界面 > SidePanel > AnnotationPanel
  * 规范参考：UI_spec.md §9 / §8.6
@@ -189,7 +207,7 @@ export interface Annotation {
   fileId: string;
   /** PDF 为页码；EPUB 为 spine index */
   page: number;
-  /** 定位锚点：EPUB 用 CFI，PDF 为页内坐标序列化字符串 */
+  /** 定位锚点：EPUB 用 CFI，PDF 优先使用版本化文字层偏移，兼容旧字符串 */
   anchor: string;
   /** 引用的原文；无划词引用时为 `null` */
   quotedText: string | null;

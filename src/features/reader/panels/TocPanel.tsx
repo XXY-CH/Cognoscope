@@ -3,7 +3,14 @@
  * 所属页面：E · 阅读界面
  * 规范参考：UI_spec.md §8.4
  */
-import { useEffect, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type RefCallback,
+} from 'react';
 import { Bookmark, List, Pencil, Trash2, X } from 'lucide-react';
 import { EmptyState, IconButton } from '../../../components/common';
 import { useHorizontalResize } from '../../../hooks/usePanelResize';
@@ -15,6 +22,182 @@ import styles from './TocPanel.module.css';
 type TocTab = 'toc' | 'bookmarks';
 
 const BM_COLORS: AnnotationColor[] = ['yellow', 'green', 'blue', 'pink'];
+
+interface OutlineEntry {
+  id: string;
+  title: string;
+  level: number;
+  fileKind: 'pdf' | 'epub';
+  page?: number;
+  href?: string;
+  parentIds: readonly string[];
+}
+
+interface OutlineNode {
+  key: string;
+  entry: OutlineEntry | null;
+  index: number;
+  children: OutlineNode[];
+}
+
+function buildOutlineTree(entries: readonly OutlineEntry[]): OutlineNode[] {
+  const roots: OutlineNode[] = [];
+
+  const nodesByKey = new Map<string, OutlineNode>();
+  const appendOnce = (parent: OutlineNode | null, node: OutlineNode) => {
+    const children = parent ? parent.children : roots;
+    if (!children.some((child) => child.key === node.key)) {
+      children.push(node);
+    }
+  };
+  const ensureNode = (
+    key: string,
+    entry: OutlineEntry | null = null,
+    index = -1,
+  ): OutlineNode => {
+    const existing = nodesByKey.get(key);
+    if (existing) {
+      if (entry) {
+        existing.entry = entry;
+        existing.index = index;
+      }
+      return existing;
+    }
+    const node: OutlineNode = {
+      key,
+      entry,
+      index,
+      children: [],
+    };
+    nodesByKey.set(key, node);
+    return node;
+  };
+
+  entries.forEach((entry, index) => {
+    const level = Math.max(0, Math.floor(entry.level));
+    let parent: OutlineNode | null = null;
+    for (const parentId of entry.parentIds) {
+      const ancestor = ensureNode(parentId);
+      appendOnce(parent, ancestor);
+      parent = ancestor;
+    }
+    const node = ensureNode(entry.id, { ...entry, level }, index);
+    appendOnce(parent, node);
+  });
+
+  return roots;
+}
+
+interface OutlineTreeProps {
+  nodes: readonly OutlineNode[];
+  activeIndex: number;
+  onSelect: (entry: OutlineEntry) => void;
+  listRef?: RefCallback<HTMLUListElement>;
+  ariaLabel?: string;
+}
+
+function OutlineTree({
+  nodes,
+  activeIndex,
+  onSelect,
+  listRef,
+  ariaLabel,
+}: OutlineTreeProps): ReactNode {
+  return (
+    <ul
+      ref={listRef}
+      className={styles.outlineList}
+      aria-label={ariaLabel}
+    >
+      {nodes.map((node) => {
+        if (!node.entry) {
+          return (
+            <li key={node.key} className={styles.outlinePlaceholder}>
+              {node.children.length > 0 ? (
+                <OutlineTree
+                  nodes={node.children}
+                  activeIndex={activeIndex}
+                  onSelect={onSelect}
+                />
+              ) : null}
+            </li>
+          );
+        }
+        const active = node.index === activeIndex;
+        const { entry } = node;
+        const interactive = entry.fileKind === 'pdf' || Boolean(entry.href);
+        const itemContent = (
+          <>
+            {entry.page != null ? (
+              <span className={styles.outlinePage}>{entry.page}</span>
+            ) : null}
+            <span className={styles.outlineTitle}>{entry.title}</span>
+          </>
+        );
+        return (
+          <li key={node.key}>
+            {interactive ? (
+              <button
+                type="button"
+                className={styles.outlineItem}
+                data-level={entry.level}
+                data-file-kind={entry.fileKind}
+                data-active={active ? 'true' : undefined}
+                aria-current={active ? 'location' : undefined}
+                aria-label={
+                  entry.fileKind === 'pdf' && entry.page != null
+                    ? `跳转到 ${entry.title}，第 ${entry.page} 页`
+                    : `跳转到 ${entry.title}`
+                }
+                onClick={() => onSelect(entry)}
+              >
+                {itemContent}
+              </button>
+            ) : (
+              <div
+                className={styles.outlineItem}
+                data-level={entry.level}
+                data-file-kind={entry.fileKind}
+                data-container="true"
+              >
+                {itemContent}
+              </div>
+            )}
+            {node.children.length > 0 ? (
+              <OutlineTree
+                nodes={node.children}
+                activeIndex={activeIndex}
+                onSelect={onSelect}
+              />
+            ) : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function canonicalEpubHref(value: string): string {
+  return value
+    .trim()
+    .replace(/^\.?\//, '')
+    .replace(/^\/+/, '')
+    .replace(/\\/g, '/');
+}
+
+function epubHrefMatches(itemHref: string, currentHref: string): boolean {
+  const item = canonicalEpubHref(itemHref);
+  const current = canonicalEpubHref(currentHref);
+  if (!item || !current) return false;
+  if (item === current) return true;
+  const itemPath = item.split('#', 1)[0] ?? item;
+  const currentPath = current.split('#', 1)[0] ?? current;
+  return (
+    itemPath === currentPath ||
+    itemPath.endsWith(`/${currentPath}`) ||
+    currentPath.endsWith(`/${itemPath}`)
+  );
+}
 
 /** 点击色点循环切换书签颜色 */
 function nextColor(current: AnnotationColor): AnnotationColor {
@@ -29,18 +212,30 @@ export function TocPanel() {
   const open = useReaderStore((s) => s.tocOpen);
   const width = useReaderStore((s) => s.tocWidth);
   const fileId = useReaderStore((s) => s.fileId);
+  const fileType = useReaderStore((s) => s.fileType);
   const setTocWidth = useReaderStore((s) => s.setTocWidth);
   const toggleToc = useReaderStore((s) => s.toggleToc);
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
+  const requestEpubTocHref = useReaderStore((s) => s.requestEpubTocHref);
   const tocTabRequest = useReaderStore((s) => s.tocTabRequest);
   const clearTocTabRequest = useReaderStore((s) => s.clearTocTabRequest);
   const pdfOutline = useReaderStore((s) => s.pdfOutline);
+  const epubToc = useReaderStore((s) => s.epubToc);
+  const epubTocStatus = useReaderStore((s) => s.epubTocStatus);
+  const currentPage = useReaderStore((s) => s.currentPage);
+  const currentEpubHref = useReaderStore((s) => s.currentEpubHref);
   const [tab, setTab] = useState<TocTab>('toc');
   /** 拖拽调宽时关闭过渡 */
   const [dragging, setDragging] = useState(false);
   /** 正在编辑名称的书签 id */
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState('');
+  const [outlineListElement, setOutlineListElement] =
+    useState<HTMLUListElement | null>(null);
+  const setOutlineListRef = useCallback<RefCallback<HTMLUListElement>>(
+    (node) => setOutlineListElement(node),
+    [],
+  );
   const items = useBookmarkStore((s) => s.items);
   const loadForFile = useBookmarkStore((s) => s.loadForFile);
   const clear = useBookmarkStore((s) => s.clear);
@@ -67,6 +262,73 @@ export function TocPanel() {
     setTab(tocTabRequest);
     clearTocTabRequest();
   }, [tocTabRequest, clearTocTabRequest]);
+
+  const outlineEntries: OutlineEntry[] =
+    fileType === 'epub'
+      ? epubToc.map((item) => ({
+          id: item.id,
+          title: item.title,
+          level: item.level,
+          fileKind: 'epub',
+          href: item.href || undefined,
+          parentIds: item.parentIds,
+        }))
+      : pdfOutline.map((item, index) => ({
+          id: `pdf-toc-${index}`,
+          title: item.title,
+          level: item.level,
+          fileKind: 'pdf',
+          page: item.page,
+          parentIds: [],
+        }));
+  const outlineNodes = buildOutlineTree(outlineEntries);
+  const activeOutlineIndex =
+    fileType === 'epub'
+      ? currentEpubHref
+        ? (() => {
+            const current = canonicalEpubHref(currentEpubHref);
+            const exact = outlineEntries.findIndex(
+              (entry) =>
+                Boolean(entry.href) && canonicalEpubHref(entry.href ?? '') === current,
+            );
+            return exact >= 0
+              ? exact
+              : outlineEntries.findIndex((entry) =>
+                  entry.href
+                    ? epubHrefMatches(entry.href, currentEpubHref)
+                    : false,
+                );
+          })()
+        : -1
+      : outlineEntries.reduce(
+          (activeIndex, entry, index) =>
+            entry.page != null && entry.page <= currentPage
+              ? index
+              : activeIndex,
+          -1,
+        );
+
+  useEffect(() => {
+    if (tab !== 'toc' || activeOutlineIndex < 0) return;
+    const active = outlineListElement?.querySelector<HTMLElement>(
+      '[data-active="true"]',
+    );
+    if (!active) return;
+    const behavior = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+      ? 'auto'
+      : 'smooth';
+    active.scrollIntoView({ block: 'nearest', behavior });
+  }, [
+    activeOutlineIndex,
+    currentEpubHref,
+    currentPage,
+    fileType,
+    outlineEntries.length,
+    outlineListElement,
+    tab,
+  ]);
 
   const commitRename = async () => {
     if (!editingId) return;
@@ -128,7 +390,37 @@ export function TocPanel() {
 
         <div className={styles.body} role="tabpanel">
           {tab === 'toc' ? (
-            pdfOutline.length === 0 ? (
+            fileType === 'epub' ? (
+              epubTocStatus === 'loading' ? (
+                <p className={styles.placeholder} role="status">
+                  正在读取 EPUB 导航目录…
+                </p>
+              ) : epubTocStatus === 'error' ? (
+                <EmptyState
+                  aria-label="EPUB 目录读取失败"
+                  icon={<List strokeWidth={1.5} />}
+                  title="目录暂不可用"
+                  description="导航目录读取失败，但不影响正文阅读。"
+                />
+              ) : epubToc.length === 0 ? (
+                <EmptyState
+                  aria-label="EPUB 目录空状态"
+                  icon={<List strokeWidth={1.5} />}
+                  title="无导航目录"
+                  description="当前 EPUB 没有提供可用的 navigation 目录。"
+                />
+              ) : (
+                <OutlineTree
+                  nodes={outlineNodes}
+                  activeIndex={activeOutlineIndex}
+                  listRef={setOutlineListRef}
+                  ariaLabel="EPUB 导航目录"
+                  onSelect={(entry) => {
+                    if (entry.href) requestEpubTocHref(entry.href);
+                  }}
+                />
+              )
+            ) : pdfOutline.length === 0 ? (
               <EmptyState
                 aria-label="目录空状态"
                 icon={<List strokeWidth={1.5} />}
@@ -136,22 +428,15 @@ export function TocPanel() {
                 description="当前文档没有可用的目录大纲。"
               />
             ) : (
-              <ul className={styles.outlineList} aria-label="目录大纲">
-                {pdfOutline.map((item, i) => (
-                  <li key={`${item.page}-${i}`}>
-                    <button
-                      type="button"
-                      className={styles.outlineItem}
-                      data-level={item.level}
-                      aria-label={`跳转到 ${item.title}`}
-                      onClick={() => setCurrentPage(item.page)}
-                    >
-                      <span className={styles.outlinePage}>{item.page}</span>
-                      <span className={styles.outlineTitle}>{item.title}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <OutlineTree
+                nodes={outlineNodes}
+                activeIndex={activeOutlineIndex}
+                listRef={setOutlineListRef}
+                ariaLabel="目录大纲"
+                onSelect={(entry) => {
+                  if (entry.page != null) setCurrentPage(entry.page);
+                }}
+              />
             )
           ) : items.length === 0 ? (
             <EmptyState

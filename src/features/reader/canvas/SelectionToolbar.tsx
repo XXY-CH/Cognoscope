@@ -28,13 +28,27 @@ const COLORS: { id: AnnotationColor; label: string }[] = [
 
 /** 书签名称过长时截断，避免列表溢出 */
 const BOOKMARK_LABEL_MAX = 80;
+const PDF_TEXT_OFFSET_PREFIX = 'pdf-text-offset-v1:';
 
 interface ToolbarPos {
   top: number;
   left: number;
   text: string;
   page: number;
+  anchor: string;
 }
+
+interface EpubSelectionDetail {
+  text: string;
+  cfi: string;
+  page: number;
+  top: number;
+  left: number;
+  bottom: number;
+  width: number;
+}
+
+const EPUB_SELECTION_EVENT = 'xuesen:epub-selection';
 
 /**
  * 选区相对视口定位；优先放在上方，贴边时翻到下方（§8.7）
@@ -71,6 +85,61 @@ function bookmarkLabelFromSelection(text: string): string {
   const oneLine = text.replace(/\s+/g, ' ').trim();
   if (oneLine.length <= BOOKMARK_LABEL_MAX) return oneLine;
   return `${oneLine.slice(0, BOOKMARK_LABEL_MAX - 1)}…`;
+}
+
+function normalizePdfText(value: string): string {
+  return value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
+}
+
+function findPdfTextLayer(node: Node | null): HTMLElement | null {
+  const element = node instanceof Element ? node : node?.parentElement;
+  return element?.closest<HTMLElement>('[data-pdf-text-layer="true"]') ?? null;
+}
+
+function normalizedTextLayerPrefix(
+  textLayer: HTMLElement,
+  container: Node,
+  offset: number,
+): string | null {
+  if (container !== textLayer && !textLayer.contains(container)) return null;
+  const prefixRange = document.createRange();
+  try {
+    prefixRange.selectNodeContents(textLayer);
+    prefixRange.setEnd(container, offset);
+  } catch {
+    return null;
+  }
+  const wrapper = document.createElement('div');
+  wrapper.append(prefixRange.cloneContents());
+  return Array.from(wrapper.querySelectorAll<HTMLElement>('span'))
+    .filter((element) => !element.classList.contains('markedContent'))
+    .map((element) => normalizePdfText(element.textContent ?? ''))
+    .join('');
+}
+
+/**
+ * PDF.js text-layer offsets are stable across span boundaries and can be
+ * serialized without retaining DOM nodes or implementation-specific handles.
+ */
+function buildPdfTextOffsetAnchor(range: Range): string {
+  const startLayer = findPdfTextLayer(range.startContainer);
+  const endLayer = findPdfTextLayer(range.endContainer);
+  if (!startLayer || startLayer !== endLayer) return '';
+  const startPrefix = normalizedTextLayerPrefix(
+    startLayer,
+    range.startContainer,
+    range.startOffset,
+  );
+  const endPrefix = normalizedTextLayerPrefix(
+    startLayer,
+    range.endContainer,
+    range.endOffset,
+  );
+  if (startPrefix === null || endPrefix === null) return '';
+  const start = startPrefix.length;
+  const end = endPrefix.length;
+  if (end <= start) return '';
+  return `${PDF_TEXT_OFFSET_PREFIX}${start}:${end}`;
 }
 
 /**
@@ -123,6 +192,34 @@ export function SelectionToolbar() {
         left,
         text,
         page: findPageFromNode(range.startContainer),
+        anchor: buildPdfTextOffsetAnchor(range),
+      });
+    };
+
+    const onEpubSelection = (event: Event) => {
+      const detail = (event as CustomEvent<EpubSelectionDetail>).detail;
+      if (
+        !detail ||
+        !detail.text?.trim() ||
+        !detail.cfi ||
+        !Number.isFinite(detail.page)
+      ) {
+        return;
+      }
+      const barH = 36;
+      const gap = 8;
+      let top = detail.top - barH - gap;
+      if (top < 8) top = detail.bottom + gap;
+      const left = Math.min(
+        Math.max(8, detail.left + detail.width / 2),
+        window.innerWidth - 8,
+      );
+      setPos({
+        top,
+        left,
+        text: detail.text.trim(),
+        page: detail.page,
+        anchor: detail.cfi,
       });
     };
 
@@ -138,9 +235,11 @@ export function SelectionToolbar() {
     };
 
     document.addEventListener('selectionchange', onSel);
+    window.addEventListener(EPUB_SELECTION_EVENT, onEpubSelection);
     document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
       document.removeEventListener('selectionchange', onSel);
+      window.removeEventListener(EPUB_SELECTION_EVENT, onEpubSelection);
       document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, []);
@@ -161,6 +260,7 @@ export function SelectionToolbar() {
       quotedText: pos.text,
       color,
       body: '',
+      anchor: pos.anchor,
     });
     toast.show('已高亮');
     clearSel();
@@ -173,6 +273,7 @@ export function SelectionToolbar() {
       quotedText: pos.text,
       color: 'yellow',
       body: '',
+      anchor: pos.anchor,
     });
     openSide();
     // 拉高批注区占比，便于编辑正文

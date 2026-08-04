@@ -34,6 +34,14 @@
   --success: #34c759; /* 成功、专注度高 */
   --success-subtle: #eaf9ef; /* 成功浅背景 */
 
+  /* 阅读批注色板：PDF 与 EPUB 共用，深色主题在下方覆盖 */
+  --annotation-yellow: #ffd740;
+  --annotation-green: #5bf070;
+  --annotation-blue: #47b5ff;
+  --annotation-pink: #ff7ac6;
+  --annotation-underline-width: 2px;
+  --annotation-focus-duration: 800ms;
+
   --overlay: rgba(0, 0, 0, 0.45); /* 模态遮罩 */
   --text-on-accent: #ffffff; /* 强调色实心按钮上的文字（双主题同值，保证对比） */
 
@@ -286,6 +294,11 @@
   --warning-subtle: #3d321c; /* 警告浅背景 */
   --success: #4ade80; /* 成功、专注度高 */
   --success-subtle: #1c3827; /* 成功浅背景 */
+
+  --annotation-yellow: #f0c040;
+  --annotation-green: #4ade80;
+  --annotation-blue: #69c7ff;
+  --annotation-pink: #ff8bd0;
 
   --overlay: rgba(0, 0, 0, 0.65); /* 模态遮罩 */
 

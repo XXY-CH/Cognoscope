@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
+    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "READ-04", "UX-06"],
     "next": ["UX-06", "P4"],
-    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: browser screenshots and interaction remain unavailable"],
+    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "READ-04: Q2 browser/real PDF-EPUB interaction evidence remains unavailable", "UX-06: browser screenshots and interaction remain unavailable"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；研究状态四项指标在桌面/平板/移动端分别采用 4/2/1 列，真实视口验收仍需浏览器。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 必须可回读且漂移显式 unavailable，Q1 静态门通过但 Q2 浏览器门保持 blocked；研究状态四项指标在桌面/平板/移动端分别采用 4/2/1 列，真实视口验收仍需浏览器。",
     "lastVerified": "2026-08-04",
     "evidence": [
       "npm run build",
@@ -32,7 +32,9 @@
       "bundled monitor session probe including 4.5s boundary",
       "bundled source invalidation probe and hard-purge session cascade contract",
       "python monitor syntax check; runtime dependencies unavailable",
-      "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending"
+      "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending",
+      "READ-04 static probe: PDF stable text-layer anchor, versioned drift unavailable, EPUB Contents[] decoration, exact-first TOC matching",
+      "READ-04 Q2 probe skipped: no Chromium-compatible executable"
     ]
   },
   "edgeTypes": {
@@ -308,14 +310,15 @@
       "type": "capability",
       "layer": "next",
       "title": "批注高亮层与真实 TOC",
-      "status": "next",
+      "status": "in_progress",
       "priority": 5,
       "goal": "让保存的 locator 在 PDF/EPUB 原文上可见，并提供真实目录导航。",
       "dependsOn": ["C2", "R1"],
-      "touchpoints": ["src/features/reader/canvas", "src/features/reader/panels/AnnotationPanel.tsx", "src/hooks/usePdfDocument.ts"],
-      "contracts": ["PDF/EPUB locator variants", "selection remains local", "no annotation text duplication in graph"],
-      "acceptance": ["annotation can jump and highlight when locator resolves", "unresolved locator is visible as unavailable", "TOC works without blocking document load"],
-      "verification": ["PDF fixture", "EPUB fixture", "390px reader", "keyboard navigation"],
+      "touchpoints": ["src/features/reader/canvas", "src/features/reader/panels/AnnotationPanel.tsx", "src/hooks/usePdfDocument.ts", "src/utils/epubToc.ts", "scripts/probe-read04.mjs"],
+      "contracts": ["PDF/EPUB locator variants", "selection remains local", "no annotation text duplication in graph", "versioned PDF drift is unavailable", "EPUB runtime Contents[] is normalized", "annotation colors use design tokens"],
+      "acceptance": ["annotation can jump and highlight when locator resolves", "unresolved locator is visible as unavailable", "TOC works without blocking document load", "exact PDF duplicate occurrences use text-layer offsets"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-read04.mjs", "390px reader and real PDF/EPUB keyboard navigation (blocked: no browser runtime)"],
+      "blocker": "AG-QA.static passes; AG-QA.browser remains blocked because no Chromium-compatible executable is available for real PDF/EPUB, 390/768/1280, keyboard, theme, reduced-motion, and matrix-return evidence.",
       "rollback": "Keep annotation list and reader jump even if highlight rendering is unavailable.",
       "next": ["KG-05", "UX-06"]
     },

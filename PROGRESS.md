@@ -1,6 +1,6 @@
 # 学森 · 项目进度与待办
 
-> 更新时间：2026-08-03
+> 更新时间：2026-08-04
 > 设计权威：`UI_spec.md`（产品迭代与规范冲突见 §四 / [`HANDOFF.md`](./HANDOFF.md)）
 > 技术栈：Vite 6 + React 18 + TypeScript (strict) + Zustand + React Router Data API + IndexedDB (`idb`)
 > 行为检测：`monitor/`（Python Flask API，默认 `localhost:8765`）
@@ -66,7 +66,8 @@
 ### E · 阅读界面
 - [x] PDF / EPUB、划词工具条、书签、文内搜索、全屏、适应宽度
 - [x] 已读行数 + 阅读会话；打开文件时可选调 `startDetection(fileId)`
-- [ ] Toc 真实目录树；批注高亮层（§8.8）；QA 真实 PDF/EPUB 流程验收
+- [x] PDF/EPUB 目录投影、批注高亮回读、失效定位提示与异步回读竞态门禁（静态验收）
+- [ ] QA 真实 PDF/EPUB 流程验收（Q2：当前环境无 Chromium runtime）
 
 ### C · 知识图谱
 - [x] 论文关系图 + 关键词图双画布，本地 IndexedDB 持久化
@@ -198,3 +199,4 @@
 | 2026-08-04 | Agent Graph 推进图：补充 `T0-T6` 研究环境目标 DAG、研究质量门和静态/浏览器双 QA 门；浏览器不可用时保持 `AG-QA.browser=blocked`，不解锁 Integration/Release |
 | 2026-08-04 | UX-06 Apple Design 静态审计：研究状态指标在桌面/平板/移动端采用 4/2/1 列，契约探针通过；真实 390/768/1280 视口、文档、键盘、主题和减弱动效验收因浏览器运行时不可用而保留阻塞 |
 | 2026-08-04 | D4 / MON-02：monitor 会话按 fileId 隔离，Reader 退出先 stop 再取 JSONL；短于 5 秒不进入统计，monitor 字段用事务合并并同步 `sessionStore`；硬删除同步清理 ReadingSession 孤儿；build、lint、静态探针通过，浏览器与 Python 视觉依赖仍阻塞 |
+| 2026-08-04 | READ-04：PDF CSS-module 文字层改用稳定偏移锚点，漂移保持 unavailable；EPUB `Contents[]` 高亮装饰、fragment 优先 TOC、批注色板 token 和静态契约探针收口；build、lint、diff check、probe 通过，Q2 浏览器/真实文档仍 blocked，Integration/Release 未宣称完成 |

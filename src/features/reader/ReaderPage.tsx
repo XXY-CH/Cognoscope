@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { toast } from '../../components/common';
+import { Button, toast } from '../../components/common';
 import { OfflineBanner } from '../../components/layout/OfflineBanner';
 import { SettingsDrawer } from '../../components/layout/SettingsDrawer';
 import * as annotationsDb from '../../db/annotations';
@@ -62,6 +62,16 @@ export function ReaderPage() {
   const clearFile = useReaderStore((s) => s.clearFile);
   const setPendingLocator = useReaderStore((s) => s.setPendingLocator);
   const clearPendingLocator = useReaderStore((s) => s.clearPendingLocator);
+  const setPendingLocatorUnavailable = useReaderStore(
+    (s) => s.setPendingLocatorUnavailable,
+  );
+  const clearPendingLocatorUnavailable = useReaderStore(
+    (s) => s.clearPendingLocatorUnavailable,
+  );
+  const pendingLocatorUnavailable = useReaderStore(
+    (s) => s.pendingLocatorUnavailable,
+  );
+  const retryPendingLocator = useReaderStore((s) => s.retryPendingLocator);
   const activeFileId = useReaderStore((s) => s.fileId);
   useLinesReadSync(activeFileId);
 
@@ -69,12 +79,14 @@ export function ReaderPage() {
   useEffect(() => {
     if (!fileId) {
       clearPendingLocator();
+      clearPendingLocatorUnavailable();
       return;
     }
     const params = new URLSearchParams(location.search);
     const matrixId = params.get('matrixId');
     const rowId = params.get('rowId');
     clearPendingLocator();
+    clearPendingLocatorUnavailable();
     if (!matrixId || !rowId) return;
     let cancelled = false;
     void listEvidenceRowsByMatrix(matrixId)
@@ -83,18 +95,44 @@ export function ReaderPage() {
         const row = rows.find((candidate) => candidate.id === rowId);
         const item = row?.evidence.find((candidate) => candidate.fileId === fileId);
         if (!item) {
-          clearPendingLocator();
+          const reason = row
+            ? '该文件未记录在当前证据行中'
+            : '证据矩阵行不存在或已被删除';
+          const handoff = {
+            fileId,
+            matrixId,
+            rowId,
+            locator: { kind: 'unresolved' as const, reason },
+          };
+          setPendingLocator(handoff);
+          setPendingLocatorUnavailable(handoff, reason);
           return;
         }
         setPendingLocator({ fileId, matrixId, rowId, locator: item.locator });
       })
       .catch(() => {
-        if (!cancelled) clearPendingLocator();
+        if (cancelled) return;
+        const reason = '无法读取证据矩阵行，请稍后重试';
+        const handoff = {
+          fileId,
+          matrixId,
+          rowId,
+          locator: { kind: 'unresolved' as const, reason },
+        };
+        setPendingLocator(handoff);
+        setPendingLocatorUnavailable(handoff, reason);
       });
     return () => {
       cancelled = true;
     };
-  }, [clearPendingLocator, fileId, location.search, setPendingLocator]);
+  }, [
+    clearPendingLocator,
+    clearPendingLocatorUnavailable,
+    fileId,
+    location.search,
+    setPendingLocator,
+    setPendingLocatorUnavailable,
+  ]);
 
   // 按文件保留 monitor 会话 ID，避免快速切换时旧会话写入新文件。
   const pySessionIdsRef = useRef<Map<string, string>>(new Map());
@@ -342,6 +380,28 @@ export function ReaderPage() {
       {!isFullscreen ? <OfflineBanner /> : null}
       {!isFullscreen ? (
         <ReaderTopBar onEnterFullscreen={() => void enterFullscreen()} />
+      ) : null}
+      {pendingLocatorUnavailable ? (
+        <div className={styles.locatorAlert} role="alert">
+          <div className={styles.locatorAlertCopy}>
+            <strong>来源定位不可用</strong>
+            <span>{pendingLocatorUnavailable.reason}</span>
+            <span className={styles.locatorAlertMeta}>
+              矩阵 {pendingLocatorUnavailable.handoff.matrixId} · 行{' '}
+              {pendingLocatorUnavailable.handoff.rowId}
+            </span>
+          </div>
+          <Button
+            aria-label="重试来源定位"
+            variant="secondary"
+            size="sm"
+            onClick={() =>
+              retryPendingLocator(pendingLocatorUnavailable.handoff)
+            }
+          >
+            重试定位
+          </Button>
+        </div>
       ) : null}
       <div className={styles.body}>
         {!isFullscreen ? <TocPanel /> : null}

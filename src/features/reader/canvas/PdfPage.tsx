@@ -11,6 +11,7 @@ import {
 } from '../../../utils/pdfjs';
 import { buildPdfLineKeys } from '../../../utils/pdfTextLines';
 import { PdfPageBookmarks } from './PdfPageBookmarks';
+import { PdfPageAnnotations } from './PdfPageAnnotations';
 import styles from './PdfRenderer.module.css';
 import textStyles from './PdfTextLayer.module.css';
 
@@ -143,9 +144,15 @@ export function PdfPage({
       <div
         ref={textLayerRef}
         className={textStyles.textLayer}
+        data-pdf-text-layer="true"
         data-page={pageNumber}
       />
       <PdfPageBookmarks
+        pageNumber={pageNumber}
+        textLayerEl={textLayerEl}
+        ready={!rendering}
+      />
+      <PdfPageAnnotations
         pageNumber={pageNumber}
         textLayerEl={textLayerEl}
         ready={!rendering}

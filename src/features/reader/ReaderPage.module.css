@@ -37,9 +37,47 @@
   flex: 1;
 }
 
+.locatorAlert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-shrink: 0;
+  padding: var(--sp-2) var(--sp-5);
+  border-bottom: var(--border-width) solid var(--warning);
+  background: var(--warning-subtle);
+  color: var(--text-primary);
+}
+
+.locatorAlertCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--sp-1);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+}
+
+.locatorAlertCopy > span {
+  color: var(--text-secondary);
+}
+
+.locatorAlertMeta {
+  overflow: hidden;
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 899px) {
   .body {
     min-width: 0;
+  }
+
+  .locatorAlert {
+    align-items: stretch;
+    flex-direction: column;
+    gap: var(--sp-2);
   }
 
   .mobilePanelScrim {

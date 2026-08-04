@@ -11,14 +11,37 @@ import {
 } from 'react';
 import { usePdfDocument } from '../../../hooks/usePdfDocument';
 import { toast } from '../../../components/common';
-import { useReaderStore } from '../../../stores/readerStore';
+import { useAnnotationStore } from '../../../stores/annotationStore';
+import {
+  sameReaderLocatorHandoff,
+  useReaderStore,
+} from '../../../stores/readerStore';
 import {
   markLinesRead,
   registerLineKeys,
 } from '../../../utils/linesReadStore';
 import { PdfPage } from './PdfPage';
 import { extractPdfOutline } from '../../../utils/pdfOutline';
+import type { EvidenceLocator } from '../../../types';
 import styles from './PdfRenderer.module.css';
+
+function pdfLocatorUnavailableReason(
+  locator: EvidenceLocator,
+  numPages: number,
+): string | null {
+  if (locator.kind === 'unresolved') return locator.reason;
+  if (locator.kind !== 'pdf-page') {
+    return 'PDF 来源定位类型与当前文档不匹配';
+  }
+  if (
+    !Number.isInteger(locator.page) ||
+    locator.page < 1 ||
+    locator.page > numPages
+  ) {
+    return `PDF 页码 ${locator.page} 超出当前文档范围（共 ${numPages} 页）`;
+  }
+  return null;
+}
 
 /**
  * PdfRendererProps
@@ -55,13 +78,63 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
   const setPdfOutline = useReaderStore((s) => s.setPdfOutline);
   const pendingLocator = useReaderStore((s) => s.pendingLocator);
   const clearPendingLocator = useReaderStore((s) => s.clearPendingLocator);
+  const setPendingLocatorUnavailable = useReaderStore(
+    (s) => s.setPendingLocatorUnavailable,
+  );
+  const clearPendingLocatorUnavailable = useReaderStore(
+    (s) => s.clearPendingLocatorUnavailable,
+  );
+  const pendingLocatorUnavailable = useReaderStore(
+    (s) => s.pendingLocatorUnavailable,
+  );
   const fitWidthNonce = useReaderStore((s) => s.fitWidthNonce);
+  const annotationJumpId = useReaderStore((s) => s.annotationJumpId);
+  const clearAnnotationJumpIfCurrent = useReaderStore(
+    (s) => s.clearAnnotationJumpIfCurrent,
+  );
+  const setAnnotationLocatorState = useReaderStore(
+    (s) => s.setAnnotationLocatorState,
+  );
+  const annotationFileId = useAnnotationStore((s) => s.fileId);
+  const annotationItems = useAnnotationStore((s) => s.items);
+  const loadAnnotations = useAnnotationStore((s) => s.loadForFile);
   const lastFindPageRef = useRef(0);
   /** 每个 fileId 只自动适应一次，避免设置变更反复触发 */
   const autoFitAppliedRef = useRef<string | null>(null);
 
   currentPageRef.current = currentPage;
   const scale = zoomPercent / 100;
+
+  // 文字层高亮不能依赖侧栏是否展开；Reader 自己确保批注事实源已加载。
+  useEffect(() => {
+    if (annotationFileId === fileId) return;
+    void loadAnnotations(fileId);
+  }, [annotationFileId, fileId, loadAnnotations]);
+
+  useEffect(() => {
+    if (!pdf || !annotationJumpId || annotationFileId !== fileId) return;
+    const annotation = annotationItems.find(
+      (item) => item.id === annotationJumpId && item.fileId === fileId,
+    );
+    if (!annotation) return;
+    if (annotation.page < 1 || annotation.page > pdf.numPages) {
+      setAnnotationLocatorState(
+        fileId,
+        annotationJumpId,
+        'unavailable',
+        `PDF 批注页码 ${annotation.page} 超出当前文档范围`,
+      );
+      clearAnnotationJumpIfCurrent(fileId, annotationJumpId);
+    }
+  }, [
+    annotationFileId,
+    annotationItems,
+    annotationJumpId,
+    clearAnnotationJumpIfCurrent,
+    fileId,
+    pdf,
+    setAnnotationLocatorState,
+  ]);
 
   // 关键字变化时重置查找游标，使首次搜索包含当前页
   useEffect(() => {
@@ -75,14 +148,42 @@ export function PdfRenderer({ fileId }: PdfRendererProps) {
   }, [pdf, setTotalPages]);
 
   useEffect(() => {
-    if (!pdf || pendingLocator?.fileId !== fileId) return;
-    if (pendingLocator.locator.kind === 'pdf-page') {
-      setCurrentPage(pendingLocator.locator.page);
+    const handoff = pendingLocator;
+    if (!pdf || !handoff || handoff.fileId !== fileId) return;
+    if (
+      pendingLocatorUnavailable &&
+      sameReaderLocatorHandoff(
+        pendingLocatorUnavailable.handoff,
+        handoff,
+      )
+    ) {
+      return;
     }
-    clearPendingLocator();
-  }, [pdf, fileId, pendingLocator, setCurrentPage, clearPendingLocator]);
-
-
+    const reason = pdfLocatorUnavailableReason(
+      handoff.locator,
+      pdf.numPages,
+    );
+    if (reason) {
+      setPendingLocatorUnavailable(handoff, reason);
+      return;
+    }
+    if (handoff.locator.kind !== 'pdf-page') return;
+    setCurrentPage(handoff.locator.page);
+    const current = useReaderStore.getState().pendingLocator;
+    if (sameReaderLocatorHandoff(current, handoff)) {
+      clearPendingLocatorUnavailable(handoff);
+      clearPendingLocator(handoff);
+    }
+  }, [
+    clearPendingLocator,
+    clearPendingLocatorUnavailable,
+    fileId,
+    pdf,
+    pendingLocator,
+    pendingLocatorUnavailable,
+    setPendingLocatorUnavailable,
+    setCurrentPage,
+  ]);
   // 文档就绪后提取基于字体大小的文本大纲
   useEffect(() => {
     if (!pdf || status !== 'ready') return;

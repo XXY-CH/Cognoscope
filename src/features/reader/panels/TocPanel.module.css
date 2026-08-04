@@ -127,6 +127,18 @@
   padding: 0;
 }
 
+/* 每层使用真实嵌套列表，目录深度不受预设 data-level 数量限制。 */
+.outlineList .outlineList {
+  margin-top: var(--sp-1);
+  padding-inline-start: var(--sp-4);
+}
+
+.outlinePlaceholder {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .outlineItem {
   display: flex;
   align-items: baseline;
@@ -136,8 +148,8 @@
   border: none;
   background: none;
   color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
@@ -147,20 +159,23 @@
   background: var(--bg-hover);
 }
 
-.outlineItem:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
-}
-
-.outlineItem[data-level='1'] {
-  padding-left: calc(var(--sp-2) + var(--sp-3));
-  font-size: 12.5px;
-}
-
-.outlineItem[data-level='2'] {
-  padding-left: calc(var(--sp-2) + var(--sp-5));
-  font-size: 12px;
+.outlineItem[data-container='true'] {
   color: var(--text-secondary);
+  cursor: default;
+}
+
+.outlineItem[data-container='true']:hover {
+  background: transparent;
+}
+
+.outlineItem[data-active='true'] {
+  background: var(--bg-active);
+  color: var(--accent);
+}
+
+.outlineItem:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .outlinePage {
@@ -168,7 +183,7 @@
   min-width: 2em;
   font-variant-numeric: tabular-nums;
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: var(--text-xs);
 }
 
 .outlineTitle {

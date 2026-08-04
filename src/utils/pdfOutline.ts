@@ -1,7 +1,7 @@
 /**
- * pdfOutline.ts - 从 PDF 文本字体大小推断大纲
+ * pdfOutline.ts - 优先读取 PDF 内嵌大纲，必要时推断文本大纲
  * 所属：E · 阅读界面 > TocPanel
- * 策略：字体显著大于正文的文本行视为标题，按字号分层层级
+ * 策略：PDF.js outline/destination 是主路径，字体推断只作显式兜底
  */
 import type { PDFDocumentProxy } from './pdfjs';
 import type { PdfOutlineItem } from '../types';
@@ -25,11 +25,90 @@ interface RawItem {
   page: number;
 }
 
+type PdfPageRef = Parameters<PDFDocumentProxy['getPageIndex']>[0];
+
+interface EmbeddedOutlineItem {
+  title?: string;
+  dest?: string | unknown[] | null;
+  items?: EmbeddedOutlineItem[];
+}
+
+async function resolveOutlinePage(
+  pdf: PDFDocumentProxy,
+  destination: string | unknown[] | null | undefined,
+): Promise<number | null> {
+  let resolved = destination;
+  if (typeof resolved === 'string') {
+    resolved = await pdf.getDestination(resolved);
+  }
+  if (!Array.isArray(resolved) || resolved.length === 0) return null;
+
+  const pageRef = resolved[0];
+  if (typeof pageRef === 'number' && Number.isInteger(pageRef)) {
+    return pageRef + 1;
+  }
+  if (!pageRef || typeof pageRef !== 'object') return null;
+
+  try {
+    return (await pdf.getPageIndex(pageRef as PdfPageRef)) + 1;
+  } catch {
+    return null;
+  }
+}
+
+async function extractEmbeddedPdfOutline(
+  pdf: PDFDocumentProxy,
+): Promise<PdfOutlineItem[]> {
+  const outline = (await pdf.getOutline()) as EmbeddedOutlineItem[] | null;
+  if (!outline?.length) return [];
+
+  const result: PdfOutlineItem[] = [];
+  const visit = async (
+    items: readonly EmbeddedOutlineItem[],
+    level: number,
+  ): Promise<void> => {
+    for (const item of items) {
+      const title = item.title?.trim();
+      const page = await resolveOutlinePage(pdf, item.dest);
+      if (title && page != null && page > 0 && page <= pdf.numPages) {
+        result.push({
+          title: title.length > 80 ? `${title.slice(0, 80)}…` : title,
+          page,
+          level,
+        });
+      }
+      if (item.items?.length) {
+        await visit(item.items, level + 1);
+      }
+    }
+  };
+
+  await visit(outline, 0);
+  return result;
+}
+
 /**
- * 从 PDFDocumentProxy 提取基于字体大小的文本大纲。
- * 只处理前 MAX_PAGES 页，避免超大文档阻塞。
+ * 从 PDFDocumentProxy 提取 PDF 大纲。
+ * 先使用嵌入式 outline；只有没有可解析条目时才走字体推断兜底。
  */
 export async function extractPdfOutline(
+  pdf: PDFDocumentProxy,
+  totalPages: number,
+): Promise<PdfOutlineItem[]> {
+  try {
+    const embedded = await extractEmbeddedPdfOutline(pdf);
+    if (embedded.length > 0) return embedded;
+  } catch {
+    // 损坏或不完整的内嵌目录不应阻塞正文，明确降级到文本推断。
+  }
+  return extractHeuristicPdfOutline(pdf, totalPages);
+}
+
+/**
+ * 显式的 PDF 目录兜底：从字体大小推断大纲。
+ * 只处理前 MAX_PAGES 页，避免超大文档阻塞。
+ */
+async function extractHeuristicPdfOutline(
   pdf: PDFDocumentProxy,
   totalPages: number,
 ): Promise<PdfOutlineItem[]> {

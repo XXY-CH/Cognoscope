@@ -69,3 +69,33 @@
   background: color-mix(in srgb, #ff7ac6 40%, transparent) !important;
   border-radius: 2px;
 }
+
+/* 已保存批注：与书签颜色分开，避免批注删除时清掉书签命中态。 */
+.annotationYellow {
+  background: color-mix(in srgb, var(--annotation-yellow) 48%, transparent) !important;
+  box-shadow: inset 0 calc(-1 * var(--annotation-underline-width)) 0 color-mix(in srgb, var(--annotation-yellow) 72%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.annotationGreen {
+  background: color-mix(in srgb, var(--annotation-green) 44%, transparent) !important;
+  box-shadow: inset 0 calc(-1 * var(--annotation-underline-width)) 0 color-mix(in srgb, var(--annotation-green) 68%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.annotationBlue {
+  background: color-mix(in srgb, var(--annotation-blue) 46%, transparent) !important;
+  box-shadow: inset 0 calc(-1 * var(--annotation-underline-width)) 0 color-mix(in srgb, var(--annotation-blue) 70%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.annotationPink {
+  background: color-mix(in srgb, var(--annotation-pink) 46%, transparent) !important;
+  box-shadow: inset 0 calc(-1 * var(--annotation-underline-width)) 0 color-mix(in srgb, var(--annotation-pink) 70%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+.annotationFocus {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
