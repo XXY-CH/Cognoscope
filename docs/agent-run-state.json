@@ -1,7 +1,7 @@
 {
   "schema": "xuesen.agent-run-state/v1",
   "runId": "run_2026-08-04_read04",
-  "objective": "在既有 Interview、Phase 005 与 Agent Graph 合同内，完成 READ-04 阅读证据回读闭环：PDF/EPUB locator 可回读、失效显式可见、TOC 不阻塞正文，并分别记录 Q1 静态通过与 Q2 浏览器阻塞。",
+  "objective": "在既有 Interview、Phase 005 与 Agent Graph 合同内，完成 READ-04 阅读证据回读闭环：PDF/EPUB locator 可回读、失效显式可见、TOC 不阻塞正文，并分别记录 Q1 静态通过与 Q2 浏览器通过。",
   "scope": [
     "READ-04",
     "src/features/reader/ReaderPage.tsx",
@@ -28,7 +28,7 @@
     ".omx/plans/read04-review-2026-08-04.md",
     ".omx/specs/deep-interview-frontend-research-environment.md"
   ],
-  "active": ["AG-QA.browser"],
+  "active": [],
   "done": [
     "AG-ORCH",
     "AG-STATE",
@@ -39,17 +39,17 @@
     "AG-RESEARCH",
     "AG-EXEC",
     "AG-REVIEW",
-    "AG-QA.static"
+    "AG-QA.static",
+    "AG-QA.browser",
+    "AG-INTEGRATION",
+    "AG-RELEASE"
   ],
-  "blocked": [
-    "AG-QA.browser: no Chromium-compatible runtime for real PDF/EPUB, 390/768/1280, keyboard, theme, reduced-motion and matrix-return evidence",
-    "AG-INTEGRATION: cannot unlock while browser-required Q2 is blocked",
-    "AG-RELEASE: cannot unlock while integration is blocked"
-  ],
+  "blocked": [],
   "attempts": {
     "AG-REVIEW": 6,
-    "AG-QA": 4,
-    "AG-INTEGRATION": 1,
+    "AG-QA": 5,
+    "AG-INTEGRATION": 2,
+    "AG-RELEASE": 1,
     "AG-EXEC": 4
   },
   "artifacts": [
@@ -79,7 +79,9 @@
     "TOC projection preserves hidden parent paths and exact href/fragment matching runs before path fallback.",
     "PDF/EPUB annotation colors, underline width and focus duration use shared light/dark design tokens.",
     "Q1 static QA passed; source probe remains a contract fixture and does not replace real-document behavior evidence.",
-    "Browser runtime has no available instance; real PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending.",
+    "Q2 browser QA passed with real PDF/EPUB fixtures: duplicate PDF offsets, drift-unavailable state, EPUB binary/iframe/TOC/CFI replay, keyboard focus, theme refresh and host-SVG focus flash.",
+    "Real reader matrix passed at 390/768/1280 with no page-level horizontal overflow; reduced-motion tokens use the short-fade policy.",
+    "Integration probes passed for evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session conversion; direct TypeScript probe execution remains unsupported by Node extensionless imports.",
     "Bounded cleanup removed an unused display-guard parameter and deduplicated EPUB display close semantics; behavior probe remains green."
   ],
   "lastVerification": [
@@ -87,11 +89,13 @@
     "npm run lint (pass; three pre-existing warnings)",
     "git diff --check (pass)",
     "node scripts/probe-read04.mjs (pass)",
-    "node scripts/probe-blank.mjs (blocked; no Chromium-compatible executable)",
+    "PUPPETEER_EXECUTABLE_PATH=<repo-local Chrome for Testing> node scripts/probe-blank.mjs (pass; no page errors, root mounted)",
     "READ-04 follow-up review remediation: stable PDF data anchor, versioned drift unavailable, EPUB Contents[] decoration, exact-first TOC, annotation tokens",
-    "READ-04 cleanup baseline and post-pass: npm run build, npm run lint, git diff --check, node scripts/probe-read04.mjs (all pass)"
+    "READ-04 cleanup baseline and post-pass: npm run build, npm run lint, git diff --check, node scripts/probe-read04.mjs (all pass)",
+    "Real browser QA: PDF + EPUB fixtures, 390/768/1280, dark/light theme, reduced motion, annotation focus and keyboard attributes (pass)",
+    "Integration: probe-evidence-matrix, probe-ui-contract, bundled probe-source-invalidation, bundled probe-monitor-session (pass)"
   ],
-  "next": ["AG-QA.browser"],
-  "iteration": 5,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW remediation -> bounded cleanup -> AG-QA.static pass; AG-QA.browser remains blocked by missing Chromium runtime, so Integration/Release stay locked."
+  "next": ["AG-STATE"],
+  "iteration": 6,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW remediation -> bounded cleanup -> AG-QA.static pass -> AG-QA.browser pass with real fixtures -> AG-INTEGRATION pass -> AG-RELEASE checkpoint."
 }

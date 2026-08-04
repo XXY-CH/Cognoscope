@@ -13,6 +13,7 @@ import {
   useReaderStore,
   type ReaderLocatorHandoff,
 } from '../../../stores/readerStore';
+import { useUiStore } from '../../../stores/uiStore';
 import type {
   Annotation,
   AnnotationColor,
@@ -75,6 +76,15 @@ function paintThemeVars(doc: Document): void {
 
 function isEpubCfi(value: string): boolean {
   return /^epubcfi\(.+\)$/.test(value.trim());
+}
+
+function epubPageFromLocation(
+  location: number | undefined,
+  total?: number,
+): number | null {
+  if (location == null || !Number.isFinite(location)) return null;
+  const page = Math.max(1, Math.round(location) + 1);
+  return total != null && total > 0 ? Math.min(total, page) : page;
 }
 
 function epubLocatorUnavailableReason(
@@ -169,29 +179,34 @@ function decorateEpubHighlight(
   annotationId: string,
   preview: string,
   onActivate: () => void,
+  root?: ParentNode | null,
 ): void {
   try {
-    for (const contents of getEpubContents(rendition)) {
-      const elements = contents.document.querySelectorAll<SVGElement>(
-        '[data-annotation-id]',
-      );
-      for (const element of elements) {
-        if (element.dataset.annotationId !== annotationId) continue;
-        element.setAttribute('title', preview || '批注高亮');
-        element.setAttribute(
-          'aria-label',
-          preview ? `批注高亮：${preview}` : '批注高亮',
+    const elements = root
+      ? root.querySelectorAll<SVGElement>('[data-annotation-id]')
+      : getEpubContents(rendition).flatMap((contents) =>
+          Array.from(
+            contents.document.querySelectorAll<SVGElement>(
+              '[data-annotation-id]',
+            ),
+          ),
         );
-        element.setAttribute('role', 'button');
-        element.setAttribute('tabindex', '0');
-        if (element.dataset.xuesenInteractive === 'true') continue;
-        element.dataset.xuesenInteractive = 'true';
-        element.addEventListener('keydown', (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') return;
-          event.preventDefault();
-          onActivate();
-        });
-      }
+    for (const element of elements) {
+      if (element.dataset.annotationId !== annotationId) continue;
+      element.setAttribute('title', preview || '批注高亮');
+      element.setAttribute(
+        'aria-label',
+        preview ? `批注高亮：${preview}` : '批注高亮',
+      );
+      element.setAttribute('role', 'button');
+      element.setAttribute('tabindex', '0');
+      if (element.dataset.xuesenInteractive === 'true') continue;
+      element.dataset.xuesenInteractive = 'true';
+      element.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        onActivate();
+      });
     }
   } catch {
     // 当前章节尚未 attach 时，epub.js 会在后续 view render 阶段继续挂载。
@@ -203,16 +218,24 @@ function flashEpubHighlight(
   annotationId: string,
   generation: number,
   isCurrent: () => boolean,
+  root?: ParentNode | null,
 ): void {
   try {
     if (!isCurrent()) return;
-    const elements = getEpubContents(rendition).flatMap((contents) =>
-      Array.from(
-        contents.document.querySelectorAll<SVGElement>(
-          '[data-annotation-id]',
+    const elements = [
+      ...getEpubContents(rendition).flatMap((contents) =>
+        Array.from(
+          contents.document.querySelectorAll<SVGElement>(
+            '[data-annotation-id]',
+          ),
         ),
       ),
-    );
+      ...(root
+        ? Array.from(
+            root.querySelectorAll<SVGElement>('[data-annotation-id]'),
+          )
+        : []),
+    ];
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;
@@ -288,6 +311,7 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
 
   const pageMode = useReaderStore((s) => s.pageMode);
   const zoomPercent = useReaderStore((s) => s.zoomPercent);
+  const resolvedTheme = useUiStore((s) => s.resolvedTheme);
   const currentPage = useReaderStore((s) => s.currentPage);
   const setCurrentPage = useReaderStore((s) => s.setCurrentPage);
   const setTotalPages = useReaderStore((s) => s.setTotalPages);
@@ -439,8 +463,11 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
           if (!isCurrentEpubDisplay(token, rendition)) return;
           const current = await rendition.currentLocation();
           if (!current || !isCurrentEpubDisplay(token, rendition)) return;
-          skipDisplayRef.current = true;
-          setCurrentPage(Math.max(1, current.location + 1));
+          const page = epubPageFromLocation(current.location);
+          if (page != null) {
+            skipDisplayRef.current = true;
+            setCurrentPage(page);
+          }
           setCurrentEpubHref(current.href ?? null);
         } catch {
           // 键盘翻页失败时保留当前阅读位置。
@@ -515,6 +542,16 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
           previous?.cfi === next.cfi &&
           previous.preview === next.preview
         ) {
+          decorateEpubHighlight(
+            rendition,
+            annotation.id,
+            next.preview,
+            () => {
+              openSide();
+              setFocusAnnotationId(annotation.id);
+            },
+            hostRef.current,
+          );
           continue;
         }
         const color = EPUB_HIGHLIGHT_COLORS[annotation.color];
@@ -547,7 +584,13 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
               next.preview ? `批注高亮：${next.preview}` : '批注高亮',
             );
           }
-          decorateEpubHighlight(rendition, annotation.id, next.preview, activate);
+          decorateEpubHighlight(
+            rendition,
+            annotation.id,
+            next.preview,
+            activate,
+            hostRef.current,
+          );
         } catch {
           setAnnotationLocatorState(
             fileId,
@@ -621,8 +664,11 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
       }
       const current = await rendition.currentLocation();
       if (!current || !isCurrentEpubDisplay(token, rendition)) return false;
-      skipDisplayRef.current = true;
-      setCurrentPage(Math.max(1, current.location + 1));
+      const page = epubPageFromLocation(current.location);
+      if (page != null) {
+        skipDisplayRef.current = true;
+        setCurrentPage(page);
+      }
       setCurrentEpubHref(current.href ?? null);
       if (!isCurrentEpubDisplay(token, rendition)) return false;
       finishEpubDisplay(token);
@@ -667,7 +713,6 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
     const highlightRefs = epubHighlightRefs.current;
     const isCurrentFile = () => useReaderStore.getState().fileId === fileId;
     let cancelled = false;
-    let objectUrl: string | null = null;
 
     setStatus('loading');
     setErrorMessage(null);
@@ -689,8 +734,10 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
           return;
         }
 
-        objectUrl = URL.createObjectURL(record.blob);
-        const book = ePub(objectUrl);
+        // blob: URL 没有 .epub 后缀时会被 epub.js 误判为目录输入；
+        // 传入二进制让它稳定走压缩 EPUB 的 unarchive 路径。
+        const book = ePub(await record.blob.arrayBuffer());
+        if (cancelled) return;
         bookRef.current = book;
         await book.ready;
         if (cancelled) return;
@@ -710,12 +757,16 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
 
         const rendition = book.renderTo(host, {
           width: '100%',
-          height: '100%',
+          // epub.js 对百分比高度的 stage 不会回读 min-height，导致 iframe 高度为 0。
+          height: Math.max(320, host.clientHeight),
           flow: pageMode === 'scroll' ? 'scrolled' : 'paginated',
           allowScriptedContent: false,
         });
         renditionRef.current = rendition;
-        rendition.themes.default(themeCss(useReaderStore.getState().zoomPercent));
+        rendition.themes.registerCss(
+          'default',
+          themeCss(useReaderStore.getState().zoomPercent),
+        );
         let total = 1;
 
         const commitLocation = (location: {
@@ -733,11 +784,10 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
             return;
           }
           const start = location.start;
-          if (start?.location != null) {
+          const page = epubPageFromLocation(start?.location, total);
+          if (page != null) {
             skipDisplayRef.current = true;
-            setCurrentPage(
-              Math.min(total, Math.max(1, start.location + 1)),
-            );
+            setCurrentPage(page);
           }
           if (start?.href !== undefined) {
             setCurrentEpubHref(start.href ?? null);
@@ -810,7 +860,11 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
 
         await book.locations.generate(1600);
         if (cancelled) return;
-        total = Math.max(1, book.locations.length());
+        const locationCount = book.locations.length();
+        total =
+          Number.isFinite(locationCount) && locationCount > 0
+            ? locationCount
+            : 1;
         setTotalPages(total);
 
         await replayPendingLocator(book, rendition, total);
@@ -841,7 +895,6 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
       bookRef.current?.destroy();
       bookRef.current = null;
       if (isCurrentFile()) setCurrentEpubHref(null);
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
       host.replaceChildren();
     };
   }, [
@@ -864,7 +917,12 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
     const book = bookRef.current;
     const rendition = renditionRef.current;
     if (!book || !rendition) return;
-    void replayPendingLocator(book, rendition, Math.max(1, book.locations.length()));
+    const locationCount = book.locations.length();
+    void replayPendingLocator(
+      book,
+      rendition,
+      Number.isFinite(locationCount) && locationCount > 0 ? locationCount : 1,
+    );
   }, [
     fileId,
     pendingLocator,
@@ -903,8 +961,11 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
         if (!displayed) return;
         const current = await rendition.currentLocation();
         if (!current || !isCurrentEpubDisplay(token, rendition)) return;
-        skipDisplayRef.current = true;
-        setCurrentPage(Math.max(1, current.location + 1));
+        const page = epubPageFromLocation(current.location);
+        if (page != null) {
+          skipDisplayRef.current = true;
+          setCurrentPage(page);
+        }
         setCurrentEpubHref(current.href ?? null);
         if (isCurrentEpubDisplay(token, rendition)) {
           clearEpubTocHref(href);
@@ -989,6 +1050,7 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
           requestedAnnotationId,
           token.generation,
           isCurrentAnnotationRequest,
+          hostRef.current,
         );
       } catch {
         if (!isCurrentAnnotationRequest()) return;
@@ -1032,9 +1094,12 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
   useEffect(() => {
     const r = renditionRef.current;
     if (!r || status !== 'ready') return;
-    r.themes.default(themeCss(zoomPercent));
+    r.themes.registerCss('default', themeCss(zoomPercent));
     r.themes.select('default');
-  }, [zoomPercent, status]);
+    for (const contents of getEpubContents(r)) {
+      paintThemeVars(contents.document);
+    }
+  }, [resolvedTheme, status, zoomPercent]);
 
   // 设置「默认适应宽度」：就绪后触发一次（EPUB 为重置舒适字号）
   useEffect(() => {
@@ -1081,7 +1146,8 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
         if (!displayed) return;
         const current = await r.currentLocation();
         if (!current || !isCurrentEpubDisplay(token, r)) return;
-        setCurrentPage(Math.max(1, current.location + 1));
+        const page = epubPageFromLocation(current.location, total);
+        if (page != null) setCurrentPage(page);
         setCurrentEpubHref(current.href ?? null);
       } catch {
         // 用户手动翻页失败时保留当前阅读位置，不覆盖来源定位状态。
