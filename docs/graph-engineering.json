@@ -34,7 +34,8 @@
       "python monitor syntax check; runtime dependencies unavailable",
       "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending",
       "READ-04 static probe: PDF stable text-layer anchor, versioned drift unavailable, EPUB Contents[] decoration, exact-first TOC matching",
-      "READ-04 Q2 probe skipped: no Chromium-compatible executable"
+      "READ-04 Q2 probe skipped: no Chromium-compatible executable",
+      "READ-04 cleanup: shared EPUB display close helper and removed unused guard parameter"
     ]
   },
   "edgeTypes": {

@@ -46,6 +46,7 @@ const contracts = [
   ['EPUB TOC 跳转消费', sources.epubRenderer, 'pendingEpubTocHref'],
   ['EPUB display generation guard', sources.epubRenderer, 'guardedEpubDisplay'],
   ['EPUB display cancellation', sources.epubRenderer, 'AbortController'],
+  ['EPUB display close deduplication', sources.epubRenderer, 'const cancelEpubDisplayIfCurrent = finishEpubDisplay'],
   ['EPUB keyboard navigation guard', sources.epubRenderer, 'beginPageMove'],
   ['EPUB 批注跳转 stale guard', sources.epubRenderer, 'clearAnnotationJumpIfCurrent'],
   ['EPUB 定位回放 stale guard', sources.epubRenderer, 'clearPendingLocator(handoff)'],

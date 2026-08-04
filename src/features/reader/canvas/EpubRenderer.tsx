@@ -107,7 +107,6 @@ function isCurrentEpubDisplayRequest(
   currentGeneration: number,
   tokenFileId: string,
   currentFileId: string | null,
-  _requiresCurrentRequest: boolean,
   aborted: boolean,
 ): boolean {
   return (
@@ -365,7 +364,6 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
           displayGenerationRef.current,
           token.fileId,
           state.fileId,
-          false,
           token.controller.signal.aborted,
         )
       ) {
@@ -401,14 +399,8 @@ export function EpubRenderer({ fileId }: EpubRendererProps) {
     activeDisplayRef.current = null;
   }, []);
 
-  const cancelEpubDisplayIfCurrent = useCallback(
-    (token: EpubDisplayToken) => {
-      if (activeDisplayRef.current?.generation !== token.generation) return;
-      token.controller.abort();
-      activeDisplayRef.current = null;
-    },
-    [],
-  );
+  // 完成和 effect cleanup 共享同一代际关闭语义，避免两份相同的 abort 逻辑漂移。
+  const cancelEpubDisplayIfCurrent = finishEpubDisplay;
 
   const guardedEpubDisplay = useCallback(
     async (

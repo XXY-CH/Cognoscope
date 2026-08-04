@@ -47,10 +47,10 @@
     "AG-RELEASE: cannot unlock while integration is blocked"
   ],
   "attempts": {
-    "AG-REVIEW": 5,
+    "AG-REVIEW": 6,
     "AG-QA": 4,
     "AG-INTEGRATION": 1,
-    "AG-EXEC": 3
+    "AG-EXEC": 4
   },
   "artifacts": [
     "docs/GRAPH_ENGINEERING.md",
@@ -64,7 +64,8 @@
     ".omx/plans/read04-review-2026-08-04.md",
     "scripts/probe-read04.mjs",
     "src/utils/epubToc.ts",
-    "src/features/reader/canvas/PdfPageAnnotations.tsx"
+    "src/features/reader/canvas/PdfPageAnnotations.tsx",
+    ".omx/plans/read04-cleanup-plan-2026-08-04.md"
   ],
   "localAgentGraph": [
     "docs/AGENT_DEPENDENCY_GRAPH.md",
@@ -78,7 +79,8 @@
     "TOC projection preserves hidden parent paths and exact href/fragment matching runs before path fallback.",
     "PDF/EPUB annotation colors, underline width and focus duration use shared light/dark design tokens.",
     "Q1 static QA passed; source probe remains a contract fixture and does not replace real-document behavior evidence.",
-    "Browser runtime has no available instance; real PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending."
+    "Browser runtime has no available instance; real PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending.",
+    "Bounded cleanup removed an unused display-guard parameter and deduplicated EPUB display close semantics; behavior probe remains green."
   ],
   "lastVerification": [
     "npm run build (pass)",
@@ -86,9 +88,10 @@
     "git diff --check (pass)",
     "node scripts/probe-read04.mjs (pass)",
     "node scripts/probe-blank.mjs (blocked; no Chromium-compatible executable)",
-    "READ-04 follow-up review remediation: stable PDF data anchor, versioned drift unavailable, EPUB Contents[] decoration, exact-first TOC, annotation tokens"
+    "READ-04 follow-up review remediation: stable PDF data anchor, versioned drift unavailable, EPUB Contents[] decoration, exact-first TOC, annotation tokens",
+    "READ-04 cleanup baseline and post-pass: npm run build, npm run lint, git diff --check, node scripts/probe-read04.mjs (all pass)"
   ],
   "next": ["AG-QA.browser"],
   "iteration": 5,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW remediation -> AG-QA.static pass; AG-QA.browser remains blocked by missing Chromium runtime, so Integration/Release stay locked."
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW remediation -> bounded cleanup -> AG-QA.static pass; AG-QA.browser remains blocked by missing Chromium runtime, so Integration/Release stay locked."
 }
