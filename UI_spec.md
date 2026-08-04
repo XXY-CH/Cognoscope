@@ -1,5 +1,9 @@
 # UI 设计规范文档（v1.0）
 
+> **Authority note:** 产品叙事、研究对象边界、证据可追溯性和功能验收以
+> [`docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md`](./docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md)
+> 为准；本文继续作为组件级、数据字段级和快捷键级实现规范。
+
 > 面向 AI 辅助代码生成的完整前端设计规范。  
 > 覆盖：设计令牌 · 布局骨架 · 全部页面交互 · 数据模型 · 无障碍 · 快捷键。  
 > 文档格式支持：**PDF、EPUB**。视觉主题：**浅色 / 深色对等双主题**。  

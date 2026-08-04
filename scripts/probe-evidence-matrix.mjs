@@ -20,7 +20,7 @@ if (!html.includes('<div id="root"></div>')) {
   throw new Error('矩阵路由没有返回 React 根节点');
 }
 
-const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource, invalidationSource, citationSource, currentStateSource, fileStoreSource, matrixPageSource, rowEditorSource, eventSource, leadReviewSource, evidenceRowsDbSource, evidenceAnalysisDbSource, researchSignalsDbSource, researchLeadsDbSource] = await Promise.all([
+const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource, invalidationSource, citationSource, currentStateSource, fileStoreSource, filesDbSource, matrixPageSource, rowEditorSource, eventSource, leadReviewSource, evidenceRowsDbSource, evidenceAnalysisDbSource, researchSignalsDbSource, researchLeadsDbSource] = await Promise.all([
   fs.readFile(new URL('../src/App.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/db/index.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/stores/evidenceMatrixStore.ts', import.meta.url), 'utf8'),
@@ -38,6 +38,7 @@ const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPan
   fs.readFile(new URL('../src/utils/evidenceCitation.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/utils/currentResearchState.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/stores/fileStore.ts', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/db/files.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixPage.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/evidence-matrix/EvidenceRowEditor.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/utils/sourceInvalidationEvents.ts', import.meta.url), 'utf8'),
@@ -82,6 +83,8 @@ for (const [label, source, marker] of [
   ['当前状态来源失效计数', currentStateSource, 'staleSourceCount'],
   ['当前状态 stale 研究记录计数', currentStateSource, 'staleLeadCount'],
   ['软删除调用来源失效', fileStoreSource, 'invalidateSourceReferences('],
+  ['硬删除会话级联', filesDbSource, "'sessions'"],
+  ['硬删除会话索引', filesDbSource, "sessionStore.index('by-file')"],
   ['矩阵复制来源门禁', matrixPageSource, 'isCitationReadyEvidenceRow(row, files)'],
   ['矩阵回读 locator 门禁', matrixPageSource, 'isResolvableLocator(item.locator, file.type)'],
   ['证据行来源失效状态', rowEditorSource, '来源失效'],

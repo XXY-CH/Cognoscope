@@ -109,6 +109,7 @@ export async function deleteFile(id: string): Promise<void> {
     'researchSignals',
     'researchLeads',
     'qaMessages',
+    'sessions',
   ] as const;
   const tx = db.transaction([...storeNames], 'readwrite');
   await tx.objectStore('files').delete(id);
@@ -216,6 +217,11 @@ export async function deleteFile(id: string): Promise<void> {
   const qaStore = tx.objectStore('qaMessages');
   const qaMessages = await qaStore.index('by-file').getAll(id);
   await Promise.all(qaMessages.map((message) => qaStore.delete(message.id)));
+
+  // ReadingSession 以 fileId 为外键；硬删除时级联清理，避免仪表盘保留孤儿会话。
+  const sessionStore = tx.objectStore('sessions');
+  const sessions = await sessionStore.index('by-file').getAll(id);
+  await Promise.all(sessions.map((session) => sessionStore.delete(session.id)));
 
   await tx.done;
 }

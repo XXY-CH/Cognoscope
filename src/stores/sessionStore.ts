@@ -26,6 +26,9 @@ import { fromApiAnalysis } from '../utils/sessionAnalyze';
 const DEMO_CLEANUP_KEY = 'xuesen.demoCleanup.v2';
 const DEMO_HEATMAP_YEAR_KEY = 'xuesen.demoHeatmapYear';
 
+/** 丢弃在晚到的 monitor 合并之前启动、但之后才返回的旧列表读取。 */
+let sessionsLoadVersion = 0;
+
 /** 旧 seedSessions 写入的演示文献 id 前缀 */
 function isDemoSession(s: ReadingSession): boolean {
   return s.fileId.startsWith('demo-file-');
@@ -46,6 +49,7 @@ interface SessionState {
   activeSessionId: string | null;
   loadSessions: () => Promise<void>;
   loadMonitorAnalyses: () => Promise<void>;
+  mergeSession: (session: ReadingSession) => void;
   setRange: (range: SessionRange) => void;
   setActiveSessionId: (id: string | null) => void;
   updateDistraction: (
@@ -67,6 +71,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   activeSessionId: null,
 
   loadSessions: async () => {
+    const requestVersion = ++sessionsLoadVersion;
     set({ status: 'loading' });
     try {
       // 一次性清除 seedSessions 留下的演示数据（不依赖易丢的 localStorage 标记）
@@ -106,6 +111,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       }
 
       const sessions = await sessionsDb.listSessions();
+      if (requestVersion !== sessionsLoadVersion) return;
       // 防御：清理标记已写入后仍残留的演示行不再进入 store
       const realSessions = sessions.filter((s) => !isDemoSession(s));
       if (realSessions.length !== sessions.length) {
@@ -120,6 +126,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         activeSessionId: filtered[0]?.id ?? realSessions[0]?.id ?? null,
       });
     } catch {
+      if (requestVersion !== sessionsLoadVersion) return;
       set({ status: 'error', sessions: [] });
     }
   },
@@ -161,6 +168,20 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     }
   },
 
+  mergeSession: (session) => {
+    sessionsLoadVersion += 1;
+    set((state) => {
+      const next = state.sessions.some((item) => item.id === session.id)
+        ? state.sessions.map((item) => (item.id === session.id ? session : item))
+        : [session, ...state.sessions];
+      return {
+        sessions: next.sort((a, b) => b.startedAt.localeCompare(a.startedAt)),
+        status: 'idle',
+        activeSessionId: state.activeSessionId ?? session.id,
+      };
+    });
+  },
+
   setRange: (range) => {
     const filtered = filterSessionsByRange(get().sessions, range);
     set({
@@ -172,18 +193,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   setActiveSessionId: (activeSessionId) => set({ activeSessionId }),
 
   updateDistraction: async (sessionId, eventId, patch) => {
-    const sessions = get().sessions.map((s) => {
-      if (s.id !== sessionId) return s;
-      return {
-        ...s,
-        distractions: s.distractions.map((d) =>
-          d.id === eventId ? { ...d, ...patch } : d,
-        ),
-      };
-    });
-    const target = sessions.find((s) => s.id === sessionId);
-    if (target) await sessionsDb.putSession(target);
-    set({ sessions });
+    const target = await sessionsDb.updateSessionDistraction(
+      sessionId,
+      eventId,
+      patch,
+    );
+    if (target) get().mergeSession(target);
   },
 }));
 

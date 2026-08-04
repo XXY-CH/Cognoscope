@@ -61,6 +61,51 @@ export async function updateSessionLines(
 }
 
 /**
+ * 在事务内合并 monitor 字段，保留会话当前的结束状态、时长和已读行数。
+ * monitor 请求可能在离开阅读页后才返回，不能用旧快照覆盖会话终态。
+ */
+export async function updateSessionMonitorData(
+  id: string,
+  data: Pick<ReadingSession, 'focusSamples' | 'fatigueSamples' | 'distractions'>,
+): Promise<ReadingSession | undefined> {
+  const db = await getDb();
+  const tx = db.transaction('sessions', 'readwrite');
+  const session = await tx.store.get(id);
+  if (!session) {
+    await tx.done;
+    return undefined;
+  }
+  const next = { ...session, ...data };
+  await tx.store.put(next);
+  await tx.done;
+  return next;
+}
+
+/** 仅更新一条分心事件，保留会话中晚到的 monitor 字段。 */
+export async function updateSessionDistraction(
+  id: string,
+  eventId: string,
+  patch: Partial<ReadingSession['distractions'][number]>,
+): Promise<ReadingSession | undefined> {
+  const db = await getDb();
+  const tx = db.transaction('sessions', 'readwrite');
+  const session = await tx.store.get(id);
+  if (!session) {
+    await tx.done;
+    return undefined;
+  }
+  const next = {
+    ...session,
+    distractions: session.distractions.map((event) =>
+      event.id === eventId ? { ...event, ...patch } : event,
+    ),
+  };
+  await tx.store.put(next);
+  await tx.done;
+  return next;
+}
+
+/**
  * 批量写入
  */
 export async function putSessions(sessions: ReadingSession[]): Promise<void> {
@@ -104,8 +149,13 @@ export async function endSession(
   id: string,
   endedAt = new Date().toISOString(),
 ): Promise<ReadingSession | undefined> {
-  const session = await getSession(id);
-  if (!session || session.endedAt) return session;
+  const db = await getDb();
+  const tx = db.transaction('sessions', 'readwrite');
+  const session = await tx.store.get(id);
+  if (!session || session.endedAt) {
+    await tx.done;
+    return session;
+  }
   const start = Date.parse(session.startedAt);
   const end = Date.parse(endedAt);
   const durationSec =
@@ -113,6 +163,7 @@ export async function endSession(
       ? Math.max(0, Math.round((end - start) / 1000))
       : session.durationSec;
   const next: ReadingSession = { ...session, endedAt, durationSec };
-  await putSession(next);
+  await tx.store.put(next);
+  await tx.done;
   return next;
 }

@@ -22,6 +22,7 @@ import { listEvidenceRowsByMatrix } from '../../db/evidenceRows';
 import { useFileStore } from '../../stores/fileStore';
 import { useReaderStore } from '../../stores/readerStore';
 import { useResearchArtifactStore } from '../../stores/researchArtifactStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { useUiStore } from '../../stores/uiStore';
 import { convertToReadingSession } from '../../utils/monitorAdapter';
 import {
@@ -37,6 +38,9 @@ import { ReaderTopBar } from './ReaderTopBar';
 import { SidePanel } from './panels/SidePanel';
 import { TocPanel } from './panels/TocPanel';
 import styles from './ReaderPage.module.css';
+
+/** 小于该时长的 monitor 片段不进入专注统计，但阅读会话仍会保存。 */
+const MIN_MONITOR_SESSION_SEC = 5;
 
 /**
  * ReaderPage - 根据路由 fileId 打开文件；布局：TopBar / Toc+Canvas+Side / BottomBar
@@ -92,38 +96,56 @@ export function ReaderPage() {
     };
   }, [clearPendingLocator, fileId, location.search, setPendingLocator]);
 
-  // Python monitor 会话 ID（由 startDetection 返回，stop 后用于拉取数据）
-  const pySessionIdRef = useRef<string | null>(null);
+  // 按文件保留 monitor 会话 ID，避免快速切换时旧会话写入新文件。
+  const pySessionIdsRef = useRef<Map<string, string>>(new Map());
 
   // 会话结束时合并 monitor 检测数据，并在离开阅读边界后生成整理结果。
   const mergeMonitorData = useCallback(
     async (dbSessionId: string) => {
       const currentFileId = activeFileId;
       if (!currentFileId) return;
-      const pySid = pySessionIdRef.current;
-      const monitorTask = pySid
-        ? (async () => {
-            try {
-              const { frames } = await getSessionFrames(pySid);
-              if (!frames || frames.length === 0) return;
-              // 大量帧同步处理会阻塞主线程 → yield 后再转换，并限制帧数
-              await new Promise<void>((resolve) => setTimeout(resolve, 0));
-              const capped = frames.length > 6000 ? frames.slice(-6000) : frames;
-              const monitorSession = convertToReadingSession(capped, currentFileId);
-              const cur = await sessionsDb.getSession(dbSessionId);
-              if (monitorSession && cur) {
-                await sessionsDb.putSession({
-                  ...cur,
-                  focusSamples: monitorSession.focusSamples,
-                  fatigueSamples: monitorSession.fatigueSamples,
-                  distractions: monitorSession.distractions,
-                });
-              }
-            } catch {
-              /* monitor 不可用时静默；阅读整理仍继续 */
+      const pySid = pySessionIdsRef.current.get(currentFileId);
+      const monitorTask = (async () => {
+        try {
+          // 先结束 Python 会话，再读取完整 JSONL，避免尾部帧仍在写入。
+          const stopped = await stopDetection(currentFileId);
+          const monitorSessionId =
+            pySid ??
+            (stopped.fileId === currentFileId ? stopped.sessionId : undefined);
+          if (!monitorSessionId) return;
+          const { frames } = await getSessionFrames(monitorSessionId);
+          if (!frames || frames.length === 0) return;
+          // 大量帧同步处理会阻塞主线程 → yield 后再转换，并限制帧数
+          await new Promise<void>((resolve) => setTimeout(resolve, 0));
+          const capped = frames.length > 6000 ? frames.slice(-6000) : frames;
+          const monitorSession = convertToReadingSession(capped, currentFileId);
+          const monitorDurationSec = monitorSession
+            ? (Date.parse(monitorSession.endedAt ?? '') -
+                Date.parse(monitorSession.startedAt)) /
+              1000
+            : 0;
+          if (
+            monitorSession &&
+            Number.isFinite(monitorDurationSec) &&
+            monitorDurationSec >= MIN_MONITOR_SESSION_SEC
+          ) {
+            const merged = await sessionsDb.updateSessionMonitorData(dbSessionId, {
+              focusSamples: monitorSession.focusSamples,
+              fatigueSamples: monitorSession.fatigueSamples,
+              distractions: monitorSession.distractions,
+            });
+            if (merged) {
+              useSessionStore.getState().mergeSession(merged);
             }
-          })()
-        : Promise.resolve();
+          }
+        } catch {
+          /* monitor 不可用时静默；阅读整理仍继续 */
+        } finally {
+          if (pySessionIdsRef.current.get(currentFileId) === pySid) {
+            pySessionIdsRef.current.delete(currentFileId);
+          }
+        }
+      })();
 
       const digestTask = (async () => {
         const file = useFileStore
@@ -166,22 +188,30 @@ export function ReaderPage() {
     // Puppeteer/omp 等无头页也会挂 /read/；webdriver 为 true 时跳过，避免误开摄像头
     if (navigator.webdriver) return;
 
-    // 先确保之前的检测已停止
-    void stopDetection();
-
     // 启动检测
     const timer = setTimeout(() => {
       void (async () => {
         // 延迟后再次确认：HMR/自动化可能在等待期间注入 webdriver 标记
         if (navigator.webdriver) return;
+        // 等待旧会话停止，避免 Python 端以 already_running 响应旧文件会话。
+        await Promise.race([
+          stopDetection(),
+          new Promise<void>((resolve) => setTimeout(resolve, 2000)),
+        ]);
+        if (useReaderStore.getState().fileId !== activeFileId) return;
         const result = await Promise.race([
           startDetection(activeFileId),
           new Promise<StartResult>((r) =>
             setTimeout(() => r({ status: 'unreachable' }), 2000),
           ),
         ]);
-        if (result.sessionId) {
-          pySessionIdRef.current = result.sessionId;
+        if (
+          result.status === 'started' &&
+          result.sessionId &&
+          result.fileId === activeFileId &&
+          useReaderStore.getState().fileId === activeFileId
+        ) {
+          pySessionIdsRef.current.set(activeFileId, result.sessionId);
         }
       })();
     }, 500);
@@ -195,7 +225,6 @@ export function ReaderPage() {
     return () => {
       clearTimeout(timer);
       window.removeEventListener('beforeunload', handleUnload);
-      if (!navigator.webdriver) void stopDetection();
     };
   }, [activeFileId]);
   const tocOpen = useReaderStore((s) => s.tocOpen);

@@ -17,8 +17,12 @@ ReaderPage ──POST /api/detect/start──→ server.py → ReadingMonitor
          ←── sessionId / status ─────
 … 阅读中 …
 ReaderPage ──POST /api/detect/stop───→ 写 sessions/*.jsonl
-Dashboard ← sessionStore / IndexedDB   （JSONL 合并进 IDB 仍为待办）
+Dashboard ← sessionStore / IndexedDB   （结束时合并已落地；实时推流仍待办）
 ```
+
+阅读页结束边界会先停止检测，再读取完整 JSONL，并把专注、疲劳和分心字段
+原子合并到同一条 `ReadingSession`；monitor 不可用时只保留本地阅读会话，不
+补造任何指标。小于 5 秒的 monitor 片段不会进入统计。
 
 | 步骤 | 命令 |
 |---|---|
@@ -54,11 +58,11 @@ CORS 已开，供 `http://localhost:5173` 调用。
 
 ### 当前缺口（与 PROGRESS P1/P2 对齐）
 
-- [ ] 检测会话与 IndexedDB `ReadingSession` 稳定合并  
 - [ ] 实时推流（现为 start→stop→analyze 批处理）  
+- [ ] 浏览器前台可见性与 monitor 暂停/恢复仍需独立接入，当前不从缺失字段推断前台状态
 - [ ] **窗口是否在最上方**：非前台不计/降权专注（前端或系统钩子）  
 - [ ] **临近专注时段自动合并**  
-- [ ] **阅读 &lt; 5s 的会话不算专注**  
+- [x] **阅读 &lt; 5s 的会话不算专注**
 
 ---
 

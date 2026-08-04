@@ -61,7 +61,7 @@
 - [x] 指标卡图标/趋势条、热力图色阶均跟 **主题强调色** `--accent`
 - [x] `sessionStore` + `dashboardMetrics`；演示种子可补热力图历史
 - [x] 修复：离开阅读页时 `clearFile` 不再清零 `linesRead`（避免会话写库竞态）
-- [ ] monitor JSONL → IndexedDB 完整合并（`monitorAdapter` 已有雏形，仪表盘六维仍偏前端聚合）
+- [x] monitor JSONL → IndexedDB 完整合并：按文件绑定会话、停止后读取完整 JSONL、短会话门禁、事务内合并并刷新 `sessionStore`
 
 ### E · 阅读界面
 - [x] PDF / EPUB、划词工具条、书签、文内搜索、全屏、适应宽度
@@ -105,10 +105,10 @@
 ### P1 · 检测与会话质量（可加功能）
 - [ ] **检测窗口是否在最上方**：浏览器/应用未前台时，不计入专注或降低权重（避免切走后仍记专注）
 - [ ] **临近专注时段自动合并**：相邻会话间隔短于阈值则合并为一段，减少碎片记录
-- [ ] **阅读论文小于 5s 不算专注**：过短打开即关的会话不写入有效专注时长 / 不进仪表盘有效统计
+- [x] **阅读论文小于 5s 不算专注**：过短 monitor 片段仍保留阅读会话，但不写入专注/疲劳/分心统计
 
 ### P2 · 仪表盘 / 图谱 / monitor 打通
-- [ ] 将 monitor 分析（专注分、分心事件）稳定写入 `ReadingSession` 并驱动会话表「综合」等列
+- [x] 将 monitor 分析（专注分、分心事件）稳定写入 `ReadingSession` 并驱动会话表「综合」等列；服务不可用时保留空字段
 - [x] 知识图谱双画布与搜索/筛选/证据详情（见 `HANDOFF.md`）
 - [ ] 实时推流检测状态（现为 start→stop→analyze 批处理）
 
@@ -125,7 +125,7 @@
 2. EPUB 划词受 iframe 选区限制。
 3. 连续滚动渲染全部 PDF 页 → 大文档易卡顿。
 4. 知识图谱关系来自本地共现与 AI 语义判断；旧数据可能显示“来源未记录”，勿把它们一律表述为 AI 已验证。勿装伞包 `react-force-graph`。
-5. monitor 会话与 IndexedDB 会话仍分离；未起 `server.py` 时检测不可用（前端不阻断阅读）。
+5. monitor 仍是 start→stop→JSONL 的批处理；未起 `server.py` 或本机缺少视觉依赖时检测不可用（前端不阻断阅读）。
 6. 仪表盘布局已偏离 `UI_spec.md` §5 全文（以产品迭代为准）；会话表列为产品精简版，非规范六维原始字段全集。
 7. AI 配置与按文件 QA 已落盘；会话边界整理输出结构化栏目 + Markdown，仍需真实 PDF/EPUB、离线和多视口交互验收。
 8. 划词工具条以书签替代规范 §8.7「词典」（产品已拍板）。
@@ -194,4 +194,7 @@
 | 2026-08-01 | Phase 002 UI 首轮：移动侧栏改为 overlay 抽屉，PageHeader/FileToolbar 响应式重排；Codex 内置浏览器完成 390/768/1280 视口回归 |
 | 2026-08-02 | Phase 003 知识图谱设计：五级数据层、四种视图、证据桥接边界、响应式三表面布局与分阶段执行计划 |
 | 2026-08-02 | Phase 004 系统 UI 设计：全路由页面分级、视觉表面、状态契约、动画时序、减弱动效与分阶段执行计划 |
+| 2026-08-04 | Phase 005 总契约：将研究依据、证据边界、分层图谱、研究判断演化、CV 阅读上下文、UI 交互和工程验收统一写入 [`docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md`](./docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md) |
+| 2026-08-04 | Agent Graph 推进图：补充 `T0-T6` 研究环境目标 DAG、研究质量门和静态/浏览器双 QA 门；浏览器不可用时保持 `AG-QA.browser=blocked`，不解锁 Integration/Release |
 | 2026-08-04 | UX-06 Apple Design 静态审计：研究状态指标在桌面/平板/移动端采用 4/2/1 列，契约探针通过；真实 390/768/1280 视口、文档、键盘、主题和减弱动效验收因浏览器运行时不可用而保留阻塞 |
+| 2026-08-04 | D4 / MON-02：monitor 会话按 fileId 隔离，Reader 退出先 stop 再取 JSONL；短于 5 秒不进入统计，monitor 字段用事务合并并同步 `sessionStore`；硬删除同步清理 ReadingSession 孤儿；build、lint、静态探针通过，浏览器与 Python 视觉依赖仍阻塞 |

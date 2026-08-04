@@ -21,6 +21,11 @@ Agent 图是执行入口，项目图是执行上下文。它们都不是论文�
 按 Graph Engineering 执行 KG-05：把图谱节点桥接到证据锚点和原文回读，先检查它的 depends_on 和 acceptance，再实现和验证。
 ```
 
+当前研究环境闭环的 Agent 推进 DAG、双 QA 门和可直接复制的调用模板见
+[`docs/AGENT_DEPENDENCY_GRAPH.md`](./AGENT_DEPENDENCY_GRAPH.md) 的“研究环境推进图”。
+其中 `AG-QA` 必须分别记录静态/数据门和浏览器/真实文档门；浏览器不可用时，
+浏览器门保持 `blocked`，不能用静态检查替代集成验收。
+
 每次迭代都遵守同一顺序：
 
 1. 读取 JSON 图和相关 sourceOfTruth 文档。
@@ -91,13 +96,13 @@ flowchart TD
 | 1 | `KG-05` 图谱 → 证据锚点 → Reader 回读 | `in_progress` | 选中节点后看到 locator、摘录、匹配状态，并能回读原文 | `C4`, `C5`, `R1` |
 | 2 | `KG-06` 失效来源与状态传播 | `next` | 删除/修改来源后，图谱、矩阵和研究状态统一降级 | `KG-05`, `D3` |
 | 3 | `AI-03` 真实 QA / 整理习得 | `in_progress` | 使用本地批注和问答生成结构化会话摘要，不打断阅读 | `C2`, `C3`, `D2` |
-| 4 | `MON-02` monitor → ReadingSession | `next` | 专注分和分心事件进入会话与当前研究状态 | `C2`, `D4` |
+| 4 | `MON-02` monitor → ReadingSession | `in_progress`（静态门通过，浏览器/monitor 运行时阻塞） | 专注分和分心事件进入会话与当前研究状态 | `C2`, `D4` |
 | 5 | `READ-04` 批注高亮层与真实 TOC | `next` | locator 在 PDF/EPUB 原文上可见、可回读 | `C2`, `R1` |
 | 6 | `UX-06` 真实文档视觉验收 | `next` | 390/768/1280、键盘、主题、离线、减弱动效均通过 | `KG-05`, `P4` |
 | 7 | `EXT-01` 外部检索与下载 | `deferred` | 后续阶段接入，不影响本地闭环 | `O4` 稳定后再立项 |
 | 8 | `TEX-01` TeX / 期刊格式和引用扫描 | `deferred` | 后续科研交付阶段接入，不在当前阅读闭环中偷渡 | `P4` 完成后再立项 |
 
-`KG-05` 与 `AI-03` 已进入实现与静态验证阶段：前者完成图谱证据锚点投影，后者完成文件级 QA 与会话边界整理。两者都保留浏览器运行时验收 blocker；下一轮优先恢复 `AG-QA`，再按依赖推进 `KG-06`、`UX-06` 和 `P4`。
+`KG-05`、`AI-03`、`KG-06` 和 `MON-02` 已完成当前可执行的实现与静态验证：图谱证据锚点、文件级 QA、来源失效传播和 monitor 会话合并均已落地。它们都保留浏览器/真实文档验收 blocker；下一轮优先恢复 `AG-QA.browser`，再按依赖推进 `AG-INTEGRATION`、`UX-06` 和 `P4`。
 
 ## 节点执行合同
 

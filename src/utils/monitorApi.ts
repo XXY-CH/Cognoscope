@@ -19,12 +19,15 @@ export interface StartResult {
 }
 
 interface StopResult {
-  status: 'stopped' | 'not_running' | 'unreachable';
+  status: 'stopped' | 'not_running' | 'not_owner' | 'unreachable';
   sessionId?: string;
   path?: string;
   frameCount?: number;
   fileId?: string;
 }
+
+/** monitor 服务是单例摄像头进程，客户端必须串行化 stop 请求。 */
+let stopInFlight: Promise<StopResult> | null = null;
 
 export interface StatusResult {
   running: boolean;
@@ -83,14 +86,27 @@ export async function startDetection(
 
 /** 停止检测，返回会话元数据。
  *  返回 `{ status: 'unreachable' }` 表示 Python 服务未运行。 */
-export async function stopDetection(): Promise<StopResult> {
+export async function stopDetection(fileId?: string): Promise<StopResult> {
+  const previous = stopInFlight;
+  if (previous) await previous.catch(() => undefined);
+
+  const request = (async () => {
+    try {
+      const res = await fetch(`${MONITOR_API_BASE}/api/detect/stop`, {
+        method: 'POST',
+        headers: fileId ? { 'Content-Type': 'application/json' } : undefined,
+        body: fileId ? JSON.stringify({ fileId }) : undefined,
+      });
+      return res.json();
+    } catch {
+      return { status: 'unreachable' as const };
+    }
+  })();
+  stopInFlight = request;
   try {
-    const res = await fetch(`${MONITOR_API_BASE}/api/detect/stop`, {
-      method: 'POST',
-    });
-    return res.json();
-  } catch {
-    return { status: 'unreachable' };
+    return await request;
+  } finally {
+    if (stopInFlight === request) stopInFlight = null;
   }
 }
 

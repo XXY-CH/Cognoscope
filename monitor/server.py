@@ -83,6 +83,14 @@ def stop_detection():
     if _monitor is None or not _monitor.is_running:
         return jsonify({"status": "not_running"})
 
+    body = request.get_json(silent=True) or {}
+    requested_file_id = body.get("fileId")
+    if requested_file_id and requested_file_id != _current_file_id:
+        return jsonify({
+            "status": "not_owner",
+            "fileId": _current_file_id,
+        }), 409
+
     file_id = _current_file_id
     session_path = _monitor.stop()
     frame_count = _monitor.frame_count

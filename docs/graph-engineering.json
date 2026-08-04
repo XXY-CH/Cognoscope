@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "UX-06"],
+    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
     "next": ["UX-06", "P4"],
-    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "UX-06: browser screenshots and interaction remain unavailable"],
+    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: browser screenshots and interaction remain unavailable"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；研究状态四项指标在桌面/平板/移动端分别采用 4/2/1 列，真实视口验收仍需浏览器。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；研究状态四项指标在桌面/平板/移动端分别采用 4/2/1 列，真实视口验收仍需浏览器。",
     "lastVerified": "2026-08-04",
     "evidence": [
       "npm run build",
@@ -29,6 +29,9 @@
       "cross-tab BroadcastChannel invalidation and IndexedDB write guards",
       "node scripts/probe-ui-contract.mjs",
       "Apple Design static responsive metric contract (4/2/1 columns)",
+      "bundled monitor session probe including 4.5s boundary",
+      "bundled source invalidation probe and hard-purge session cascade contract",
+      "python monitor syntax check; runtime dependencies unavailable",
       "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending"
     ]
   },
@@ -288,14 +291,15 @@
       "type": "capability",
       "layer": "next",
       "title": "monitor 会话合并",
-      "status": "next",
+      "status": "in_progress",
       "priority": 4,
       "goal": "把本地 monitor 的专注分和分心事件稳定合并进 ReadingSession 与当前研究状态。",
       "dependsOn": ["C2", "D4"],
-      "touchpoints": ["monitor/server.py", "src/utils/monitorApi.ts", "src/stores/sessionStore.ts", "src/types/index.ts"],
-      "contracts": ["camera inference stays local", "monitor unavailable does not block reading", "session IDs remain stable"],
-      "acceptance": ["batch analyze result maps to ended session", "frontmost/short-session rules are explicit", "dashboard and current state agree"],
-      "verification": ["monitor API smoke", "session persistence", "offline/unavailable fallback"],
+      "touchpoints": ["monitor/server.py", "monitor/README.md", "src/utils/monitorApi.ts", "src/features/reader/ReaderPage.tsx", "src/hooks/useReadingSession.ts", "src/db/sessions.ts", "src/stores/sessionStore.ts", "src/db/files.ts", "scripts/probe-monitor-session.mjs"],
+      "contracts": ["camera inference stays local", "monitor unavailable does not block reading", "session IDs remain stable", "raw short-session gate", "late merge updates sessionStore", "hard purge removes file-scoped sessions"],
+      "acceptance": ["batch analyze result maps to ended session", "frontmost/short-session rules are explicit", "dashboard and current state agree", "stale session snapshots cannot overwrite monitor fields"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "bundled monitor session probe", "session persistence transaction contract", "offline/unavailable fallback", "browser reader and camera smoke (blocked: no runtime/dependencies)"],
+      "blocker": "Static implementation and contract probes pass; browser runtime and Python monitor dependencies/camera are unavailable, so real PDF/EPUB and camera evidence remains blocked.",
       "rollback": "Keep monitor data separate when unavailable; do not fabricate focus metrics.",
       "next": ["UX-06"]
     },
@@ -379,6 +383,7 @@
       "touchpoints": ["src/types/index.ts", "src/hooks/useReadingSession.ts", "src/stores/sessionStore.ts", "src/utils/monitorApi.ts"],
       "contracts": ["session ID", "endedAt", "monitor unavailable fallback"],
       "acceptance": ["session is not lost on reader exit", "monitor data is never fabricated"],
+      "verification": ["npm run build", "npm run lint", "bundled monitor session probe", "transactional session lifecycle review"],
       "next": ["MON-02"]
     },
     {
