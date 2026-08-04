@@ -1,7 +1,7 @@
 {
   "schema": "xuesen.agent-run-state/v1",
-  "runId": "run_2026-08-03_kg06",
-  "objective": "在既有 Interview、Apple Design 合同和 KG-06 计划边界内，完成来源软删除的行级失效传播、citation-ready 门禁、跨标签页状态同步和持久化竞态隔离；保留证据矩阵作为唯一可引用核验入口，并记录浏览器验收阻塞。",
+  "runId": "run_2026-08-04_ux06",
+  "objective": "在既有 Interview、Apple Design 合同和 UX-06 计划边界内，完成研究状态页的静态响应式契约审计，保留 4/2/1 指标布局和 reduced-preference 合同，并记录浏览器验收阻塞。",
   "scope": [
     "D3",
     "KG-06",
@@ -25,6 +25,9 @@
     "scripts/probe-source-invalidation.mjs",
     "scripts/probe-evidence-matrix.mjs",
     ".omx/plans/kg06-plan-2026-08-03.md",
+    "src/features/research-state/CurrentResearchStatePage.module.css",
+    "scripts/probe-ui-contract.mjs",
+    ".omx/plans/ux06-static-audit-2026-08-04.md",
     ".omx/specs/deep-interview-frontend-research-environment.md"
   ],
   "active": ["AG-QA"],
@@ -40,10 +43,10 @@
     "AG-REVIEW",
     "AG-INTEGRATION"
   ],
-  "blocked": ["AG-QA: browser runtime unavailable for source deletion/restore and real 390/768/1280 PDF/EPUB interaction evidence"],
+  "blocked": ["AG-QA: browser runtime unavailable for source deletion/restore, real documents, and UX-06 390/768/1280 interaction evidence"],
   "attempts": {
     "AG-REVIEW": 3,
-    "AG-QA": 1,
+    "AG-QA": 2,
     "AG-INTEGRATION": 1
   },
   "artifacts": [
@@ -54,7 +57,9 @@
     ".omx/plans/kg06-plan-2026-08-03.md",
     ".omx/plans/kg05-review-2026-08-03.md",
     "scripts/probe-source-invalidation.mjs",
-    "scripts/probe-evidence-matrix.mjs"
+    "scripts/probe-evidence-matrix.mjs",
+    "scripts/probe-ui-contract.mjs",
+    ".omx/plans/ux06-static-audit-2026-08-04.md"
   ],
   "localAgentGraph": [
     "docs/AGENT_DEPENDENCY_GRAPH.md",
@@ -67,6 +72,7 @@
     "Open matrix, research artifact and file projections receive local and BroadcastChannel invalidation events; stale lead actions are disabled and rejected at the store boundary.",
     "Evidence row, analysis, signal, and lead writes re-read current files/rows/signals inside IndexedDB transactions; non-citation-ready row IDs prevent an async or cross-tab old snapshot from reviving citation-ready state.",
     "The bundled fixture covers pure reconciliation, restore navigation semantics, mixed legacy citation rejection and no-op idempotence; transaction execution is recorded as a static contract/manual gate because no browser-backed IDB runner is installed.",
+    "UX-06 static audit corrected the four-metric research-state grid to 4/2/1 columns and added a contract probe for responsive and reduced-preference safeguards.",
     "Browser runtime has no available instance; source deletion/restore, real PDF/EPUB, responsive, keyboard, theme and reduced-motion interaction evidence remains pending."
   ],
   "lastVerification": [
@@ -75,11 +81,12 @@
     "git diff --check (pass)",
     "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs (pass)",
     "esbuild-bundled source invalidation fixture (pass)",
+    "node scripts/probe-ui-contract.mjs (pass)",
     "node scripts/probe-blank.mjs (skipped; no Chromium-compatible executable found)",
     "AG-REVIEW cross-tab race and citation-gate findings fixed; transaction fixture gap documented",
     "browser runtime discovery and retry (agent.browsers.list returned [])"
   ],
   "next": ["AG-QA"],
-  "iteration": 1,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> AG-QA static/data gates -> AG-INTEGRATION; AG-QA remains the retry point until a browser runtime is available for source deletion/restore and real documents."
+  "iteration": 2,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> AG-QA static/data gates -> AG-INTEGRATION -> UX-06 static audit; AG-QA remains the retry point until a browser runtime is available for source deletion/restore, real documents, and multi-viewport interaction."
 }

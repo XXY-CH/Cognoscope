@@ -2,7 +2,7 @@
   "schema": "xuesen.graph-engineering/v1",
   "project": "xuesen",
   "title": "学森 AI 时代科研环境迭代图",
-  "updatedAt": "2026-08-03",
+  "updatedAt": "2026-08-04",
   "purpose": "把产品目标、科研工作流、代码触点、数据合同和验证门组织成可执行的迭代图，供 Codex 恢复上下文并选择下一步。",
   "notThis": [
     "论文知识图谱",
@@ -10,12 +10,12 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06"],
-    "next": ["KG-06", "UX-06", "P4"],
-    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable"],
+    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "UX-06"],
+    "next": ["UX-06", "P4"],
+    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "UX-06: browser screenshots and interaction remain unavailable"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联。",
-    "lastVerified": "2026-08-03",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；研究状态四项指标在桌面/平板/移动端分别采用 4/2/1 列，真实视口验收仍需浏览器。",
+    "lastVerified": "2026-08-04",
     "evidence": [
       "npm run build",
       "npm run lint",
@@ -27,6 +27,8 @@
       "esbuild-bundled source invalidation fixture",
       "source invalidation transaction and citation gate contract probe",
       "cross-tab BroadcastChannel invalidation and IndexedDB write guards",
+      "node scripts/probe-ui-contract.mjs",
+      "Apple Design static responsive metric contract (4/2/1 columns)",
       "Browser runtime unavailable; real 390/768/1280, PDF/EPUB, keyboard and theme interaction remains pending"
     ]
   },
@@ -318,14 +320,15 @@
       "type": "verification",
       "layer": "verification",
       "title": "真实文档和多视口验收",
-      "status": "next",
+      "status": "in_progress",
       "priority": 6,
       "goal": "在真实本地文档下验证研究闭环而不是只验证空状态。",
       "dependsOn": ["KG-05", "C4"],
-      "touchpoints": ["scripts", "Codex in-app browser", "docs/plans/2026-08-02-004-ui-system-plan.md"],
+      "touchpoints": ["scripts/probe-ui-contract.mjs", "src/features/research-state/CurrentResearchStatePage.module.css", "Codex in-app browser", "docs/plans/2026-08-02-004-ui-system-plan.md"],
       "contracts": ["390/768/1280", "light/dark", "keyboard", "reduced motion", "offline"],
       "acceptance": ["import -> read -> annotate -> exit -> review -> graph/matrix -> reader return completes", "no page-level horizontal overflow", "source state remains legible"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "browser screenshots and interaction checks"],
+      "verification": ["node scripts/probe-ui-contract.mjs", "npm run build", "npm run lint", "git diff --check", "browser screenshots and interaction checks (blocked: no browser instance)"],
+      "blocker": "Static Apple Design responsive and reduced-preference contracts pass; browser runtime discovery returned an empty list, so real 390/768/1280 screenshots and interactions remain pending.",
       "rollback": "Keep route and data contracts; isolate visual regression to the affected surface.",
       "next": ["P4"]
     },
