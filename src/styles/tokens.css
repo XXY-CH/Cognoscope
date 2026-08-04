@@ -9,30 +9,30 @@
    ============================================================ */
 :root {
   /* ---------- §1.1 语义色彩 ---------- */
-  --bg-base: #ffffff; /* 页面主背景 */
-  --bg-elevated: #f5f5f7; /* 侧栏、卡片背景 */
-  --bg-hover: #efeff3; /* 悬停背景 */
-  --bg-active: #e6e9fb; /* 选中行 / 选中导航项背景 */
+  --bg-base: #fbfcfb; /* 中性纸面画布 */
+  --bg-elevated: #f3f5f4; /* 侧栏、工具区 */
+  --bg-hover: #edf1ef; /* 悬停背景 */
+  --bg-active: #e7eff0; /* 选中行 / 选中导航项背景 */
   --bg-surface: #ffffff; /* 浮层、模态框、下拉菜单 */
 
-  --border-subtle: #e0e0e5; /* 分隔线、卡片描边 */
-  --border-default: #c8c8d2; /* 输入框边框 */
-  --border-strong: #a8a8b6; /* 强调边框、拖拽手柄 */
+  --border-subtle: #dfe5e2; /* 分隔线、工作面边界 */
+  --border-default: #b9c5c0; /* 输入框边框 */
+  --border-strong: #879890; /* 强调边框、拖拽手柄 */
 
   --text-primary: #1a1a1e; /* 正文 */
-  --text-secondary: #6b6b7a; /* 次要说明 */
-  --text-tertiary: #8e8e9c; /* 时间戳、脚注、占位符 */
-  --text-disabled: #adadba; /* 禁用状态 */
+  --text-secondary: #5f6b66; /* 次要说明 */
+  --text-tertiary: #7b8781; /* 时间戳、脚注、占位符 */
+  --text-disabled: #a7b0ab; /* 禁用状态 */
 
-  --accent: #4a6cf7; /* 主要强调色（按钮、链接、选中） */
-  --accent-hover: #3a5ce6; /* 强调色悬停 */
-  --accent-subtle: #eef1fe; /* 强调色浅背景（标签、徽章、批量条） */
+  --accent: #2f6f85; /* 主要强调色：克制的青灰动作色 */
+  --accent-hover: #255b6d; /* 强调色悬停 */
+  --accent-subtle: #e7f0f2; /* 强调色浅背景（标签、徽章、批量条） */
 
   --danger: #e54545; /* 删除、错误 */
-  --warning: #f5a623; /* 警告 */
-  --warning-subtle: #fff6e5; /* 警告浅背景 */
-  --success: #34c759; /* 成功、专注度高 */
-  --success-subtle: #eaf9ef; /* 成功浅背景 */
+  --warning: #9a6a1f; /* 警告 */
+  --warning-subtle: #fbf3df; /* 警告浅背景 */
+  --success: #33745b; /* 成功、已确认 */
+  --success-subtle: #e8f3ed; /* 成功浅背景 */
 
   /* 阅读批注色板：PDF 与 EPUB 共用，深色主题在下方覆盖 */
   --annotation-yellow: #ffd740;
@@ -46,27 +46,42 @@
   --text-on-accent: #ffffff; /* 强调色实心按钮上的文字（双主题同值，保证对比） */
 
   /* ---------- §1.1 数据可视化专用色 ---------- */
-  --chart-focus: #4a6cf7; /* 专注度曲线 */
-  --chart-fatigue: #f5a623; /* 疲劳度曲线 */
-  --chart-distraction: #e54545; /* 分心事件标记 */
-  --chart-reading: #34c759; /* 阅读时长 */
-  --chart-bg-grid: #e8e8ef; /* 图表网格线 */
-  --chart-axis: #9090a0; /* 轴线与刻度标签 */
+  --chart-focus: #55798a; /* 专注度曲线 */
+  --chart-fatigue: #a98345; /* 疲劳度曲线 */
+  --chart-distraction: #a8544d; /* 分心事件标记 */
+  --chart-reading: #5a7d65; /* 阅读时长 */
+  --chart-bg-grid: #dfe5e2; /* 图表网格线 */
+  --chart-axis: #7b8781; /* 轴线与刻度标签 */
 
   /* ---------- §1.1 分心事件类型配色 ---------- */
-  --event-drink: #22a7c2; /* 喝水 */
-  --event-talk: #b565d8; /* 聊天 */
-  --event-away: #e54545; /* 离开座位 */
-  --event-phone: #f5761a; /* 看手机 */
-  --event-yawn: #9a8c2e; /* 打哈欠 */
-  --event-gaze-off: #6b6b7a; /* 走神（视线离屏） */
+  --event-drink: #4e7e8e; /* 喝水 */
+  --event-talk: #77658a; /* 聊天 */
+  --event-away: #a8544d; /* 离开座位 */
+  --event-phone: #9a6a3f; /* 看手机 */
+  --event-yawn: #8b7c3e; /* 打哈欠 */
+  --event-gaze-off: #6e7772; /* 走神（视线离屏） */
 
   /* ---------- §1.2 字体族 ---------- */
   --font-sans: "Inter", "SF Pro Text", "PingFang SC", "Microsoft YaHei", system-ui,
     sans-serif; /* 界面无衬线正文字体 */
   --font-serif: "Source Serif 4", "Songti SC", Georgia, serif; /* EPUB 正文可选衬线字体 */
   --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace; /* 代码、数值等宽字体 */
-  --tracking-label: 0.04em; /* 小标签的轻微字距 */
+  --tracking-label: 0; /* 学术工作面不使用装饰性字距 */
+
+  /* ---------- 学术工作面语义别名（新页面优先使用） ---------- */
+  --surface-canvas: var(--bg-base);
+  --surface-section: var(--bg-surface);
+  --surface-utility: var(--bg-elevated);
+  --surface-inspector: var(--bg-surface);
+  --rule-subtle: var(--border-subtle);
+  --ink: var(--text-primary);
+  --ink-muted: var(--text-secondary);
+  --ink-faint: var(--text-tertiary);
+  --action: var(--accent);
+  --status-support: var(--success);
+  --status-review: var(--warning);
+  --status-dispute: var(--danger);
+  --status-unavailable: var(--text-secondary);
 
   /* ---------- §1.3 字号阶梯（尺寸 / 行高 / 字重） ---------- */
   --text-display: 32px; /* 仪表盘大数字 · 字号 */
@@ -113,19 +128,19 @@
   --sp-12: 48px; /* 超大间距 · 空状态等 */
 
   /* ---------- §1.4 圆角 ---------- */
-  --radius-sm: 4px; /* 小圆角 · 细标签、小徽章 */
-  --radius-md: 8px; /* 中圆角 · 按钮、输入框、导航项 */
-  --radius-lg: 12px; /* 大圆角 · 对话框、卡片 */
-  --radius-xl: 16px; /* 更大圆角 · 大型面板 */
+  --radius-sm: 2px; /* 小圆角 · 细标签、小徽章 */
+  --radius-md: 4px; /* 中圆角 · 按钮、输入框、导航项 */
+  --radius-lg: 6px; /* 大圆角 · 对话框、卡片 */
+  --radius-xl: 8px; /* 更大圆角 · 大型面板 */
   --radius-full: 9999px; /* 全圆角 · 胶囊标签、圆形头像遮罩 */
 
   /* ---------- §1.4 边框宽度 ---------- */
   --border-width: 1px; /* 统一边框线宽 */
 
   /* ---------- §1.4 阴影（浅色） ---------- */
-  --shadow-sm: 0 1px 2px rgba(16, 16, 24, 0.06); /* 轻阴影 · 卡片、批注条 */
-  --shadow-md: 0 4px 12px rgba(16, 16, 24, 0.1); /* 中阴影 · 浮层、工具条 */
-  --shadow-lg: 0 12px 32px rgba(16, 16, 24, 0.14); /* 重阴影 · 抽屉、模态框 */
+  --shadow-sm: 0 1px 2px rgba(24, 40, 34, 0.05); /* 轻阴影 · 重复项 */
+  --shadow-md: 0 4px 12px rgba(24, 40, 34, 0.08); /* 中阴影 · 浮层、工具条 */
+  --shadow-lg: 0 12px 28px rgba(24, 40, 34, 0.12); /* 重阴影 · 抽屉、模态框 */
 
   /* ---------- §1.5 动效时长 ---------- */
   --dur-fast: 120ms; /* 快速 · hover、按钮按下、图标切换 */
@@ -177,7 +192,8 @@
   --settings-drawer-width: 420px; /* 设置抽屉宽度 */
   --overlay-drawer: rgba(0, 0, 0, 0.32); /* 设置抽屉遮罩（§2.4） */
   --accent-alpha-12: color-mix(in srgb, var(--accent) 12%, transparent); /* 头像无图时的强调色浅底 */
-  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent); /* Input focus 外发光 20% */
+  --focus-accent: color-mix(in srgb, var(--accent) 18%, transparent); /* 兼容表单 focus 的同色外圈 */
+  --accent-glow: var(--focus-accent); /* 旧控件兼容别名，不用于装饰 */
 
   /* ---------- §3 通用组件尺寸 ---------- */
   --btn-height-sm: 32px; /* Button 小尺寸高度 */
@@ -270,30 +286,30 @@
    ============================================================ */
 [data-theme="dark"] {
   /* ---------- §1.1 语义色彩（深色） ---------- */
-  --bg-base: #1a1a1e; /* 页面主背景 */
-  --bg-elevated: #242428; /* 侧栏、卡片背景 */
-  --bg-hover: #2a2a30; /* 悬停背景 */
-  --bg-active: #2e3350; /* 选中行 / 选中导航项背景 */
-  --bg-surface: #2c2c32; /* 浮层、模态框、下拉菜单 */
+  --bg-base: #1c2221; /* 深色纸面画布 */
+  --bg-elevated: #242c2a; /* 侧栏、工具区 */
+  --bg-hover: #2b3532; /* 悬停背景 */
+  --bg-active: #263d43; /* 选中行 / 选中导航项背景 */
+  --bg-surface: #29322f; /* 浮层、模态框、下拉菜单 */
 
-  --border-subtle: #3a3a42; /* 分隔线、卡片描边 */
-  --border-default: #4a4a54; /* 输入框边框 */
-  --border-strong: #55555f; /* 强调边框、拖拽手柄 */
+  --border-subtle: #3b4743; /* 分隔线、工作面边界 */
+  --border-default: #52615b; /* 输入框边框 */
+  --border-strong: #6b7b73; /* 强调边框、拖拽手柄 */
 
-  --text-primary: #e8e8f0; /* 正文 */
-  --text-secondary: #9090a0; /* 次要说明 */
-  --text-tertiary: #75758a; /* 时间戳、脚注、占位符 */
-  --text-disabled: #55555f; /* 禁用状态 */
+  --text-primary: #e8eeeb; /* 正文 */
+  --text-secondary: #a4b0aa; /* 次要说明 */
+  --text-tertiary: #829089; /* 时间戳、脚注、占位符 */
+  --text-disabled: #5b6861; /* 禁用状态 */
 
-  --accent: #6b8cf9; /* 主要强调色（按钮、链接、选中） */
-  --accent-hover: #5a7be8; /* 强调色悬停 */
-  --accent-subtle: #1e2a5a; /* 强调色浅背景（标签、徽章、批量条） */
+  --accent: #8dbbc5; /* 主要强调色：深色主题的青灰动作色 */
+  --accent-hover: #a5ced5; /* 强调色悬停 */
+  --accent-subtle: #20363b; /* 强调色浅背景（标签、徽章、批量条） */
 
-  --danger: #ff6b6b; /* 删除、错误 */
-  --warning: #ffb830; /* 警告 */
-  --warning-subtle: #3d321c; /* 警告浅背景 */
-  --success: #4ade80; /* 成功、专注度高 */
-  --success-subtle: #1c3827; /* 成功浅背景 */
+  --danger: #ef8b86; /* 删除、错误 */
+  --warning: #ddb36a; /* 警告 */
+  --warning-subtle: #3e3524; /* 警告浅背景 */
+  --success: #82c49f; /* 成功、已确认 */
+  --success-subtle: #1f3a2d; /* 成功浅背景 */
 
   --annotation-yellow: #f0c040;
   --annotation-green: #4ade80;
@@ -303,28 +319,28 @@
   --overlay: rgba(0, 0, 0, 0.65); /* 模态遮罩 */
 
   /* ---------- §1.1 数据可视化专用色（深色） ---------- */
-  --chart-focus: #6b8cf9; /* 专注度曲线 */
-  --chart-fatigue: #ffb830; /* 疲劳度曲线 */
-  --chart-distraction: #ff6b6b; /* 分心事件标记 */
-  --chart-reading: #4ade80; /* 阅读时长 */
-  --chart-bg-grid: #2e2e38; /* 图表网格线 */
-  --chart-axis: #6a6a78; /* 轴线与刻度标签 */
+  --chart-focus: #8dbbc5; /* 专注度曲线 */
+  --chart-fatigue: #d0ab6e; /* 疲劳度曲线 */
+  --chart-distraction: #d1847d; /* 分心事件标记 */
+  --chart-reading: #8fc0a2; /* 阅读时长 */
+  --chart-bg-grid: #35413d; /* 图表网格线 */
+  --chart-axis: #829089; /* 轴线与刻度标签 */
   --heat-empty: #323238; /* 热力图无阅读日，需与 --bg-elevated 可辨 */
 
   /* ---------- §1.1 分心事件类型配色（深色） ---------- */
-  --event-drink: #38c7e0; /* 喝水 */
-  --event-talk: #c98ae8; /* 聊天 */
-  --event-away: #ff6b6b; /* 离开座位 */
-  --event-phone: #ff9448; /* 看手机 */
-  --event-yawn: #c4b441; /* 打哈欠 */
-  --event-gaze-off: #9090a0; /* 走神（视线离屏） */
+  --event-drink: #83bdc8; /* 喝水 */
+  --event-talk: #b3a0c5; /* 聊天 */
+  --event-away: #d1847d; /* 离开座位 */
+  --event-phone: #d0a06d; /* 看手机 */
+  --event-yawn: #c2b276; /* 打哈欠 */
+  --event-gaze-off: #a1aaa5; /* 走神（视线离屏） */
 
   /* ---------- §1.4 阴影（深色：加深 + 顶部内高光） ---------- */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.36),
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 轻阴影 · 卡片、批注条 */
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.48),
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.42),
     inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 中阴影 · 浮层、工具条 */
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6),
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.54),
     inset 0 1px 0 rgba(255, 255, 255, 0.04); /* 重阴影 · 抽屉、模态框 */
 
   /* Tooltip 深色主题：同为柔和表面色，不再反相高对比 */

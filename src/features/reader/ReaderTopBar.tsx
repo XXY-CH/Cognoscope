@@ -52,9 +52,18 @@ export function ReaderTopBar({ onEnterFullscreen }: ReaderTopBarProps) {
   const searchParams = new URLSearchParams(location.search);
   const matrixId = searchParams.get('matrixId');
   const graphPath = graphReturnPath(searchParams);
-  const returnPath = graphPath ??
+  const resultsPath = searchParams.get('returnTo') === 'results' ? '/results' : null;
+  const returnPath =
+    graphPath ??
+    resultsPath ??
     (matrixId ? `/evidence-matrix/${encodeURIComponent(matrixId)}` : '/');
-  const returnLabel = graphPath ? '知识图谱' : matrixId ? '证据矩阵' : '当前研究';
+  const returnLabel = graphPath
+    ? '知识图谱'
+    : resultsPath
+      ? '成果中心'
+      : matrixId
+        ? '证据矩阵'
+        : '当前研究';
   const fileId = useReaderStore((s) => s.fileId);
   const fileName = useReaderStore((s) => s.fileName);
   const fileType = useReaderStore((s) => s.fileType);

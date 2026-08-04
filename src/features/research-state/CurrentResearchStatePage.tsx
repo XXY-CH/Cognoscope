@@ -6,13 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
-  CheckCircle2,
   FilePlus2,
-  GitCompareArrows,
   Library,
-  Network,
-  Sparkles,
-  TriangleAlert,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, EmptyState, Skeleton } from '../../components/common';
@@ -30,7 +25,6 @@ import {
   type CurrentResearchStateSnapshot,
 } from '../../utils/currentResearchState';
 import type { EvidenceAnalysis, EvidenceRow } from '../../types';
-import { PostReadingSummary } from './PostReadingSummary';
 import { ResearchLeadReview } from './ResearchLeadReview';
 import styles from './CurrentResearchStatePage.module.css';
 
@@ -158,6 +152,30 @@ export function CurrentResearchStatePage() {
       }),
     [analyses, digests, files, graphNodes, leads, matrices, rows, sessions, signals],
   );
+  const latestMatrix = useMemo(
+    () =>
+      [...matrices].sort((left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt),
+      )[0] ?? null,
+    [matrices],
+  );
+  const timelineSteps = useMemo(
+    () => [
+      { label: '导入文献', done: snapshot.activeFiles.length > 0 },
+      { label: '开始阅读', done: snapshot.recentSessions.length > 0 },
+      { label: '保存证据', done: rows.length > 0 },
+      { label: '建立比较', done: snapshot.matrixCount > 0 },
+      { label: '收窄判断', done: snapshot.verifiedRowCount > 0 },
+      { label: '形成成果材料', done: snapshot.verifiedRowCount > 0 },
+    ],
+    [
+      rows.length,
+      snapshot.activeFiles.length,
+      snapshot.matrixCount,
+      snapshot.recentSessions.length,
+      snapshot.verifiedRowCount,
+    ],
+  );
 
   const loading =
     fileStatus === 'loading' ||
@@ -176,7 +194,7 @@ export function CurrentResearchStatePage() {
         <div>
           <p className={styles.eyebrow}>现在</p>
           <h1 id="research-state-title" className={styles.title}>
-            研究正在推进
+            研究现场
           </h1>
           <p className={styles.subtitle}>
             {statusLabel(snapshot)}。把注意力留给原文，环境负责记住进展和需要回看的地方。
@@ -212,7 +230,7 @@ export function CurrentResearchStatePage() {
       </section>
 
       {!snapshot.hasLibrary ? (
-        <EmptyState
+          <EmptyState
           aria-label="研究空间暂无文献"
           icon={<BookOpen strokeWidth={1.5} />}
           title="从一篇本地文献开始"
@@ -223,6 +241,24 @@ export function CurrentResearchStatePage() {
         />
       ) : (
         <>
+          <section className={styles.questionSurface} aria-labelledby="current-question-title">
+            <div>
+              <p className={styles.sectionKicker}>当前问题</p>
+              <h2 id="current-question-title" className={styles.questionTitle}>
+                {latestMatrix?.comparisonQuestion || '先提出一个比较问题，再让阅读和证据围绕它展开。'}
+              </h2>
+            </div>
+            <Button
+              aria-label="打开证据工作台"
+              variant="ghost"
+              size="sm"
+              rightIcon={<ArrowRight size={16} strokeWidth={1.5} />}
+              onClick={() => navigate('/evidence-matrix')}
+            >
+              证据工作台
+            </Button>
+          </section>
+
           <section className={styles.focusGrid} aria-label="当前研究焦点">
             <div className={styles.focusSurface}>
               <div className={styles.sectionHeader}>
@@ -263,91 +299,7 @@ export function CurrentResearchStatePage() {
                 <p className={styles.inlineEmpty}>打开一篇文献，下一次回来时会从这里继续。</p>
               )}
             </div>
-
-            <div className={styles.nextSurface}>
-              <div className={styles.sectionHeader}>
-                <div>
-                  <p className={styles.sectionKicker}>下一步</p>
-                  <h2 className={styles.sectionTitle}>环境已经记住的事</h2>
-                </div>
-                <Sparkles size={20} strokeWidth={1.5} aria-hidden="true" />
-              </div>
-              <ul className={styles.actionList}>
-                <li>
-                  <button type="button" onClick={() => navigate('/evidence-matrix')}>
-                    <span>待审阅证据</span>
-                    <strong>{snapshot.pendingRowCount + snapshot.disputedRowCount}</strong>
-                    <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
-                  </button>
-                </li>
-                <li>
-                  <button type="button" onClick={() => navigate('/knowledge-graph')}>
-                    <span>个人研究图谱</span>
-                    <strong>{snapshot.graphNodeCount}</strong>
-                    <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
-                  </button>
-                </li>
-                <li>
-                  <button type="button" onClick={() => navigate('/library')}>
-                    <span>本地文献</span>
-                    <strong>{snapshot.activeFiles.length}</strong>
-                    <ArrowRight size={16} strokeWidth={1.5} aria-hidden="true" />
-                  </button>
-                </li>
-              </ul>
-            </div>
           </section>
-
-          <section className={styles.metrics} aria-label="研究空间概览">
-            <div className={styles.metric}>
-              <span>已确认证据</span>
-              <strong>{snapshot.verifiedRowCount}</strong>
-              <small>可回读后引用</small>
-            </div>
-            <div className={styles.metric}>
-              <span>证据矩阵</span>
-              <strong>{snapshot.matrixCount}</strong>
-              <small>{snapshot.analysisCount} 个研究分析</small>
-            </div>
-            <div className={styles.metric}>
-              <span>待审阅</span>
-              <strong>
-                {snapshot.pendingRowCount + snapshot.disputedRowCount + snapshot.pendingLeadCount}
-              </strong>
-              <small>证据和线索，保留判断权</small>
-            </div>
-            <div className={styles.metric}>
-              <span>来源失效</span>
-              <strong>{snapshot.staleSourceCount}</strong>
-                <small>
-                  {snapshot.staleLeadCount + snapshot.staleSignalCount > 0
-                    ? `${snapshot.staleLeadCount} 条线索 · ${snapshot.staleSignalCount} 条立场待复核`
-                    : '恢复后仍需重新核对'}
-                </small>
-            </div>
-          </section>
-
-          {snapshot.latestDigest ? (
-            <PostReadingSummary
-              digest={snapshot.latestDigest}
-              fileName={
-                files.find((file) => file.id === snapshot.latestDigest?.fileId)?.name ??
-                '来源已从资料库移除'
-              }
-              pendingLeadCount={snapshot.pendingLeadCount}
-              onReadSource={() => {
-                const source = files.find(
-                  (file) =>
-                    file.id === snapshot.latestDigest?.fileId &&
-                    file.deletedAt === null &&
-                    file.type !== 'folder',
-                );
-                if (source) navigate(`/read/${source.id}`);
-                else navigate('/library');
-              }}
-              onOpenGraph={() => navigate('/knowledge-graph')}
-            />
-          ) : null}
 
           <ResearchLeadReview
             leads={leads
@@ -388,7 +340,7 @@ export function CurrentResearchStatePage() {
               <div>
                 <p className={styles.sectionKicker}>研究轨迹</p>
                 <h2 id="recent-reading-title" className={styles.sectionTitle}>
-                  最近阅读
+                  阅读进展
                 </h2>
               </div>
               <Button
@@ -427,25 +379,24 @@ export function CurrentResearchStatePage() {
             )}
           </section>
 
-          <section className={styles.statusStrip} aria-label="研究状态说明">
-            <span className={styles.statusStripIcon} aria-hidden="true">
-              {snapshot.disputedRowCount > 0 || snapshot.staleSourceCount > 0 ? (
-                <TriangleAlert size={18} strokeWidth={1.5} />
-              ) : (
-                <CheckCircle2 size={18} strokeWidth={1.5} />
-              )}
-            </span>
-            <span>
-              {snapshot.staleSourceCount > 0 ||
-              snapshot.staleLeadCount > 0 ||
-              snapshot.staleSignalCount > 0
-                ? `有 ${snapshot.staleSourceCount} 条证据来源失效，另有 ${snapshot.staleLeadCount + snapshot.staleSignalCount} 条研究记录待复核。`
-                : snapshot.disputedRowCount > 0
-                ? `有 ${snapshot.disputedRowCount} 条证据存在冲突，系统保留它们供你判断。`
-                : '本地阅读、批注和已确认证据会持续留在研究空间里。'}
-            </span>
-            <GitCompareArrows size={18} strokeWidth={1.5} aria-hidden="true" />
-            <Network size={18} strokeWidth={1.5} aria-hidden="true" />
+          <section className={styles.timeline} aria-labelledby="research-timeline-title">
+            <div className={styles.sectionHeader}>
+              <div>
+                <p className={styles.sectionKicker}>研究轨迹</p>
+                <h2 id="research-timeline-title" className={styles.sectionTitle}>
+                  从阅读走向成果
+                </h2>
+              </div>
+              <span className={styles.timelineStatus}>{statusLabel(snapshot)}</span>
+            </div>
+            <ol className={styles.timelineList}>
+              {timelineSteps.map((step) => (
+                <li className={step.done ? styles.timelineStepDone : styles.timelineStep} key={step.label}>
+                  <span className={styles.timelineDot} aria-hidden="true" />
+                  <span>{step.label}</span>
+                </li>
+              ))}
+            </ol>
           </section>
         </>
       )}

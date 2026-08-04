@@ -1,0 +1,323 @@
+/** ResultsCenterPage.module.css - 成果输出的平面、来源优先层级。 */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  min-height: 100%;
+  padding: var(--sp-6) var(--sp-8) var(--sp-10);
+}
+
+.intro,
+.sectionHeader,
+.resultRowHeader,
+.groupHeader,
+.analysisHeader,
+.sourceItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.intro {
+  align-items: flex-end;
+}
+
+.eyebrow,
+.sectionKicker,
+.rowLabel {
+  margin: 0 0 var(--sp-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: var(--text-xs-lh);
+}
+
+.title,
+.sectionHeader h2,
+.groupHeader h3,
+.resultRow h3,
+.analysisBlock h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.title {
+  font-size: var(--text-h1);
+  font-weight: var(--text-h1-weight);
+  line-height: var(--text-h1-lh);
+}
+
+.subtitle,
+.reviewCopy,
+.empty,
+.status {
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: var(--text-body-lh);
+}
+
+.subtitle {
+  max-width: 720px;
+  margin: var(--sp-2) 0 0;
+}
+
+.introActions {
+  display: flex;
+  flex-shrink: 0;
+  gap: var(--sp-2);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: var(--border-width) solid var(--border-subtle);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.summary > div {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-4) var(--sp-5);
+}
+
+.summary > div + div {
+  border-left: var(--border-width) solid var(--border-subtle);
+}
+
+.summary span,
+.summary small,
+.sectionHeader > span,
+.analysisHeader > span {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.summary strong {
+  color: var(--text-primary);
+  font-size: var(--text-h1);
+  line-height: var(--text-h1-lh);
+  font-variant-numeric: tabular-nums;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.sectionHeader {
+  align-items: baseline;
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.sectionHeader h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--text-h2-weight);
+  line-height: var(--text-h2-lh);
+}
+
+.groupList,
+.analysisList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.groupHeader {
+  align-items: center;
+}
+
+.groupHeader h3 {
+  font-size: var(--text-h3);
+  font-weight: var(--text-h3-weight);
+  line-height: var(--text-h3-lh);
+}
+
+.groupHeader button,
+.referenceList button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.resultRow,
+.analysisBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) 0;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.resultRowHeader {
+  align-items: center;
+}
+
+.rowLabel {
+  margin-bottom: var(--sp-1);
+}
+
+.resultRow h3,
+.analysisBlock h3 {
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: var(--text-body-lh);
+}
+
+.sourceList,
+.referenceList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sourceItem {
+  align-items: flex-start;
+  padding: var(--sp-3) 0 0 var(--sp-4);
+  border-left: var(--quote-border-width) solid var(--success);
+}
+
+.sourceCopy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.sourceCopy strong {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+}
+
+.sourceCopy > span {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.sourceCopy blockquote {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+}
+
+.analysisBlock {
+  padding-left: var(--sp-4);
+  border-left: var(--quote-border-width) solid var(--accent);
+}
+
+.analysisBlock > p,
+.reviewCopy {
+  margin: 0;
+}
+
+.referenceList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding-top: var(--sp-2);
+  border-top: var(--border-width) solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.referenceCopy {
+  display: grid;
+  min-width: 0;
+  gap: var(--sp-1);
+}
+
+.referenceCopy small {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.referenceActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.status,
+.empty {
+  margin: var(--sp-6) 0;
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .root {
+    padding: var(--sp-5) var(--sp-4) var(--sp-8);
+  }
+
+  .intro {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .introActions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary > div + div {
+    border-top: var(--border-width) solid var(--border-subtle);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .sectionHeader,
+  .resultRowHeader,
+  .groupHeader,
+  .sourceItem {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .referenceList li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .referenceActions {
+    flex-wrap: wrap;
+  }
+
+  .sourceItem .sourceCopy {
+    width: 100%;
+  }
+}

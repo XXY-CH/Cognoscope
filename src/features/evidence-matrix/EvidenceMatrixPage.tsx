@@ -3,7 +3,7 @@
  * 入口来自文件目录的三至五篇多选，也支持通过 URL 重新打开已保存矩阵。
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ClipboardCopy, LoaderCircle, Save, Sparkles, Trash2, WifiOff } from 'lucide-react';
+import { ArrowLeft, ClipboardCopy, FileSearch, LoaderCircle, Save, Trash2, WifiOff } from 'lucide-react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Badge, Button, EmptyState, toast } from '../../components/common';
 import { useFileStore } from '../../stores/fileStore';
@@ -19,7 +19,7 @@ import { isResolvableLocator } from '../../utils/graphEvidence';
 import { formatEvidenceAnalysisCitation } from '../../utils/evidenceAnalysisCitation';
 import type { EvidenceItem } from '../../types';
 import { EvidenceAnalysisPanel } from './EvidenceAnalysisPanel';
-import { EvidenceRowEditor } from './EvidenceRowEditor';
+import { EvidenceMatrixWorkbench } from './EvidenceMatrixWorkbench';
 import styles from './EvidenceMatrixPage.module.css';
 
 const MIN_FILES = 3;
@@ -41,9 +41,12 @@ export function EvidenceMatrixPage() {
   const initializedRef = useRef<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
   const matrices = useEvidenceMatrixStore((state) => state.matrices);
   const activeMatrix = useEvidenceMatrixStore((state) => state.activeMatrix);
+  const activeFirstFileId = activeMatrix?.fileIds[0] ?? null;
   const rows = useEvidenceMatrixStore((state) => state.rows);
   const analysis = useEvidenceMatrixStore((state) => state.analysis);
   const selectedRowIds = useEvidenceMatrixStore((state) => state.selectedRowIds);
@@ -105,7 +108,9 @@ export function EvidenceMatrixPage() {
 
   useEffect(() => {
     setQuestionDraft(activeMatrix?.comparisonQuestion ?? '');
-  }, [activeMatrix?.id, activeMatrix?.comparisonQuestion]);
+    setActiveRowId(null);
+    setSelectedFileId(activeFirstFileId);
+  }, [activeFirstFileId, activeMatrix?.id, activeMatrix?.comparisonQuestion]);
 
   const activeFiles = useMemo(
     () => files.filter((file) => activeMatrix?.fileIds.includes(file.id)),
@@ -125,6 +130,11 @@ export function EvidenceMatrixPage() {
     if (activeMatrix && questionDraft !== activeMatrix.comparisonQuestion) {
       void setComparisonQuestion(questionDraft);
     }
+  };
+
+  const onSelectMatrixCell = (rowId: string, fileId?: string) => {
+    setActiveRowId(rowId);
+    setSelectedFileId(fileId ?? activeFiles[0]?.id ?? null);
   };
 
   const onCopy = async () => {
@@ -293,7 +303,7 @@ export function EvidenceMatrixPage() {
           {requestId ? (
             <Button aria-label="取消证据提取" variant="ghost" leftIcon={<LoaderCircle size={15} strokeWidth={1.5} />} onClick={() => { void cancelExtraction(); }}>取消提取</Button>
           ) : (
-            <Button aria-label="生成证据提议" variant="primary" leftIcon={<Sparkles size={15} strokeWidth={1.5} />} disabled={!isOnline || !questionDraft.trim()} onClick={() => { void generateProposals(); }}>生成证据提议</Button>
+            <Button aria-label="生成候选结论" variant="primary" leftIcon={<FileSearch size={15} strokeWidth={1.5} />} disabled={!isOnline || !questionDraft.trim()} onClick={() => { void generateProposals(); }}>生成候选</Button>
           )}
           <Button aria-label="保存比较问题" variant="secondary" leftIcon={<Save size={15} strokeWidth={1.5} />} onClick={() => { void setComparisonQuestion(questionDraft); toast.success('比较问题已保存'); }}>保存
           </Button>
@@ -305,39 +315,34 @@ export function EvidenceMatrixPage() {
       </section>
 
       <div className={styles.content}>
-        {rows.length === 0 ? (
-          <div className={styles.empty}>
-            <Sparkles size={18} strokeWidth={1.5} aria-hidden="true" />
-            <span>填写比较问题后生成候选结论；每条结论都需要回到原文核对。</span>
-          </div>
-        ) : (
-          <div className={styles.rows}>
-            {rows.map((row) => (
-              <EvidenceRowEditor
-                key={row.id}
-                row={row}
-                files={files}
-                selected={selectedRowIds.includes(row.id)}
-                onToggleSelected={() => toggleRowSelection(row.id)}
-                onUpdateConclusion={(value) => { void updateConclusion(row.id, value); }}
-                onUpdateNote={(evidenceId, value) => { void updateEvidenceNote(row.id, evidenceId, value); }}
-                onSetVerification={(state) => { void setVerification(row.id, state); }}
-                onOpenSource={(item) => onOpenSource(item, row.id)}
-              />
-            ))}
-          </div>
-        )}
-        <EvidenceAnalysisPanel
-          analysis={analysis}
+        <EvidenceMatrixWorkbench
           rows={rows}
-          online={isOnline}
-          requestId={analysisRequestId}
-          onGenerate={() => { void generateAnalysis(); }}
-          onCancel={() => { void cancelAnalysis(); }}
-          onUpdate={(itemId, statement, rationale) => { void updateAnalysisItem(itemId, statement, rationale); }}
-          onVerify={(itemId, state) => { void setAnalysisVerification(itemId, state); }}
-          onCopy={() => { void onCopyAnalysis(); }}
+          files={activeFiles}
+          selectedRowIds={selectedRowIds}
+          activeRowId={activeRowId}
+          selectedFileId={selectedFileId}
+          onSelectRow={onSelectMatrixCell}
+          onCloseInspector={() => setActiveRowId(null)}
+          onToggleSelected={toggleRowSelection}
+          onUpdateConclusion={(rowId, value) => { void updateConclusion(rowId, value); }}
+          onUpdateNote={(rowId, evidenceId, value) => { void updateEvidenceNote(rowId, evidenceId, value); }}
+          onSetVerification={(rowId, state) => { void setVerification(rowId, state); }}
+          onOpenSource={onOpenSource}
         />
+        <details className={styles.analysisDisclosure}>
+          <summary>研究判断（可选，基于已确认矩阵行）</summary>
+          <EvidenceAnalysisPanel
+            analysis={analysis}
+            rows={rows}
+            online={isOnline}
+            requestId={analysisRequestId}
+            onGenerate={() => { void generateAnalysis(); }}
+            onCancel={() => { void cancelAnalysis(); }}
+            onUpdate={(itemId, statement, rationale) => { void updateAnalysisItem(itemId, statement, rationale); }}
+            onVerify={(itemId, state) => { void setAnalysisVerification(itemId, state); }}
+            onCopy={() => { void onCopyAnalysis(); }}
+          />
+        </details>
       </div>
     </main>
   );

@@ -256,6 +256,16 @@ export type EvidenceMatchMethod =
   | 'transcript-exact'
   | 'none';
 
+/** 证据在主张中的学术作用；旧记录缺失时必须显示为待核对。 */
+export type EvidenceType =
+  | 'support'
+  | 'refute'
+  | 'condition'
+  | 'limitation'
+  | 'method'
+  | 'data'
+  | 'unknown';
+
 /** 结论行中的一条可追溯证据。 */
 export interface EvidenceItem {
   id: string;
@@ -271,6 +281,11 @@ export interface EvidenceItem {
   originalProposal: string | null;
   match: EvidenceMatchMethod;
   verification: EvidenceVerificationState;
+  /** 可选以兼容历史矩阵记录；未知类型不能直接升级为支持。 */
+  evidenceType?: EvidenceType;
+  condition?: string | null;
+  method?: string | null;
+  dataset?: string | null;
 }
 
 /** 跨论文比较中的一条结论。 */

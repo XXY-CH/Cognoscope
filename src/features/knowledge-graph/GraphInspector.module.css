@@ -1,14 +1,17 @@
 /** GraphInspector.module.css - 图谱节点证据面板 */
 
 .inspector {
+  display: flex;
+  flex-direction: column;
   flex-shrink: 0;
+  height: 100%;
+  box-sizing: border-box;
   min-height: 0;
-  max-height: var(--graph-inspector-max-height);
+  max-height: none;
   overflow: auto;
-  padding: var(--sp-4);
-  background: var(--bg-elevated);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-lg);
+  padding: 0 0 0 var(--sp-4);
+  border-left: var(--border-width) solid var(--border-subtle);
+  background: var(--bg-base);
 }
 
 .mobileClose {
@@ -21,6 +24,7 @@
   justify-content: center;
   gap: var(--sp-2);
   min-height: var(--btn-height-md);
+  padding-top: var(--sp-4);
   color: var(--text-tertiary);
   font-size: var(--text-sm);
 }
@@ -130,10 +134,8 @@
 
 .anchor {
   min-width: 0;
-  padding: var(--sp-3);
-  background: var(--bg-surface);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-md);
+  padding: var(--sp-3) 0;
+  border-top: var(--border-width) solid var(--border-subtle);
 }
 
 .anchorHeader {
@@ -219,21 +221,6 @@
   -webkit-line-clamp: 4;
 }
 
-.keywordRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-1);
-  margin-top: var(--sp-3);
-}
-
-.keyword {
-  padding: var(--sp-1) var(--sp-2);
-  border-radius: var(--radius-sm);
-  background: var(--bg-active);
-  color: var(--text-secondary);
-  font-size: var(--text-xs);
-}
-
 .list {
   display: flex;
   flex-direction: column;
@@ -310,6 +297,13 @@
 }
 
 @media (max-width: 900px) {
+  .inspector {
+    height: auto;
+    padding: var(--sp-4);
+    border-left: 0;
+    background: var(--bg-elevated);
+  }
+
   .inspector[data-active='true'] {
     position: fixed;
     right: var(--sp-3);

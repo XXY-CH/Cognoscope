@@ -5,10 +5,8 @@
   display: grid;
   gap: var(--sp-4);
   min-width: 0;
-  padding: var(--sp-5);
-  border: var(--border-width) solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
+  padding: var(--sp-4) 0;
+  border-top: var(--border-width) solid var(--rule-subtle);
 }
 
 .header {

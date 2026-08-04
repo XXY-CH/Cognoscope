@@ -15,9 +15,7 @@ import { MetricCards } from './MetricCards';
 import { ReadingHeatmap } from './ReadingHeatmap';
 import styles from './DashboardPage.module.css';
 
-/**
- * DashboardPage - 指标卡 → 热力图 → 专注会话（analyze.py 六维）
- */
+/** DashboardPage - 指标卡 → 热力图 → 专注会话（兼容旧反馈入口）。 */
 export function DashboardPage() {
   const loadSessions = useSessionStore((s) => s.loadSessions);
   const loadMonitorAnalyses = useSessionStore((s) => s.loadMonitorAnalyses);
@@ -26,14 +24,10 @@ export function DashboardPage() {
   const range = useSessionStore((s) => s.range);
   const setRange = useSessionStore((s) => s.setRange);
 
-  const sessions = useSessionStore(
-    useShallow((s) => selectFilteredSessions(s)),
-  );
+  const sessions = useSessionStore(useShallow((s) => selectFilteredSessions(s)));
   const allSessions = useSessionStore(useShallow((s) => s.sessions));
   const monitorMetas = useSessionStore(useShallow((s) => s.monitorMetas));
-  const analyses = useSessionStore(
-    useShallow((s) => selectFilteredAnalyses(s)),
-  );
+  const analyses = useSessionStore(useShallow((s) => selectFilteredAnalyses(s)));
 
   useEffect(() => {
     void loadSessions();
@@ -44,7 +38,7 @@ export function DashboardPage() {
     return (
       <div className={styles.root}>
         <p className={styles.status} role="status" aria-live="polite">
-          加载仪表盘…
+          加载专注进展…
         </p>
       </div>
     );

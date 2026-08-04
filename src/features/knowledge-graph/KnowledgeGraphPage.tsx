@@ -1,5 +1,5 @@
 /**
- * KnowledgeGraphPage - 知识图谱主页面：左论文关系图 | 右关键词图谱
+ * KnowledgeGraphPage - 分层研究图谱：单一画布 + 证据检查器
  * 所属页面：C · 知识图谱
  * 规范参考：UI_spec.md §6；访谈规格 keyword-graph-2026-07-30
  */
@@ -13,20 +13,36 @@ import { useFileStore } from '../../stores/fileStore';
 import { useGraphStore } from '../../stores/graphStore';
 import { useKeywordGraphStore } from '../../stores/keywordGraphStore';
 import { useReaderStore } from '../../stores/readerStore';
-import type { FileDocMeta, GraphNode, KeywordNode } from '../../types';
+import type {
+  EvidenceRow,
+  FileDocMeta,
+  GraphEdge,
+  GraphNode,
+  KeywordNode,
+} from '../../types';
 import {
   canOpenGraphEvidence,
   fileIdsForGraphSelection,
+  graphRelationKey,
+  locatorLabel,
+  projectGraphRelationEvidence,
   selectGraphEvidenceAnchors,
+  sourceStateLabel,
   type GraphEvidenceAnchor,
+  type GraphRelationProjection,
+  verificationLabel,
 } from '../../utils/graphEvidence';
 import { GraphCanvas } from './GraphCanvas';
 import { GraphInspector } from './GraphInspector';
-import { GraphToolbar } from './GraphToolbar';
+import {
+  GraphToolbar,
+  type GraphEvidenceFilter,
+  type GraphView,
+} from './GraphToolbar';
 import { filterGraphData, type GraphKindFilter } from './graphFilters';
 import styles from './KnowledgeGraphPage.module.css';
 
-/** 关键词节点转力导向画布所需 GraphNode 形态 */
+/** 关键词节点转画布所需 GraphNode 形态。L2 概念仍由现有关键词记录提供。 */
 function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
   return kws.map((k) => ({
     id: k.id,
@@ -38,19 +54,164 @@ function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
   }));
 }
 
+function paperKeywordEdges(keywordNodes: KeywordNode[]): GraphEdge[] {
+  const seen = new Set<string>();
+  const edges: GraphEdge[] = [];
+  for (const keyword of keywordNodes) {
+    for (const paperNodeId of keyword.paperNodeIds) {
+      const key = `${paperNodeId}::${keyword.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      edges.push({
+        source: paperNodeId,
+        target: keyword.id,
+        weight: 0.35,
+        origin: 'cooccurrence',
+        reason: '论文元数据与主题词关联；仅作为导航线索',
+      });
+    }
+  }
+  return edges;
+}
+
+function graphEdgeProjection(
+  edge: GraphEdge,
+  relationEvidenceByKey: ReadonlyMap<string, GraphRelationProjection>,
+): GraphRelationProjection {
+  return (
+    relationEvidenceByKey.get(graphRelationKey(edge.source, edge.target)) ?? {
+      state: 'insufficient',
+      label: '证据不足',
+      reason: '这条关系没有绑定到具体主张，仍只是导航线索，不是引用证据。',
+      rowIds: [],
+    }
+  );
+}
+
+function matchesEvidenceFilter(
+  projection: GraphRelationProjection,
+  filter: GraphEvidenceFilter,
+): boolean {
+  return filter === 'all' || projection.state === filter;
+}
+
+function matchesAnchorFilter(
+  anchor: GraphEvidenceAnchor,
+  filter: GraphEvidenceFilter,
+): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'stale') return anchor.sourceState !== 'available';
+  if (filter === 'disputed') {
+    return anchor.verification === 'disputed' || anchor.rowVerification === 'disputed';
+  }
+  if (filter === 'review') {
+    return (
+      anchor.verification === 'proposed' ||
+      anchor.verification === 'unresolved' ||
+      anchor.rowVerification === 'proposed' ||
+      anchor.rowVerification === 'unresolved'
+    );
+  }
+  return anchor.match === 'none' || anchor.sourceState !== 'available';
+}
+
 /**
- * KnowledgeGraphPage - 左右分栏：论文图 + 关键词图，双向联动高亮
+ * 给画布投影稳定的列式位置。保留用户已经拖拽过的坐标，未定位节点不
+ * 进入随机力导向，避免关系强弱被误读成空间距离。
+ */
+function layoutGraphNodes(nodes: GraphNode[], view: GraphView): GraphNode[] {
+  const buckets = new Map<GraphNode['kind'], GraphNode[]>();
+  for (const node of nodes) {
+    const bucket = buckets.get(node.kind) ?? [];
+    bucket.push(node);
+    buckets.set(node.kind, bucket);
+  }
+  const offsets: Record<GraphNode['kind'], number> = {
+    file: view === 'topics' ? -240 : 0,
+    folder: -240,
+    tag: view === 'papers' ? 240 : 240,
+  };
+  const positions = new Map<string, { x: number; y: number }>();
+  for (const [kind, bucket] of buckets) {
+    const sorted = [...bucket].sort((left, right) => left.label.localeCompare(right.label));
+    const spread = Math.max(84, Math.min(132, 620 / Math.max(sorted.length, 1)));
+    sorted.forEach((node, index) => {
+      positions.set(node.id, {
+        x: node.x ?? offsets[kind],
+        y: node.y ?? (index - (sorted.length - 1) / 2) * spread,
+      });
+    });
+  }
+  return nodes.map((node) => ({ ...node, ...positions.get(node.id) }));
+}
+
+function EvidenceView({
+  anchors,
+  loading,
+  error,
+  onOpenEvidence,
+}: {
+  anchors: GraphEvidenceAnchor[];
+  loading: boolean;
+  error: string | null;
+  onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
+}) {
+  if (loading) return <p className={styles.paneEmpty} role="status">正在读取证据锚点…</p>;
+  if (error) return <p className={styles.paneEmpty} role="alert">{error}</p>;
+  if (anchors.length === 0) {
+    return (
+      <div className={styles.paneEmpty}>
+        先选择一篇论文或一个主题；这里显示最多 20 条可回读证据。图谱关系本身不是引用材料。
+      </div>
+    );
+  }
+  return (
+    <ol className={styles.evidenceList}>
+      {anchors.map((anchor) => {
+        const canOpen = canOpenGraphEvidence(anchor);
+        return (
+          <li className={styles.evidenceItem} key={anchor.id}>
+            <div className={styles.evidenceItemHeader}>
+              <strong>{anchor.conclusion}</strong>
+              <span>{sourceStateLabel(anchor.sourceState)}</span>
+            </div>
+            <blockquote>{anchor.quotedText || '（没有摘录）'}</blockquote>
+            <div className={styles.evidenceItemMeta}>
+              <span>{anchor.fileName}</span>
+              <span>{locatorLabel(anchor.locator)}</span>
+              <span>{verificationLabel(anchor.rowVerification)}</span>
+            </div>
+            <button
+              type="button"
+              disabled={!canOpen}
+              aria-label={canOpen ? `回读 ${anchor.fileName}` : '来源不可回读'}
+              onClick={() => onOpenEvidence(anchor)}
+            >
+              回读来源
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/**
+ * KnowledgeGraphPage - 单一画布上的论文、主题与证据视图，配合来源检查器。
  */
 export function KnowledgeGraphPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [view, setView] = useState<GraphView>('overview');
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<GraphKindFilter>('all');
+  const [evidenceFilter, setEvidenceFilter] = useState<GraphEvidenceFilter>('all');
   const [selectedMeta, setSelectedMeta] = useState<FileDocMeta | null>(null);
   const [metaLoading, setMetaLoading] = useState(false);
   const [evidenceAnchors, setEvidenceAnchors] = useState<GraphEvidenceAnchor[]>([]);
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
+  const [relationRows, setRelationRows] = useState<EvidenceRow[]>([]);
   const restoredSelectionRef = useRef<string | null>(null);
 
   const files = useFileStore((s) => s.files);
@@ -95,8 +256,6 @@ export function KnowledgeGraphPage() {
     return kw?.paperNodeIds ?? [];
   }, [selectedKeywordId, kwNodes]);
 
-  const kwGraphNodes = useMemo(() => keywordToGraphNodes(kwNodes), [kwNodes]);
-
   const filteredGraph = useMemo(
     () =>
       filterGraphData({
@@ -109,17 +268,40 @@ export function KnowledgeGraphPage() {
       }),
     [edges, kindFilter, kwEdges, kwNodes, nodes, query],
   );
-  const visiblePaperNodes = filteredGraph.paperNodes;
-  const visibleKeywordNodes = filteredGraph.keywordNodes;
-  const visiblePaperEdges = filteredGraph.paperEdges;
-  const visibleKeywordEdges = filteredGraph.keywordEdges;
-  const visiblePaperIds = useMemo(
-    () => new Set(visiblePaperNodes.map((node) => node.id)),
-    [visiblePaperNodes],
-  );
-  const visibleKeywordIds = useMemo(
-    () => new Set(visibleKeywordNodes.map((node) => node.id)),
+  const visiblePaperNodes = filteredGraph.paperNodes.slice(0, 80);
+  const visibleKeywordNodes = filteredGraph.keywordNodes.slice(0, 80);
+  const visiblePaperEdges = filteredGraph.paperEdges.slice(0, 160);
+  const visibleKeywordEdges = filteredGraph.keywordEdges.slice(0, 160);
+  const visibleKeywordGraphNodes = useMemo(
+    () => keywordToGraphNodes(visibleKeywordNodes),
     [visibleKeywordNodes],
+  );
+  const paperTopicEdges = useMemo(
+    () => paperKeywordEdges(visibleKeywordNodes),
+    [visibleKeywordNodes],
+  );
+  const projectedNodes = useMemo(() => {
+    if (view === 'topics') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
+    if (view === 'overview') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
+    return visiblePaperNodes;
+  }, [view, visibleKeywordGraphNodes, visiblePaperNodes]);
+  const projectedEdges = useMemo(() => {
+    if (view === 'topics') {
+      return [...visiblePaperEdges, ...visibleKeywordEdges, ...paperTopicEdges].slice(0, 160);
+    }
+    if (view === 'overview') {
+      return [...visiblePaperEdges, ...paperTopicEdges].slice(0, 160);
+    }
+    return visiblePaperEdges;
+  }, [paperTopicEdges, view, visibleKeywordEdges, visiblePaperEdges]);
+  const graphFileIds = useMemo(
+    () =>
+      nodes
+        .map((node) => node.fileId)
+        .filter((fileId, index, fileIds): fileId is string =>
+          Boolean(fileId) && fileIds.indexOf(fileId) === index,
+        ),
+    [nodes],
   );
 
   const selectedPaper = useMemo(
@@ -152,6 +334,24 @@ export function KnowledgeGraphPage() {
 
   useEffect(() => {
     let cancelled = false;
+    if (graphFileIds.length === 0) {
+      setRelationRows([]);
+      return;
+    }
+    void listEvidenceRowsByFileIds(graphFileIds)
+      .then((rows) => {
+        if (!cancelled) setRelationRows(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setRelationRows([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [graphFileIds]);
+
+  useEffect(() => {
+    let cancelled = false;
     setEvidenceError(null);
     if (selectedFileIds.length === 0) {
       setEvidenceAnchors([]);
@@ -177,6 +377,59 @@ export function KnowledgeGraphPage() {
       cancelled = true;
     };
   }, [files, selectedFileIds]);
+
+  const relationEvidenceByKey = useMemo<ReadonlyMap<string, GraphRelationProjection>>(
+    () =>
+      new Map(
+        edges.map((edge) => [
+          graphRelationKey(edge.source, edge.target),
+          projectGraphRelationEvidence(edge, nodes, relationRows, files),
+        ]),
+      ),
+    [edges, files, nodes, relationRows],
+  );
+
+  const evidenceFilteredEdges = useMemo(() => {
+    if (evidenceFilter === 'all') return projectedEdges;
+    return projectedEdges.filter((edge) =>
+      matchesEvidenceFilter(graphEdgeProjection(edge, relationEvidenceByKey), evidenceFilter),
+    );
+  }, [evidenceFilter, projectedEdges, relationEvidenceByKey]);
+  const evidenceFilteredNodes = useMemo(() => {
+    if (evidenceFilter === 'all') return projectedNodes;
+    const connectedIds = new Set<string>();
+    for (const edge of evidenceFilteredEdges) {
+      connectedIds.add(edge.source);
+      connectedIds.add(edge.target);
+    }
+    return projectedNodes.filter((node) => connectedIds.has(node.id));
+  }, [evidenceFilter, evidenceFilteredEdges, projectedNodes]);
+  const visibleEvidenceAnchors = useMemo(
+    () => evidenceAnchors.filter((anchor) => matchesAnchorFilter(anchor, evidenceFilter)),
+    [evidenceAnchors, evidenceFilter],
+  );
+  const laidOutNodes = useMemo(
+    () => layoutGraphNodes(evidenceFilteredNodes, view),
+    [evidenceFilteredNodes, view],
+  );
+  const visiblePaperIds = useMemo(
+    () =>
+      new Set(
+        evidenceFilteredNodes
+          .filter((node) => node.kind !== 'tag')
+          .map((node) => node.id),
+      ),
+    [evidenceFilteredNodes],
+  );
+  const visibleKeywordIds = useMemo(
+    () =>
+      new Set(
+        evidenceFilteredNodes
+          .filter((node) => node.kind === 'tag')
+          .map((node) => node.id),
+      ),
+    [evidenceFilteredNodes],
+  );
 
   useEffect(() => {
     if (selectedNodeId && !visiblePaperIds.has(selectedNodeId)) {
@@ -258,6 +511,17 @@ export function KnowledgeGraphPage() {
       setHighlightedKeywords([node.id]);
     },
     [setHighlightedKeywords, setSelectedKeyword, setSelectedNode, visibleKeywordIds],
+  );
+
+  const handleProjectedNodeClick = useCallback(
+    (node: GraphNode) => {
+      if (node.kind === 'tag') {
+        handleKeywordClick(node);
+      } else {
+        handlePaperClick(node);
+      }
+    },
+    [handleKeywordClick, handlePaperClick],
   );
 
   // Reader 返回图谱时，通过内部 query 恢复原先的选中节点；普通直达不受影响。
@@ -369,12 +633,16 @@ export function KnowledgeGraphPage() {
         paperEdgeCount={edges.length}
         keywordCount={kwNodes.length}
         keywordEdgeCount={kwEdges.length}
+        view={view}
         syncing={kwSyncing}
         loading={loading || kwLoading}
         query={query}
         kindFilter={kindFilter}
+        evidenceFilter={evidenceFilter}
         onQueryChange={setQuery}
         onKindFilterChange={setKindFilter}
+        onEvidenceFilterChange={setEvidenceFilter}
+        onViewChange={setView}
         onRefresh={() => {
           void loadGraph();
           void loadKeywordGraph();
@@ -391,76 +659,100 @@ export function KnowledgeGraphPage() {
         />
       ) : null}
 
-      <GraphInspector
-        selectedPaper={selectedPaper}
-        selectedKeyword={selectedKeyword}
-        paperNodes={nodes}
-        paperEdges={edges}
-        keywordNodes={kwNodes}
-        keywordEdges={kwEdges}
-        selectedMeta={selectedMeta}
-        metaLoading={metaLoading}
-        readableFileIds={readableFileIds}
-        evidenceAnchors={evidenceAnchors}
-        evidenceLoading={evidenceLoading}
-        evidenceError={evidenceError}
-        onSelectPaper={handlePaperClick}
-        onOpenPaper={handleOpenPaper}
-        onOpenEvidence={handleOpenEvidence}
-        onCreateComparison={handleCreateComparison}
-        onClose={clearSelection}
-      />
+      <div className={styles.workbench}>
+        <aside className={styles.scopeRail} aria-label="图谱范围">
+          <p className={styles.scopeLabel}>研究范围</p>
+          <strong>本地研究空间</strong>
+          <p className={styles.scopeMeta}>{visiblePaperNodes.length} 篇论文 · {visibleKeywordNodes.length} 个主题</p>
+          <div className={styles.scopeRule} />
+          <p className={styles.scopeNote}>
+            论文是来源，主题是整理线索；证据锚点只在选中对象后展开。
+          </p>
+        </aside>
 
-      <div className={styles.split}>
-        <section className={styles.pane} aria-label="论文关系图">
-          <h2 className={styles.paneTitle}>论文关系</h2>
+        <section className={styles.canvasPane} aria-label={`${view} 图谱视图`}>
+          <div className={styles.canvasHeader}>
+            <div>
+              <p className={styles.scopeLabel}>当前视图</p>
+              <h2 className={styles.canvasTitle}>
+                {view === 'overview' ? '研究空间概览' : view === 'papers' ? '论文关系' : view === 'topics' ? '主题与论文' : '证据锚点'}
+              </h2>
+            </div>
+            <span className={styles.canvasMeta}>
+              {view === 'evidence'
+                ? `${visibleEvidenceAnchors.length} 条局部锚点`
+                : `${laidOutNodes.length} 个节点`}
+            </span>
+          </div>
           <div className={styles.graph}>
-            {visiblePaperNodes.length === 0 ? (
+            {view === 'evidence' ? (
+              <EvidenceView
+                anchors={visibleEvidenceAnchors}
+                loading={evidenceLoading}
+                error={evidenceError}
+                onOpenEvidence={handleOpenEvidence}
+              />
+            ) : laidOutNodes.length === 0 ? (
               <p className={styles.paneEmpty}>
-                {nodes.length === 0 ? '暂无论文节点' : '没有匹配的论文节点'}
+                {nodes.length === 0 ? '暂无论文节点；先从资料库加入研究空间。' : '没有匹配的节点'}
               </p>
             ) : (
               <GraphCanvas
-                nodes={visiblePaperNodes}
-                edges={visiblePaperEdges}
-                selectedNodeId={selectedNodeId}
-                highlightedNodeIds={highlightedPaperIds}
-                onNodeClick={handlePaperClick}
+                nodes={laidOutNodes}
+                edges={evidenceFilteredEdges}
+                selectedNodeId={selectedNodeId ?? selectedKeywordId}
+                highlightedNodeIds={[...highlightedPaperIds, ...highlightedKeywordIds]}
+                onNodeClick={handleProjectedNodeClick}
                 onBackgroundClick={clearSelection}
+                freezeLayout
                 onNodeDrag={(node, x, y) => {
-                  void persistNodePosition(node.id, x, y);
+                  if (node.kind === 'tag') void persistKeywordPosition(node.id, x, y);
+                  else void persistNodePosition(node.id, x, y);
                 }}
               />
             )}
           </div>
+          {view !== 'evidence' && laidOutNodes.length > 0 ? (
+            <details className={styles.graphListFallback}>
+              <summary>用列表查看当前视图</summary>
+              <ul>
+                {laidOutNodes.map((node) => (
+                  <li key={node.id}>
+                    <button
+                      type="button"
+                      aria-label={`选择${node.kind === 'tag' ? '主题' : '论文'} ${node.label}`}
+                      onClick={() => handleProjectedNodeClick(node)}
+                    >
+                      <span>{node.label}</span>
+                      <small>{node.kind === 'tag' ? '主题' : '论文'}</small>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : null}
         </section>
 
-        <section className={styles.pane} aria-label="关键词图谱">
-          <h2 className={styles.paneTitle}>关键词图谱</h2>
-          <div className={styles.graph}>
-            {visibleKeywordNodes.length === 0 ? (
-              <p className={styles.paneEmpty}>
-                {kwNodes.length === 0 && kwSyncing
-                  ? '正在从摘要生成关键词…'
-                  : kwNodes.length === 0
-                    ? '入图成功后将自动生成关键词关联'
-                    : '没有匹配的关键词节点'}
-              </p>
-            ) : (
-              <GraphCanvas
-                nodes={kwGraphNodes.filter((node) => visibleKeywordIds.has(node.id))}
-                edges={visibleKeywordEdges}
-                selectedNodeId={selectedKeywordId}
-                highlightedNodeIds={highlightedKeywordIds}
-                onNodeClick={handleKeywordClick}
-                onBackgroundClick={clearSelection}
-                onNodeDrag={(node, x, y) => {
-                  void persistKeywordPosition(node.id, x, y);
-                }}
-              />
-            )}
-          </div>
-        </section>
+        <GraphInspector
+          selectedPaper={selectedPaper}
+          selectedKeyword={selectedKeyword}
+          paperNodes={nodes}
+          paperEdges={edges}
+          keywordNodes={kwNodes}
+          keywordEdges={kwEdges}
+          selectedMeta={selectedMeta}
+          metaLoading={metaLoading}
+          readableFileIds={readableFileIds}
+          evidenceAnchors={evidenceAnchors}
+          evidenceLoading={evidenceLoading}
+          evidenceError={evidenceError}
+          relationEvidenceByKey={relationEvidenceByKey}
+          onSelectPaper={handlePaperClick}
+          onOpenPaper={handleOpenPaper}
+          onOpenEvidence={handleOpenEvidence}
+          onCreateComparison={handleCreateComparison}
+          onClose={clearSelection}
+        />
       </div>
     </main>
   );

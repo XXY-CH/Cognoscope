@@ -1,17 +1,15 @@
-/**
- * DashboardPage.module.css — 仪表盘纵向分区间距
- */
+/** DashboardPage.module.css — 旧反馈入口的纵向分区间距。 */
 
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-5); /* 区块间距 */
+  gap: var(--sp-5);
   min-height: 100%;
 }
 
 .status {
   margin: var(--sp-6) 0;
-  font-size: var(--text-base);
   color: var(--text-secondary);
+  font-size: var(--text-base);
   text-align: center;
 }

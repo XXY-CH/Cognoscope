@@ -6,6 +6,7 @@ import type {
   EvidenceItem,
   EvidenceLocator,
   EvidenceRow,
+  EvidenceType,
   FileType,
 } from '../types';
 import { createId } from './id';
@@ -68,6 +69,17 @@ function parseLocator(value: unknown): EvidenceLocator | null {
 
 function unresolvedLocator(reason: string): EvidenceLocator {
   return { kind: 'unresolved', reason: reason.slice(0, 240) };
+}
+
+function parseEvidenceType(value: unknown): EvidenceType {
+  return value === 'support' ||
+    value === 'refute' ||
+    value === 'condition' ||
+    value === 'limitation' ||
+    value === 'method' ||
+    value === 'data'
+    ? value
+    : 'unknown';
 }
 
 function expectedLocatorKind(fileType: FileType): 'pdf-page' | 'epub-cfi' | null {
@@ -162,6 +174,10 @@ export function parseEvidenceProposals(input: {
         ? item.quotedText.trim().slice(0, 4000)
         : '';
       const note = typeof item.note === 'string' ? item.note.trim().slice(0, 1000) : '';
+      const evidenceType = parseEvidenceType(item.evidenceType);
+      const condition = typeof item.condition === 'string' ? item.condition.trim().slice(0, 1000) : null;
+      const method = typeof item.method === 'string' ? item.method.trim().slice(0, 1000) : null;
+      const dataset = typeof item.dataset === 'string' ? item.dataset.trim().slice(0, 1000) : null;
       const match = matchEvidenceExcerpt({
         quotedText,
         annotations: source.annotations,
@@ -193,6 +209,10 @@ export function parseEvidenceProposals(input: {
         originalProposal: quotedText || null,
         match: match.method,
         verification: supportOk && locatorOk ? 'proposed' : 'unresolved',
+        evidenceType,
+        condition,
+        method,
+        dataset,
       });
     }
 

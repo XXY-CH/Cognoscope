@@ -14,6 +14,24 @@ import type {
 
 export type GraphEvidenceSourceState = 'available' | 'unresolved' | 'missing';
 
+/**
+ * 图谱边的关系级证据状态。
+ * 当前 GraphEdge 没有持久化 rowId，故 projection 永远不会把聚合材料升级为已确认。
+ */
+export type GraphRelationEvidenceState =
+  | 'clue'
+  | 'review'
+  | 'disputed'
+  | 'insufficient'
+  | 'stale';
+
+export interface GraphRelationProjection {
+  state: GraphRelationEvidenceState;
+  label: string;
+  reason: string;
+  rowIds: string[];
+}
+
 export interface GraphEvidenceAnchor {
   id: string;
   matrixId: string;
@@ -45,6 +63,107 @@ const VERIFICATION_RANK: Record<EvidenceVerificationState, number> = {
   unresolved: 3,
   disputed: 4,
 };
+
+export function graphRelationKey(source: string, target: string): string {
+  return source < target ? `${source}::${target}` : `${target}::${source}`;
+}
+
+function relationProjection(
+  state: GraphRelationEvidenceState,
+  reason: string,
+  rowIds: string[] = [],
+): GraphRelationProjection {
+  const label =
+    state === 'review'
+      ? '待核对'
+      : state === 'disputed'
+        ? '存在争议'
+        : state === 'stale'
+          ? '来源失效'
+          : state === 'clue'
+            ? '线索'
+            : '证据不足';
+  return { state, label, reason, rowIds };
+}
+
+/**
+ * 将一条论文边投影为关系级状态。
+ * 只有同时包含两端论文的矩阵行才会进入候选；即便候选行已确认，也仍标记为待核对，
+ * 因为现有 GraphEdge 记录无法证明该行就是这条关系的来源。
+ */
+export function projectGraphRelationEvidence(
+  edge: { source: string; target: string },
+  paperNodes: GraphNode[],
+  rows: EvidenceRow[],
+  files: FileNode[],
+): GraphRelationProjection {
+  const sourceNode = paperNodes.find((node) => node.id === edge.source);
+  const targetNode = paperNodes.find((node) => node.id === edge.target);
+  const fileById = new Map(files.map((file) => [file.id, file]));
+  const sourceFile = sourceNode?.fileId ? fileById.get(sourceNode.fileId) : undefined;
+  const targetFile = targetNode?.fileId ? fileById.get(targetNode.fileId) : undefined;
+
+  if (
+    !sourceNode?.fileId ||
+    !targetNode?.fileId ||
+    !sourceFile ||
+    !targetFile ||
+    sourceFile.deletedAt !== null ||
+    targetFile.deletedAt !== null
+  ) {
+    return relationProjection('stale', '关系端点的来源文件不存在或已移入回收站');
+  }
+
+  const candidateRows = rows.filter((row) => {
+    const rowFileIds = new Set(row.evidence.map((item) => item.fileId));
+    return rowFileIds.has(sourceNode.fileId!) && rowFileIds.has(targetNode.fileId!);
+  });
+  if (candidateRows.length === 0) {
+    return relationProjection(
+      'insufficient',
+      '当前没有同时涉及两端论文的矩阵行；图谱关系仍只是导航线索，不是引用证据。',
+    );
+  }
+
+  const hasUnavailableSource = candidateRows.some((row) =>
+    row.evidence.some((item) => {
+      if (item.fileId !== sourceNode.fileId && item.fileId !== targetNode.fileId) return false;
+      const file = fileById.get(item.fileId);
+      return (
+        !file ||
+        file.deletedAt !== null ||
+        !isResolvableLocator(item.locator, file.type)
+      );
+    }),
+  );
+  if (hasUnavailableSource) {
+    return relationProjection(
+      'stale',
+      '候选矩阵材料中至少有一条来源或定位已失效；这些材料也不能证明该图谱边。',
+      candidateRows.map((row) => row.id),
+    );
+  }
+
+  if (
+    candidateRows.some(
+      (row) =>
+        row.verification === 'disputed' ||
+        row.evidence.some((item) => item.verification === 'disputed'),
+    )
+  ) {
+    return relationProjection(
+      'disputed',
+      '候选矩阵材料存在争议；它们不等同于该图谱边的证据，图谱不会替你裁定关系。',
+      candidateRows.map((row) => row.id),
+    );
+  }
+
+  return relationProjection(
+    'review',
+    `矩阵中找到 ${candidateRows.length} 条同时涉及两端论文的候选材料，但这些材料不等同于该图谱边的证据；关系尚未绑定到具体主张。`,
+    candidateRows.map((row) => row.id),
+  );
+}
 
 /** 关键词节点挂接的是 GraphNode.id，需要先转换成真实 FileNode.id。 */
 export function fileIdsForGraphSelection(input: {

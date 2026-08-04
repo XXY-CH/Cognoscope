@@ -197,6 +197,7 @@
 | 2026-08-02 | Phase 004 系统 UI 设计：全路由页面分级、视觉表面、状态契约、动画时序、减弱动效与分阶段执行计划 |
 | 2026-08-04 | Phase 005 总契约：将研究依据、证据边界、分层图谱、研究判断演化、CV 阅读上下文、UI 交互和工程验收统一写入 [`docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md`](./docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md) |
 | 2026-08-04 | Agent Graph 推进图：补充 `T0-T6` 研究环境目标 DAG、研究质量门和静态/浏览器双 QA 门；READ-04 Q2 通过后解锁本轮 Integration/Release checkpoint |
+| 2026-08-04 | UI hierarchy redesign：主导航收敛为阅读/证据/图谱/成果，研究现场改为当前问题与阅读进展，图谱改为单画布分视图与来源检查器，矩阵改为主张 × 论文工作台，成果中心保留 claim → evidence → paper → locator；静态 QA 与 Luna Max 清理通过，真实图谱/矩阵回读和多视口浏览器 QA 仍因运行时缺失阻塞 |
 | 2026-08-04 | UX-06 Apple Design 静态审计：研究状态指标在桌面/平板/移动端采用 4/2/1 列，契约探针通过；reader 真实 390/768/1280、主题、键盘和减弱动效已补证据，完整图谱/矩阵返回仍待验收 |
 | 2026-08-04 | D4 / MON-02：monitor 会话按 fileId 隔离，Reader 退出先 stop 再取 JSONL；短于 5 秒不进入统计，monitor 字段用事务合并并同步 `sessionStore`；硬删除同步清理 ReadingSession 孤儿；build、lint、静态探针通过，浏览器与 Python 视觉依赖仍阻塞 |
 | 2026-08-04 | READ-04：PDF CSS-module 文字层改用稳定偏移锚点，漂移保持 unavailable；EPUB `Contents[]` 高亮装饰、fragment 优先 TOC、主题刷新、宿主 SVG 聚焦、批注色板 token 和静态契约探针收口；真实 PDF/EPUB、390/768/1280、键盘、主题与减弱动效通过，Integration/Release checkpoint 已记录 |

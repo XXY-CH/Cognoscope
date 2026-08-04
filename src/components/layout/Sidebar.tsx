@@ -4,16 +4,17 @@
  * 规范参考：UI_spec.md §2.1
  */
 import {
-  BarChart3,
-  Compass,
+  Activity,
+  BookOpen,
   ChevronLeft,
   CloudOff,
-  GitCompareArrows,
+  ClipboardCheck,
+  FileOutput,
   Library,
   Moon,
   Monitor,
+  Network,
   Settings,
-  Share2,
   Sun,
   Trash2,
   X,
@@ -28,43 +29,21 @@ import {
 } from '../../stores/uiStore';
 import './Sidebar.css';
 
-/** 产品层级导航：资料库 → 研究 → 进展；回收站仍属于资料库。 */
-const NAV_GROUPS = [
-  {
-    id: 'now',
-    label: '现在',
-    items: [
-      { to: '/', label: '当前研究', icon: Compass, end: true },
-    ],
-  },
-  {
-    id: 'library',
-    label: '资料',
-    items: [
-      { to: '/library', label: '文件目录', icon: Library, end: false },
-      { to: '/trash', label: '回收站', icon: Trash2, end: false },
-    ],
-  },
-  {
-    id: 'research',
-    label: '研究',
-    items: [
-      { to: '/knowledge-graph', label: '知识图谱', icon: Share2, end: false },
-      {
-        to: '/evidence-matrix',
-        label: '证据矩阵',
-        icon: GitCompareArrows,
-        end: false,
-      },
-    ],
-  },
-  {
-    id: 'progress',
-    label: '进展',
-    items: [
-      { to: '/dashboard', label: '个人仪表盘', icon: BarChart3, end: false },
-    ],
-  },
+/**
+ * 产品层级导航：研究工作区是主路径，资料管理保留为辅助入口。
+ * 阅读指向研究现场 landing，继续阅读动作再进入独立 fullscreen reader。
+ */
+const PRIMARY_NAV = [
+  { to: '/', label: '阅读', icon: BookOpen, end: true },
+  { to: '/evidence-matrix', label: '证据', icon: ClipboardCheck, end: false },
+  { to: '/knowledge-graph', label: '图谱', icon: Network, end: false },
+  { to: '/results', label: '成果', icon: FileOutput, end: false },
+] as const;
+
+const UTILITY_NAV = [
+  { to: '/library', label: '资料库', icon: Library, end: false },
+  { to: '/dashboard', label: '专注进展', icon: Activity, end: false },
+  { to: '/trash', label: '回收站', icon: Trash2, end: false },
 ] as const;
 
 /**
@@ -151,40 +130,68 @@ export function Sidebar({
         </button>
       </div>
 
-      {/* 主导航：按资料库 / 研究 / 进展分组，保持研究流程可见 */}
+      {/* 主导航：研究工作区优先，资料工具保持可达但降低权重 */}
       <nav className="sidebar__nav" aria-label="主导航">
         <div className="sidebar__groups">
-          {NAV_GROUPS.map((group) => (
-            <section className="sidebar__group" key={group.id} aria-label={group.label}>
-              <h2 className="sidebar__group-label">{group.label}</h2>
-              <ul className="sidebar__nav-list">
-                {group.items.map(({ to, label, icon: Icon, end }) => (
-                  <li key={to}>
-                    <NavLink
-                      to={to}
-                      end={end}
-                      className={({ isActive }) =>
-                        `sidebar__nav-item${isActive ? ' sidebar__nav-item--active' : ''}`
-                      }
-                      title={visuallyCollapsed ? label : undefined}
-                      aria-label={label}
-                      onClick={onCloseMobile}
-                    >
-                      <Icon
-                        className="sidebar__nav-icon"
-                        size={20}
-                        strokeWidth={1.5}
-                        aria-hidden="true"
-                      />
-                      {!visuallyCollapsed && (
-                        <span className="sidebar__nav-label">{label}</span>
-                      )}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
+          <section className="sidebar__group" aria-label="研究工作区">
+            <h2 className="sidebar__group-label">研究工作区</h2>
+            <ul className="sidebar__nav-list">
+              {PRIMARY_NAV.map(({ to, label, icon: Icon, end }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      `sidebar__nav-item${isActive ? ' sidebar__nav-item--active' : ''}`
+                    }
+                    title={visuallyCollapsed ? label : undefined}
+                    aria-label={label}
+                    onClick={onCloseMobile}
+                  >
+                    <Icon
+                      className="sidebar__nav-icon"
+                      size={20}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                    {!visuallyCollapsed && (
+                      <span className="sidebar__nav-label">{label}</span>
+                    )}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="sidebar__group sidebar__group--utility" aria-label="资料工具">
+            <h2 className="sidebar__group-label">资料工具</h2>
+            <ul className="sidebar__nav-list">
+              {UTILITY_NAV.map(({ to, label, icon: Icon, end }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      `sidebar__nav-item sidebar__nav-item--muted${isActive ? ' sidebar__nav-item--active' : ''}`
+                    }
+                    title={visuallyCollapsed ? label : undefined}
+                    aria-label={label}
+                    onClick={onCloseMobile}
+                  >
+                    <Icon
+                      className="sidebar__nav-icon"
+                      size={20}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                    {!visuallyCollapsed && (
+                      <span className="sidebar__nav-label">{label}</span>
+                    )}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       </nav>
 

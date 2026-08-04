@@ -26,6 +26,11 @@ const DashboardPage = lazy(() =>
     default: m.DashboardPage,
   })),
 );
+const ResultsCenterPage = lazy(() =>
+  import('./features/results/ResultsCenterPage').then((m) => ({
+    default: m.ResultsCenterPage,
+  })),
+);
 const KnowledgeGraphPage = lazy(() =>
   import('./features/knowledge-graph/KnowledgeGraphPage').then((m) => ({
     default: m.KnowledgeGraphPage,
@@ -43,7 +48,7 @@ const ReaderPage = lazy(() =>
 );
 
 const currentResearchStateHandle = {
-  title: '当前研究状态',
+  title: '研究现场',
 } satisfies AppRouteHandle;
 
 const fileDirectoryHandle = {
@@ -51,11 +56,15 @@ const fileDirectoryHandle = {
 } satisfies AppRouteHandle;
 
 const dashboardHandle = {
-  title: '个人仪表盘',
+  title: '专注进展',
+} satisfies AppRouteHandle;
+
+const resultsHandle = {
+  title: '成果中心',
 } satisfies AppRouteHandle;
 
 const knowledgeGraphHandle = {
-  title: '知识图谱',
+  title: '研究图谱',
 } satisfies AppRouteHandle;
 
 const trashHandle = {
@@ -63,7 +72,7 @@ const trashHandle = {
 } satisfies AppRouteHandle;
 
 const evidenceMatrixHandle = {
-  title: '证据矩阵',
+  title: '证据工作台',
 } satisfies AppRouteHandle;
 
 /** 路由懒加载占位：避免空白闪屏 */
@@ -103,6 +112,15 @@ const router = createBrowserRouter([
           </LazyPage>
         ),
         handle: dashboardHandle,
+      },
+      {
+        path: 'results',
+        element: (
+          <LazyPage>
+            <ResultsCenterPage />
+          </LazyPage>
+        ),
+        handle: resultsHandle,
       },
       {
         path: 'knowledge-graph',

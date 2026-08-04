@@ -23,8 +23,10 @@ import type {
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
   canOpenGraphEvidence,
+  graphRelationKey,
   locatorLabel,
   matchLabel,
+  type GraphRelationProjection,
   sourceStateLabel,
   type GraphEvidenceAnchor,
   verificationLabel,
@@ -44,6 +46,7 @@ interface GraphInspectorProps {
   evidenceAnchors: GraphEvidenceAnchor[];
   evidenceLoading: boolean;
   evidenceError: string | null;
+  relationEvidenceByKey: ReadonlyMap<string, GraphRelationProjection>;
   onSelectPaper: (node: GraphNode) => void;
   onOpenPaper: (fileId: string) => void;
   onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
@@ -52,11 +55,21 @@ interface GraphInspectorProps {
 }
 
 function originLabel(origin: GraphEdge['origin']): string {
-  if (origin === 'ai') return 'AI 语义';
+  if (origin === 'ai') return '自动语义线索';
   if (origin === 'cooccurrence') return '关键词共现';
-  if (origin === 'mixed') return '共现 + AI';
-  if (origin === 'manual') return '人工确认';
+  if (origin === 'mixed') return '共现 + 自动语义';
+  if (origin === 'manual') return '用户确认';
   return '来源未记录';
+}
+
+function evidenceStateForSelection(
+  anchors: GraphEvidenceAnchor[],
+): { label: string; tone: 'success' | 'warning' | 'neutral' } {
+  if (anchors.length === 0) return { label: '仅导航线索', tone: 'neutral' };
+  if (anchors.some((anchor) => canOpenGraphEvidence(anchor))) {
+    return { label: '有可回读锚点', tone: 'success' };
+  }
+  return { label: '锚点待核对', tone: 'warning' };
 }
 
 function originTone(
@@ -78,23 +91,17 @@ function relationReason(
     (origin === 'cooccurrence'
       ? '两篇论文的关键词在图谱中共同出现'
       : origin === 'ai'
-        ? 'AI 根据当前图谱语料判断主题相关'
+        ? '自动语义分析提供关系导航建议'
         : origin === 'mixed'
-          ? '关键词共现与 AI 语义判断共同支持该关系'
-        : origin === 'manual'
-          ? '由用户确认的关系'
-          : '该关系在早期版本中生成，来源尚未记录')
+          ? '关键词共现与自动语义分析共同提供导航建议'
+          : origin === 'manual'
+            ? '由用户确认的关系'
+            : '该关系在早期版本中生成，来源尚未记录')
   );
 }
 
 function edgeOtherId(edge: GraphEdge | KeywordEdge, id: string): string {
   return edge.source === id ? edge.target : edge.source;
-}
-
-function relationStrengthLabel(weight: number): string {
-  if (weight >= 0.66) return '强关系线索';
-  if (weight >= 0.33) return '中等关系线索';
-  return '弱关系线索';
 }
 
 function EvidenceBadge({
@@ -107,6 +114,41 @@ function EvidenceBadge({
     <Badge aria-label={`关系来源：${label}`} tone={originTone(origin)} soft>
       {label}
     </Badge>
+  );
+}
+
+function RelationStatusBadge({
+  projection,
+}: {
+  projection: GraphRelationProjection;
+}) {
+  const tone =
+    projection.state === 'disputed'
+      ? 'danger'
+      : projection.state === 'stale'
+        ? 'warning'
+        : projection.state === 'review'
+          ? 'accent'
+          : 'neutral';
+  return (
+    <Badge aria-label={`证据状态：${projection.label}`} tone={tone} soft>
+      {projection.label}
+    </Badge>
+  );
+}
+
+function relationProjectionFor(
+  relationEvidenceByKey: ReadonlyMap<string, GraphRelationProjection>,
+  source: string,
+  target: string,
+): GraphRelationProjection {
+  return (
+    relationEvidenceByKey.get(graphRelationKey(source, target)) ?? {
+      state: 'insufficient',
+      label: '证据不足',
+      reason: '该关系没有绑定到具体主张，仍只是导航线索，不是引用证据。',
+      rowIds: [],
+    }
   );
 }
 
@@ -211,6 +253,7 @@ export function GraphInspector({
   evidenceAnchors,
   evidenceLoading,
   evidenceError,
+  relationEvidenceByKey,
   onSelectPaper,
   onOpenPaper,
   onOpenEvidence,
@@ -243,6 +286,7 @@ export function GraphInspector({
   }
 
   if (selectedPaper) {
+    const evidenceState = evidenceStateForSelection(evidenceAnchors);
     const relatedPapers = paperEdges
       .filter((edge) => edge.source === selectedId || edge.target === selectedId)
       .map((edge) => ({
@@ -288,6 +332,13 @@ export function GraphInspector({
                   论文
                 </Badge>
                 <span>{relatedPapers.length} 条论文关系</span>
+                <Badge
+                  aria-label={`选中节点证据状态：${evidenceState.label}`}
+                  tone={evidenceState.tone}
+                  soft
+                >
+                  {evidenceState.label}
+                </Badge>
               </p>
             </div>
           </div>
@@ -313,12 +364,30 @@ export function GraphInspector({
               <p className={styles.muted}>暂无摘要；可回到文件目录补充文首元数据。</p>
             )}
             {relatedKeywords.length > 0 ? (
-              <div className={styles.keywordRow} aria-label="关联关键词">
-                {relatedKeywords.map((keyword) => (
-                  <span className={styles.keyword} key={keyword.id}>
-                    {keyword.label}
-                  </span>
-                ))}
+              <div className={styles.evidence}>
+                <div className={styles.sectionHeading}>关联主题</div>
+                <ul className={styles.list}>
+                  {relatedKeywords.map((keyword) => {
+                    const projection = relationProjectionFor(
+                      relationEvidenceByKey,
+                      selectedId,
+                      keyword.id,
+                    );
+                    return (
+                      <li className={styles.listItem} key={keyword.id}>
+                        <div className={styles.relationMeta}>
+                          <span className={styles.relationTitle}>{keyword.label}</span>
+                          <EvidenceBadge origin="cooccurrence" />
+                          <RelationStatusBadge projection={projection} />
+                        </div>
+                        <p className={styles.reason}>
+                          论文元数据与主题词关联；仅作为导航线索。
+                        </p>
+                        <p className={styles.reason}>{projection.reason}</p>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
             ) : null}
           </div>
@@ -329,25 +398,33 @@ export function GraphInspector({
               <p className={styles.muted}>暂无跨论文关系。</p>
             ) : (
               <ul className={styles.list}>
-                {relatedPapers.map(({ edge, node }) => (
-                  <li key={`${edge.source}-${edge.target}`} className={styles.listItem}>
-                    <button
-                      type="button"
-                      className={styles.relationButton}
-                      aria-label={`查看关联论文 ${node.label}`}
-                      onClick={() => onSelectPaper(node)}
-                    >
-                      <span className={styles.relationTitle}>{node.label}</span>
-                      <span className={styles.relationMeta}>
-                        <EvidenceBadge origin={edge.origin} />
-                        <span>{relationStrengthLabel(edge.weight)}</span>
-                      </span>
-                    </button>
-                    <p className={styles.reason}>
-                      {relationReason(edge.origin, edge.reason)}
-                    </p>
-                  </li>
-                ))}
+                {relatedPapers.map(({ edge, node }) => {
+                  const projection = relationProjectionFor(
+                    relationEvidenceByKey,
+                    edge.source,
+                    edge.target,
+                  );
+                  return (
+                    <li key={`${edge.source}-${edge.target}`} className={styles.listItem}>
+                      <button
+                        type="button"
+                        className={styles.relationButton}
+                        aria-label={`查看关联论文 ${node.label}`}
+                        onClick={() => onSelectPaper(node)}
+                      >
+                        <span className={styles.relationTitle}>{node.label}</span>
+                        <span className={styles.relationMeta}>
+                          <EvidenceBadge origin={edge.origin} />
+                          <RelationStatusBadge projection={projection} />
+                        </span>
+                      </button>
+                      <p className={styles.reason}>
+                        {relationReason(edge.origin, edge.reason)}
+                      </p>
+                      <p className={styles.reason}>{projection.reason}</p>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -414,6 +491,7 @@ export function GraphInspector({
         ids.indexOf(id) === index,
     )
     .slice(0, 5);
+  const evidenceState = evidenceStateForSelection(evidenceAnchors);
 
   return (
     <section
@@ -434,6 +512,13 @@ export function GraphInspector({
                 关键词
               </Badge>
               <span>{relatedPapers.length} 篇关联论文</span>
+              <Badge
+                aria-label={`选中节点证据状态：${evidenceState.label}`}
+                tone={evidenceState.tone}
+                soft
+              >
+                {evidenceState.label}
+              </Badge>
             </p>
           </div>
         </div>
@@ -459,6 +544,11 @@ export function GraphInspector({
                 const canOpenPaper = Boolean(
                   paper.fileId && readableFileIds.has(paper.fileId),
                 );
+                const projection = relationProjectionFor(
+                  relationEvidenceByKey,
+                  paper.id,
+                  selectedKeyword.id,
+                );
                 return (
                   <li key={paper.id} className={styles.listItem}>
                     <div className={styles.paperRow}>
@@ -470,6 +560,10 @@ export function GraphInspector({
                       >
                         <span className={styles.relationTitle}>{paper.label}</span>
                       </button>
+                      <div className={styles.relationMeta}>
+                        <EvidenceBadge origin="cooccurrence" />
+                        <RelationStatusBadge projection={projection} />
+                      </div>
                       {paper.fileId ? (
                         <Button
                           aria-label={`打开 ${paper.label}`}
@@ -488,6 +582,10 @@ export function GraphInspector({
                         </Button>
                       ) : null}
                     </div>
+                    <p className={styles.reason}>
+                      论文元数据与主题词关联；仅作为导航线索。
+                    </p>
+                    <p className={styles.reason}>{projection.reason}</p>
                   </li>
                 );
               })}
@@ -506,10 +604,23 @@ export function GraphInspector({
                   <div className={styles.relationMeta}>
                     <span className={styles.relationTitle}>{node.label}</span>
                     <EvidenceBadge origin={edge.origin} />
-                    <span>{relationStrengthLabel(edge.weight)}</span>
+                    <RelationStatusBadge
+                      projection={relationProjectionFor(
+                        relationEvidenceByKey,
+                        edge.source,
+                        edge.target,
+                      )}
+                    />
                   </div>
                   <p className={styles.reason}>
                     {relationReason(edge.origin, edge.reason)}
+                  </p>
+                  <p className={styles.reason}>
+                    {relationProjectionFor(
+                      relationEvidenceByKey,
+                      edge.source,
+                      edge.target,
+                    ).reason}
                   </p>
                 </li>
               ))}

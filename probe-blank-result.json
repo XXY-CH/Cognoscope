@@ -1,20 +1,5 @@
 {
-  "errors": [],
-  "logs": [
-    "[debug] [vite] connecting...",
-    "[debug] [vite] connected.",
-    "[info] %cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
-    "[warn] ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition."
-  ],
-  "info": {
-    "title": "学森 · 学术文献阅读助手",
-    "dataTheme": "dark",
-    "bodyBg": "rgb(26, 26, 30)",
-    "bodyColor": "rgb(232, 232, 240)",
-    "rootHTML": "<div class=\"app-shell\"><aside id=\"main-navigation-drawer\" class=\"sidebar\" aria-label=\"全局导航\" aria-hidden=\"true\" inert=\"\"><div class=\"sidebar__user\"><div class=\"sidebar__avatar\" aria-hidden=\"true\">学</div><div class=\"sidebar__user-meta\"><span class=\"sidebar__user-name\">学森</span></div><button type=\"button\" class=\"sidebar__icon-btn\" aria-label=\"打开设置\" title=\"设置\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-settings\" aria-hidden=\"true\"><path d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg></button><button type=\"button\" class=\"sidebar__icon-btn sidebar__mobile-close\" aria-label=\"关闭主导航\" data-autofocus=\"true\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x\" aria-hidden=\"true\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></div><nav class=\"sidebar__nav\" aria-label=\"主导航\"><div class=\"sidebar__groups\"><section class=\"sidebar__group\" aria-label=\"现在\"><h2 class=\"sidebar__group-label\">现在</h2><ul class=\"sidebar__nav-list\"><li><a aria-label=\"当前研究\" aria-current=\"page\" class=\"sidebar__nav-item sidebar__nav-item--active\" href=\"/\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20",
-    "rootChildCount": 2,
-    "hasAppShell": true,
-    "hasSidebar": true,
-    "textSample": "当前研究状态\n\n现在\n\n研究正在推进\n\n等待第一篇文献进入研究空间。把注意力留给原文，环境负责记住进展和需要回看的地方。\n\n导入文献\n资料库\n从一篇本地文献开始\n\n导入 PDF 或 EPUB 后，阅读、批注和跨论文整理会在这里接上。\n\n导入文献\n设置\n外观\n阅读\n数据管理\nAI\n快捷键\n\n主题\n\n跟随系统\n浅色\n深色\n\n与侧栏主题按钮同步，立即生效。\n\n风格\n\n与书签色板一致（蓝 / 绿 / 黄 / 粉），不含警告红。\n\n取消\n保存"
-  }
+  "skipped": true,
+  "reason": "No Chromium-compatible browser executable was found.",
+  "configureWith": "EDGE_PATH, CHROME_PATH, or PUPPETEER_EXECUTABLE_PATH"
 }

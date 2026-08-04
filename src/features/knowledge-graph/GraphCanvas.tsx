@@ -16,6 +16,8 @@ interface GraphCanvasProps {
   onNodeClick: (node: GraphNode) => void;
   onBackgroundClick?: () => void;
   onNodeDrag: (node: GraphNode, x: number, y: number) => void;
+  /** 传入预先计算的学术层级布局时冻结力导向，避免随机漂移。 */
+  freezeLayout?: boolean;
 }
 
 /**
@@ -35,6 +37,7 @@ export function GraphCanvas({
   onNodeClick,
   onBackgroundClick,
   onNodeDrag,
+  freezeLayout = false,
 }: GraphCanvasProps) {
   // react-force-graph-2d 的 ref 类型与自定义字段不兼容，用宽松类型
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,8 +69,11 @@ export function GraphCanvas({
         graphRef.current.__initialized = true;
         graphRef.current.centerAt(0, 0, 0);
       }
+      if (freezeLayout) {
+        graphRef.current.zoomToFit(0, 48);
+      }
     }
-  }, [nodes.length]);
+  }, [freezeLayout, nodes.length]);
 
   const isEmphasized = (id: string) =>
     id === selectedNodeId || (hasHighlight && highlightSet.has(id));
@@ -75,20 +81,20 @@ export function GraphCanvas({
   const getNodeColor = (node: { id: string; kind: string }) => {
     const cssVars = getComputedStyle(document.documentElement);
     if (node.id === selectedNodeId) {
-      return cssVars.getPropertyValue('--accent').trim() || '#4A6CF7';
+      return cssVars.getPropertyValue('--accent').trim() || '#2f6f85';
     }
     if (hasHighlight && highlightSet.has(node.id)) {
-      return cssVars.getPropertyValue('--accent').trim() || '#4A6CF7';
+      return cssVars.getPropertyValue('--accent').trim() || '#2f6f85';
     }
     switch (node.kind) {
       case 'file':
-        return cssVars.getPropertyValue('--text-primary').trim() || '#1A1A1E';
+        return cssVars.getPropertyValue('--text-primary').trim() || '#1a1a1e';
       case 'folder':
-        return cssVars.getPropertyValue('--accent-subtle').trim() || '#EEF1FE';
+        return cssVars.getPropertyValue('--accent-subtle').trim() || '#e7f0f2';
       case 'tag':
-        return cssVars.getPropertyValue('--success').trim() || '#34C759';
+        return cssVars.getPropertyValue('--success').trim() || '#33745b';
       default:
-        return cssVars.getPropertyValue('--text-tertiary').trim() || '#999';
+        return cssVars.getPropertyValue('--text-tertiary').trim() || '#7b8781';
     }
   };
 
@@ -152,7 +158,7 @@ export function GraphCanvas({
         ctx.fillStyle =
           getComputedStyle(document.documentElement)
             .getPropertyValue('--text-primary')
-            .trim() || '#1A1A1E';
+            .trim() || '#1a1a1e';
         ctx.fillText(label, node.x, node.y + size + 2);
         ctx.restore();
       }}
@@ -169,11 +175,9 @@ export function GraphCanvas({
               : link.origin === 'manual'
                 ? '--warning'
                 : '--border-default';
-        return cssVars.getPropertyValue(token).trim() || '#C8C8D2';
+        return cssVars.getPropertyValue(token).trim() || '#b9c5c0';
       }}
-      linkDirectionalParticles={2}
-      linkDirectionalParticleWidth={(link: any) => (link.weight ?? 0.5) * 2}
-      linkDirectionalParticleSpeed={0.005}
+      linkDirectionalParticles={0}
       onNodeClick={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
         if (original) onNodeClick(original);
@@ -185,9 +189,9 @@ export function GraphCanvas({
           onNodeDrag(original, node.x, node.y);
         }
       }}
-      cooldownTicks={100}
-      d3AlphaDecay={0.02}
-      d3VelocityDecay={0.3}
+      cooldownTicks={freezeLayout ? 0 : 100}
+      d3AlphaDecay={freezeLayout ? 1 : 0.02}
+      d3VelocityDecay={freezeLayout ? 1 : 0.3}
     />
   );
 }

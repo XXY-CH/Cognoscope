@@ -1,6 +1,6 @@
 /** EvidenceAnalysisPanel - 审核结论、局限/矛盾与研究空白分析提议。 */
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ClipboardCopy, Flag, LoaderCircle, Sparkles } from 'lucide-react';
+import { Check, ClipboardCopy, FileText, Flag, LoaderCircle } from 'lucide-react';
 import { Badge, Button } from '../../components/common';
 import type {
   EvidenceAnalysis,
@@ -37,7 +37,7 @@ function statusLabel(state: EvidenceVerificationState): string {
   if (state === 'disputed') return '存在争议';
   if (state === 'unresolved') return '待核对';
   if (state === 'edited') return '已编辑';
-  return 'AI 提议';
+  return '待审阅';
 }
 
 function statusTone(state: EvidenceVerificationState): 'success' | 'danger' | 'warning' | 'accent' | 'neutral' {
@@ -127,20 +127,20 @@ export function EvidenceAnalysisPanel({
     <section className={styles.root} aria-label="研究分析">
       <header className={styles.header}>
         <div>
-          <h2 className={styles.title}>研究分析草稿</h2>
+          <h2 className={styles.title}>研究判断</h2>
           <p className={styles.description}>只基于已确认矩阵行提议结论、局限与空白；每项都保留矩阵行回指。</p>
         </div>
         <div className={styles.toolbarActions}>
           {requestId ? (
             <Button aria-label="取消研究分析" variant="ghost" size="sm" leftIcon={<LoaderCircle size={14} strokeWidth={1.5} />} onClick={onCancel}>取消分析</Button>
           ) : (
-            <Button aria-label="生成研究分析草稿" variant="secondary" size="sm" leftIcon={<Sparkles size={14} strokeWidth={1.5} />} disabled={!online || !rows.some((row) => row.verification === 'verified')} onClick={onGenerate}>生成分析</Button>
+            <Button aria-label="生成研究判断草稿" variant="secondary" size="sm" leftIcon={<FileText size={14} strokeWidth={1.5} />} disabled={!online || !rows.some((row) => row.verification === 'verified')} onClick={onGenerate}>生成判断草稿</Button>
           )}
           <Button aria-label="复制已确认分析" variant="ghost" size="sm" leftIcon={<ClipboardCopy size={14} strokeWidth={1.5} />} disabled={!analysis?.items.some((item) => item.verification === 'verified')} onClick={onCopy}>复制分析</Button>
         </div>
       </header>
       {!analysis || analysis.items.length === 0 ? (
-        <p className={styles.empty}><Sparkles size={16} strokeWidth={1.5} aria-hidden="true" />先确认矩阵行，再生成研究结论、局限与空白草稿。</p>
+        <p className={styles.empty}><FileText size={16} strokeWidth={1.5} aria-hidden="true" />先确认矩阵行，再生成研究结论、局限与空白草稿。</p>
       ) : (
         <div className={styles.sections}>
           {SECTIONS.map((section) => {
