@@ -2,6 +2,8 @@
 
 .workbench {
   display: grid;
+  flex: 1;
+  overflow: hidden;
   min-height: 0;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   gap: var(--sp-5);
@@ -13,6 +15,7 @@
   min-height: 0;
   flex-direction: column;
   gap: var(--sp-3);
+  overflow: hidden;
 }
 
 .matrixIntro,
@@ -54,6 +57,7 @@
 }
 
 .tableScroll {
+  flex: 1;
   min-height: 0;
   overflow: auto;
   border-top: var(--border-width) solid var(--border-subtle);
@@ -360,10 +364,13 @@
 @media (max-width: 900px) {
   .workbench {
     display: block;
+    height: auto;
+    overflow: visible;
   }
 
   .matrixSurface {
     min-height: 360px;
+    overflow: visible;
   }
 
   .inspector {

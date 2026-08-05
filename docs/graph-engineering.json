@@ -15,7 +15,7 @@
     "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: full graph/matrix return flow and screenshot evidence remain pending"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
     "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04 和 OUTPUT-05 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时。",
-    "lastVerified": "2026-08-04",
+    "lastVerified": "2026-08-05",
     "evidence": [
       "npm run build",
       "npm run lint",
@@ -39,7 +39,8 @@
       "READ-04 cleanup: shared EPUB display close helper and removed unused guard parameter",
       "READ-04 browser fixture: real PDF/EPUB selection and replay, duplicate PDF offsets, drift-unavailable state, CFI/TOC navigation, theme refresh, keyboard focus and host-SVG flash",
       "READ-04 browser matrix: 390/768/1280 no horizontal overflow; prefers-reduced-motion short-fade tokens observed",
-      "Integration probes: evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session (pass)"
+      "Integration probes: evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session (pass)",
+      "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked"
     ]
   },
   "edgeTypes": {

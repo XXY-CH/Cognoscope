@@ -65,7 +65,7 @@ function originLabel(origin: GraphEdge['origin']): string {
 function evidenceStateForSelection(
   anchors: GraphEvidenceAnchor[],
 ): { label: string; tone: 'success' | 'warning' | 'neutral' } {
-  if (anchors.length === 0) return { label: '仅导航线索', tone: 'neutral' };
+  if (anchors.length === 0) return { label: '暂无回读材料', tone: 'neutral' };
   if (anchors.some((anchor) => canOpenGraphEvidence(anchor))) {
     return { label: '有可回读锚点', tone: 'success' };
   }
@@ -146,10 +146,25 @@ function relationProjectionFor(
     relationEvidenceByKey.get(graphRelationKey(source, target)) ?? {
       state: 'insufficient',
       label: '证据不足',
-      reason: '该关系没有绑定到具体主张，仍只是导航线索，不是引用证据。',
+      reason: '该关系尚未绑定到具体矩阵主张，不能直接作为引用证据。',
       rowIds: [],
     }
   );
+}
+
+function metadataRelationProjection(): GraphRelationProjection {
+  return {
+    state: 'clue',
+    label: '主题关联',
+    reason: '主题来自论文元数据或关键词提取；可用于整理与回读，不能替代主张核验。',
+    rowIds: [],
+  };
+}
+
+function relationSupportLabel(projection: GraphRelationProjection): string {
+  return projection.rowIds.length > 0
+    ? `矩阵候选 ${projection.rowIds.length} 条，仍需核对`
+    : '尚未绑定矩阵主张';
 }
 
 function EvidenceAnchorList({
@@ -157,15 +172,19 @@ function EvidenceAnchorList({
   loading,
   error,
   onOpenEvidence,
+  fromKeyword = false,
 }: {
   anchors: GraphEvidenceAnchor[];
   loading: boolean;
   error: string | null;
   onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
+  fromKeyword?: boolean;
 }) {
   return (
     <div className={styles.evidenceAnchors}>
-      <div className={styles.sectionHeading}>证据锚点</div>
+      <div className={styles.sectionHeading}>
+        {fromKeyword ? '关联论文的证据锚点' : '证据锚点'}
+      </div>
       {loading ? (
         <p className={styles.muted} role="status">正在读取可回读证据…</p>
       ) : error ? (
@@ -174,7 +193,7 @@ function EvidenceAnchorList({
           证据读取失败：{error}
         </p>
       ) : anchors.length === 0 ? (
-        <p className={styles.muted}>暂无已保存的证据锚点；图谱关系仍只是导航线索。</p>
+        <p className={styles.muted}>暂无已保存的证据锚点；当前节点还没有可回读材料。</p>
       ) : (
         <ul className={styles.anchorList}>
           {anchors.map((anchor) => {
@@ -236,6 +255,9 @@ function EvidenceAnchorList({
           })}
         </ul>
       )}
+      {fromKeyword ? (
+        <p className={styles.reason}>这些锚点来自关联论文，不代表主题关系本身已经得到主张核验。</p>
+      ) : null}
     </div>
   );
 }
@@ -368,20 +390,16 @@ export function GraphInspector({
                 <div className={styles.sectionHeading}>关联主题</div>
                 <ul className={styles.list}>
                   {relatedKeywords.map((keyword) => {
-                    const projection = relationProjectionFor(
-                      relationEvidenceByKey,
-                      selectedId,
-                      keyword.id,
-                    );
+                    const projection = metadataRelationProjection();
                     return (
                       <li className={styles.listItem} key={keyword.id}>
                         <div className={styles.relationMeta}>
                           <span className={styles.relationTitle}>{keyword.label}</span>
                           <EvidenceBadge origin="cooccurrence" />
-                          <RelationStatusBadge projection={projection} />
+                          <RelationStatusBadge projection={metadataRelationProjection()} />
                         </div>
                         <p className={styles.reason}>
-                          论文元数据与主题词关联；仅作为导航线索。
+                          主题来自论文元数据或关键词提取；可用于整理与回读，不能替代主张核验。
                         </p>
                         <p className={styles.reason}>{projection.reason}</p>
                       </li>
@@ -421,7 +439,9 @@ export function GraphInspector({
                       <p className={styles.reason}>
                         {relationReason(edge.origin, edge.reason)}
                       </p>
-                      <p className={styles.reason}>{projection.reason}</p>
+                      <p className={styles.reason}>
+                        {relationSupportLabel(projection)}；{projection.reason}
+                      </p>
                     </li>
                   );
                 })}
@@ -544,11 +564,7 @@ export function GraphInspector({
                 const canOpenPaper = Boolean(
                   paper.fileId && readableFileIds.has(paper.fileId),
                 );
-                const projection = relationProjectionFor(
-                  relationEvidenceByKey,
-                  paper.id,
-                  selectedKeyword.id,
-                );
+                const projection = metadataRelationProjection();
                 return (
                   <li key={paper.id} className={styles.listItem}>
                     <div className={styles.paperRow}>
@@ -583,9 +599,9 @@ export function GraphInspector({
                       ) : null}
                     </div>
                     <p className={styles.reason}>
-                      论文元数据与主题词关联；仅作为导航线索。
+                      主题来自论文元数据或关键词提取；可用于整理与回读，不能替代主张核验。
                     </p>
-                    <p className={styles.reason}>{projection.reason}</p>
+                    <p className={styles.reason}>{relationSupportLabel(projection)}</p>
                   </li>
                 );
               })}
@@ -604,24 +620,12 @@ export function GraphInspector({
                   <div className={styles.relationMeta}>
                     <span className={styles.relationTitle}>{node.label}</span>
                     <EvidenceBadge origin={edge.origin} />
-                    <RelationStatusBadge
-                      projection={relationProjectionFor(
-                        relationEvidenceByKey,
-                        edge.source,
-                        edge.target,
-                      )}
-                    />
+                    <RelationStatusBadge projection={metadataRelationProjection()} />
                   </div>
                   <p className={styles.reason}>
                     {relationReason(edge.origin, edge.reason)}
                   </p>
-                  <p className={styles.reason}>
-                    {relationProjectionFor(
-                      relationEvidenceByKey,
-                      edge.source,
-                      edge.target,
-                    ).reason}
-                  </p>
+                  <p className={styles.reason}>{metadataRelationProjection().reason}</p>
                 </li>
               ))}
             </ul>
@@ -632,6 +636,7 @@ export function GraphInspector({
           loading={evidenceLoading}
           error={evidenceError}
           onOpenEvidence={onOpenEvidence}
+          fromKeyword
         />
       </div>
       <div className={styles.actions} role="group" aria-label="关键词节点操作">

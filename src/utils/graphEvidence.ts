@@ -121,7 +121,7 @@ export function projectGraphRelationEvidence(
   if (candidateRows.length === 0) {
     return relationProjection(
       'insufficient',
-      '当前没有同时涉及两端论文的矩阵行；图谱关系仍只是导航线索，不是引用证据。',
+      '当前没有同时涉及两端论文的矩阵行；这条关系尚未有可回读材料，不能作为引用证据。',
     );
   }
 
@@ -203,7 +203,7 @@ export function isResolvableLocator(
   );
 }
 
-function resolveSource(
+export function resolveEvidenceSource(
   locator: EvidenceLocator,
   file: FileNode | undefined,
 ): { state: GraphEvidenceSourceState; reason: string | null } {
@@ -246,7 +246,7 @@ export function selectGraphEvidenceAnchors(
       const anchorId = `${row.matrixId}:${row.id}:${item.id}`;
       if (seenAnchorIds.has(anchorId)) continue;
       seenAnchorIds.add(anchorId);
-      const source = resolveSource(item.locator, fileById.get(item.fileId));
+      const source = resolveEvidenceSource(item.locator, fileById.get(item.fileId));
       anchors.push({
         id: anchorId,
         matrixId: row.matrixId,
@@ -285,7 +285,7 @@ export function locatorLabel(locator: EvidenceLocator): string {
     if (locator.sectionIndex != null) return `EPUB 章节 ${locator.sectionIndex}`;
     return 'EPUB CFI';
   }
-  return `定位待核对：${locator.reason}`;
+  return `定位不可回读：${locator.reason}`;
 }
 
 export function matchLabel(match: EvidenceMatchMethod): string {
@@ -305,7 +305,7 @@ export function verificationLabel(state: EvidenceVerificationState): string {
 export function sourceStateLabel(state: GraphEvidenceSourceState): string {
   if (state === 'available') return '来源可回读';
   if (state === 'missing') return '来源失效';
-  return '定位待核对';
+  return '定位不可回读';
 }
 
 /** 避免未来 UI 把图谱锚点误当作可复制引用。 */

@@ -78,6 +78,7 @@
     "图谱调用入口此前传入 freezeLayout，导致 D3 排斥/吸引被关闭；现已保留列式位置作为起点，启用持续力导向、拖拽落点固定、拓扑/视图级自动 fit，并尊重 prefers-reduced-motion。",
     "主题筛选会让论文节点为空但仍保留论文-主题边，D3 可能因 dangling link 抛 node not found；现已按可见论文闭合投影边端点。",
     "AI 建边上游失败此前会把整篇论文标成 failed；现已将建边降级为 best-effort，论文节点和入图成员不再被关系建议失败阻断。",
+    "图谱与证据工作台的检查器现在使用内部滚动和窄栏换行；范围导引可收起；主题元数据关联、矩阵候选和可回读锚点分层展示；来源失效与定位不可回读分别呈现。",
     "Browser QA remains blocked and cannot be replaced by static probes."
   ],
   "lastVerification": [
@@ -91,11 +92,12 @@
     "Knowledge graph scale probe passed: max zoom 4, min zoom 0.25, and 40/32/56px node diameters at max zoom",
     "Knowledge graph canvas probe passed: D3 charge/link forces, stable drag data identity, pinned drop coordinates, reduced-motion synchronous layout, bounded cooldown, engine-stop fit, endpoint-closed topic projection, and no freezeLayout call",
     "Knowledge graph inclusion probe passed: AI edge suggestion failure is caught before node/member persistence and emits a non-blocking warning",
+    "Graph/evidence workbench boundary follow-up passed: npm run build, npm run lint, git diff --check, graph canvas/inclusion probes, and evidence matrix probe; browser runtime remains unavailable",
     "npm run build, npm run lint, git diff --check, and local Vite/API health checks passed; lint retains 3 pre-existing warnings",
     "AG-QA.static passed: build, lint, diff check, UI, READ-04, evidence matrix, source invalidation, and monitor probes",
     "AG-QA.browser blocked: no Chromium-compatible executable"
   ],
   "next": ["AG-QA.browser"],
-  "iteration": 3,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> graph physics + resilient inclusion fix -> AG-QA.static; AG-QA.browser remains blocked."
+  "iteration": 4,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> graph physics + resilient inclusion fix -> workbench boundary follow-up -> AG-QA.static; AG-QA.browser remains blocked."
 }

@@ -14,7 +14,11 @@ import type {
   EvidenceVerificationState,
   FileNode,
 } from '../../types';
-import { isResolvableLocator } from '../../utils/graphEvidence';
+import {
+  resolveEvidenceSource,
+  sourceStateLabel,
+  locatorLabel,
+} from '../../utils/graphEvidence';
 import styles from './EvidenceMatrixWorkbench.module.css';
 
 interface EvidenceMatrixWorkbenchProps {
@@ -53,23 +57,22 @@ function verificationLabel(state: EvidenceVerificationState): string {
   return '待审核';
 }
 
-function sourceAvailable(item: EvidenceItem | undefined, file: FileNode | undefined): boolean {
-  return Boolean(
-    item &&
-      file &&
-      file.deletedAt === null &&
-      file.type !== 'folder' &&
-      isResolvableLocator(item.locator, file.type),
-  );
-}
-
 function cellState(
   row: EvidenceRow,
   item: EvidenceItem | undefined,
   file: FileNode | undefined,
 ): { label: string; detail: string; state: string } {
   if (!item) return { label: '未涉及', detail: '没有该论文的证据摘录', state: 'absent' };
-  if (!sourceAvailable(item, file)) return { label: '来源失效', detail: '定位不可回读', state: 'stale' };
+  const source = resolveEvidenceSource(item.locator, file);
+  if (source.state !== 'available') {
+    return {
+      label: sourceStateLabel(source.state),
+      detail:
+        source.reason ??
+        (source.state === 'missing' ? '来源文件不存在或已移入回收站' : '定位不可回读'),
+      state: 'stale',
+    };
+  }
   if (row.verification === 'disputed' || item.verification === 'disputed') {
     return { label: '存在争议', detail: evidenceTypeLabel(item.evidenceType), state: 'disputed' };
   }
@@ -139,7 +142,10 @@ export function EvidenceMatrixWorkbench({
     [row, selectedFileId],
   );
   const activeEvidenceFile = files.find((file) => file.id === activeEvidence?.fileId) ?? activeFile;
-  const available = sourceAvailable(activeEvidence ?? undefined, activeEvidenceFile ?? undefined);
+  const activeSource = activeEvidence
+    ? resolveEvidenceSource(activeEvidence.locator, activeEvidenceFile ?? undefined)
+    : null;
+  const available = activeSource?.state === 'available';
 
   return (
     <div className={styles.workbench}>
@@ -231,10 +237,20 @@ export function EvidenceMatrixWorkbench({
             <div className={styles.inspectorStatus}>
               <Badge aria-label={`证据类型：${evidenceTypeLabel(activeEvidence.evidenceType)}`} tone="neutral" soft>{evidenceTypeLabel(activeEvidence.evidenceType)}</Badge>
               <Badge aria-label={`核验状态：${verificationLabel(activeEvidence.verification)}`} tone={activeEvidence.verification === 'verified' ? 'success' : activeEvidence.verification === 'disputed' ? 'danger' : 'warning'} soft>{verificationLabel(activeEvidence.verification)}</Badge>
+              {activeSource ? (
+                <Badge
+                  aria-label={`来源状态：${sourceStateLabel(activeSource.state)}`}
+                  tone={activeSource.state === 'available' ? 'success' : 'warning'}
+                  soft
+                >
+                  {sourceStateLabel(activeSource.state)}
+                </Badge>
+              ) : null}
             </div>
             <blockquote className={styles.inspectorQuote}>{activeEvidence.quotedText || '（没有原文摘录）'}</blockquote>
             <dl className={styles.sourceFacts}>
-              <div><dt>定位</dt><dd>{activeEvidence.locator.kind === 'pdf-page' ? `PDF 第 ${activeEvidence.locator.page} 页` : activeEvidence.locator.kind === 'epub-cfi' ? `EPUB ${activeEvidence.locator.location ?? activeEvidence.locator.sectionIndex ?? 'CFI'}` : activeEvidence.locator.reason}</dd></div>
+              <div><dt>定位</dt><dd>{locatorLabel(activeEvidence.locator)}</dd></div>
+              {activeSource ? <div><dt>来源</dt><dd>{sourceStateLabel(activeSource.state)}</dd></div> : null}
               <div><dt>匹配</dt><dd>{activeEvidence.match === 'annotation-exact' ? '用户批注精确匹配' : activeEvidence.match === 'transcript-exact' ? '本地文字稿精确匹配' : '未匹配本地材料'}</dd></div>
               {activeEvidence.method ? <div><dt>方法</dt><dd>{activeEvidence.method}</dd></div> : null}
               {activeEvidence.dataset ? <div><dt>数据集</dt><dd>{activeEvidence.dataset}</dd></div> : null}
@@ -251,7 +267,13 @@ export function EvidenceMatrixWorkbench({
                 if (event.target.value !== activeEvidence.note) onUpdateNote(row.id, activeEvidence.id, event.target.value);
               }}
             />
-            {!available ? <p className={styles.unavailable}>来源或定位不可回读；恢复来源并重新核对后才能确认。</p> : null}
+            {!available && activeSource ? (
+              <p className={styles.unavailable}>
+                {activeSource.state === 'missing'
+                  ? '来源失效：文件不存在或已移入回收站，恢复来源并重新核对后才能确认。'
+                  : `定位不可回读：${activeSource.reason ?? '缺少可回放的页码、CFI 或 location'}。`}
+              </p>
+            ) : null}
             <div className={styles.inspectorActions} role="group" aria-label="来源与核验操作">
               <Button aria-label="回读来源" variant="secondary" size="sm" leftIcon={<BookOpen size={14} strokeWidth={1.5} />} disabled={!available} onClick={() => onOpenSource(activeEvidence, row.id)}>回读来源</Button>
               <Button aria-label="确认证据" variant="primary" size="sm" leftIcon={<Check size={14} strokeWidth={1.5} />} disabled={!available || row.verification === 'verified'} onClick={() => onSetVerification(row.id, 'verified')}>确认</Button>

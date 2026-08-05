@@ -102,9 +102,11 @@
 }
 
 .content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .analysisDisclosure {
@@ -168,5 +170,10 @@
 
   .toolbarActions {
     flex-wrap: wrap;
+  }
+
+  .content {
+    display: block;
+    overflow: auto;
   }
 }

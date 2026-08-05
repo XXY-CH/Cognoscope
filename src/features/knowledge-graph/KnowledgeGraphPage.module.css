@@ -146,6 +146,10 @@
   gap: var(--sp-4);
 }
 
+.workbenchCollapsed {
+  grid-template-columns: 48px minmax(0, 1fr) 320px;
+}
+
 .scopeRail {
   display: flex;
   min-width: 0;
@@ -153,6 +157,34 @@
   gap: var(--sp-2);
   padding: var(--sp-2) var(--sp-3) 0 0;
   border-right: var(--border-width) solid var(--border-subtle);
+}
+
+.scopeRailCollapsed {
+  align-items: center;
+  padding-right: 0;
+}
+
+.scopeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-size);
+  min-height: var(--touch-target-size);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.scopeToggle:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.scopeToggle:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .scopeRail strong {
@@ -384,6 +416,10 @@
   .workbench {
     grid-template-columns: 168px minmax(0, 1fr) 300px;
   }
+
+  .workbenchCollapsed {
+    grid-template-columns: 48px minmax(0, 1fr) 300px;
+  }
 }
 
 @media (max-width: 900px) {
@@ -429,11 +465,20 @@
     flex-direction: column;
   }
 
+  .workbenchCollapsed {
+    display: flex;
+  }
+
   .scopeRail {
     flex: none;
     padding: 0 0 var(--sp-2);
     border-right: 0;
     border-bottom: var(--border-width) solid var(--border-subtle);
+  }
+
+  .scopeRailCollapsed {
+    align-items: flex-start;
+    padding: 0 0 var(--sp-2);
   }
 
   .scopeRule,

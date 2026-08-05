@@ -13,6 +13,18 @@ const pageSource = await fs.readFile(
   new URL('../src/features/knowledge-graph/KnowledgeGraphPage.tsx', import.meta.url),
   'utf8',
 );
+const inspectorSource = await fs.readFile(
+  new URL('../src/features/knowledge-graph/GraphInspector.tsx', import.meta.url),
+  'utf8',
+);
+const inspectorCss = await fs.readFile(
+  new URL('../src/features/knowledge-graph/GraphInspector.module.css', import.meta.url),
+  'utf8',
+);
+const pageCss = await fs.readFile(
+  new URL('../src/features/knowledge-graph/KnowledgeGraphPage.module.css', import.meta.url),
+  'utf8',
+);
 
 assert.match(source, /const GRAPH_MIN_ZOOM = 0\.25;/);
 assert.match(source, /const GRAPH_MAX_ZOOM = 4;/);
@@ -38,6 +50,14 @@ assert.match(source, /case 'tag':[\s\S]*?return 4 \* baseSize;/);
 assert.match(pageSource, /fitKey=\{view\}/);
 assert.doesNotMatch(pageSource, /freezeLayout/);
 assert.match(pageSource, /paperKeywordEdges\(visibleKeywordNodes, visiblePaperIdSet\)/);
+assert.match(pageSource, /scopeRailCollapsed/);
+assert.match(pageSource, /PanelLeft(?:Open|Close)/);
+assert.match(inspectorSource, /metadataRelationProjection/);
+assert.match(inspectorSource, /relationSupportLabel/);
+assert.match(inspectorCss, /\.body[\s\S]*?overflow: auto;/);
+assert.match(inspectorCss, /\.subtitle[\s\S]*?flex-wrap: wrap;/);
+assert.match(pageCss, /\.workbenchCollapsed/);
+assert.match(pageCss, /\.scopeToggle/);
 
 console.log(JSON.stringify({
   ok: true,

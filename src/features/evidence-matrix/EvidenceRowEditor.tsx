@@ -6,7 +6,10 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, BookOpen, Check, CircleHelp, Flag } from 'lucide-react';
 import { Badge, Button } from '../../components/common';
 import type { EvidenceItem, EvidenceRow, EvidenceVerificationState, FileNode } from '../../types';
-import { isResolvableLocator } from '../../utils/graphEvidence';
+import {
+  resolveEvidenceSource,
+  sourceStateLabel,
+} from '../../utils/graphEvidence';
 import styles from './EvidenceRowEditor.module.css';
 
 interface EvidenceRowEditorProps {
@@ -63,15 +66,10 @@ export function EvidenceRowEditor({
   const [conclusion, setConclusion] = useState(row.conclusion);
   useEffect(() => setConclusion(row.conclusion), [row.conclusion]);
   const fileById = new Map(files.map((file) => [file.id, file]));
-  const sourceUnavailable = row.evidence.some((item) => {
-    const file = fileById.get(item.fileId);
-    return (
-      !file ||
-      file.deletedAt !== null ||
-      file.type === 'folder' ||
-      !isResolvableLocator(item.locator, file.type)
-    );
-  });
+  const firstSourceIssue = row.evidence
+    .map((item) => resolveEvidenceSource(item.locator, fileById.get(item.fileId)))
+    .find((source) => source.state !== 'available');
+  const sourceUnavailable = Boolean(firstSourceIssue);
   const displayState = sourceUnavailable ? 'unresolved' : row.verification;
 
   return (
@@ -88,11 +86,11 @@ export function EvidenceRowEditor({
           <span>用于复制</span>
         </label>
         <Badge
-          aria-label={`结论状态：${sourceUnavailable ? '来源失效' : verificationLabel(row.verification)}`}
+          aria-label={`结论状态：${sourceUnavailable ? sourceStateLabel(firstSourceIssue?.state ?? 'missing') : verificationLabel(row.verification)}`}
           tone={sourceUnavailable ? 'warning' : verificationTone(row.verification)}
           soft
         >
-          {sourceUnavailable ? '来源失效' : verificationLabel(displayState)}
+          {sourceUnavailable ? sourceStateLabel(firstSourceIssue?.state ?? 'missing') : verificationLabel(displayState)}
         </Badge>
       </header>
 
@@ -119,11 +117,8 @@ export function EvidenceRowEditor({
         ) : (
           row.evidence.map((item) => {
             const file = fileById.get(item.fileId);
-            const unavailable =
-              !file ||
-              file.deletedAt !== null ||
-              file.type === 'folder' ||
-              !isResolvableLocator(item.locator, file.type);
+            const source = resolveEvidenceSource(item.locator, file);
+            const unavailable = source.state !== 'available';
             return (
               <div className={styles.evidence} key={item.id}>
                 <div className={styles.evidenceHeader}>
@@ -132,6 +127,13 @@ export function EvidenceRowEditor({
                       {file?.name ?? `文件 ${item.fileId}`}
                     </span>
                     <span className={styles.sourceMeta}>{locatorLabel(item)}</span>
+                    <Badge
+                      aria-label={`来源状态：${sourceStateLabel(source.state)}`}
+                      tone={source.state === 'available' ? 'success' : 'warning'}
+                      soft
+                    >
+                      {sourceStateLabel(source.state)}
+                    </Badge>
                     {item.match === 'none' ? (
                       <Badge aria-label="摘录未匹配本地材料" tone="warning" soft>
                         未匹配
@@ -165,7 +167,9 @@ export function EvidenceRowEditor({
                 {unavailable ? (
                   <p className={styles.unavailable}>
                     <AlertTriangle size={14} strokeWidth={1.5} aria-hidden="true" />
-                    来源已移入回收站或定位不可用，恢复来源并重新核对后再回读。
+                    {source.state === 'missing'
+                      ? '来源已失效，恢复来源并重新核对后再回读。'
+                      : `定位不可回读：${source.reason ?? '缺少可回放的页码、CFI 或 location'}。`}
                   </p>
                 ) : null}
                 <blockquote className={styles.quote}>
@@ -192,7 +196,9 @@ export function EvidenceRowEditor({
       <footer className={styles.footer}>
         <div className={styles.footerHint}>
           {sourceUnavailable
-            ? '来源失效：恢复后仍需重新核对'
+            ? firstSourceIssue?.state === 'missing'
+              ? '来源失效：恢复后仍需重新核对'
+              : '定位不可回读：补齐定位后仍需重新核对'
             : row.verification === 'verified'
             ? '已确认：可复制到文献综述'
             : row.verification === 'disputed'

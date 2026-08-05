@@ -38,3 +38,15 @@ __pycache__/
 *$py.class
 *.pyo
 .Python
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
+
+# Local Agent/editor integration state — machine-specific, not project runtime.
+.claude/
+.cursor/
+.ignore
+.mcp.json
+opencode.json
+.omx/metrics.json
+.omx/state/

@@ -20,7 +20,7 @@ if (!html.includes('<div id="root"></div>')) {
   throw new Error('矩阵路由没有返回 React 根节点');
 }
 
-const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource, invalidationSource, citationSource, currentStateSource, fileStoreSource, filesDbSource, matrixPageSource, rowEditorSource, eventSource, leadReviewSource, evidenceRowsDbSource, evidenceAnalysisDbSource, researchSignalsDbSource, researchLeadsDbSource] = await Promise.all([
+const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPanelSource, qaSource, dataPanelSource, sessionSource, digestStructureSource, summarySource, digestDialogSource, qaPanelSource, invalidationSource, citationSource, currentStateSource, fileStoreSource, filesDbSource, matrixPageSource, rowEditorSource, workbenchSource, workbenchCss, pageCss, graphEvidenceSource, eventSource, leadReviewSource, evidenceRowsDbSource, evidenceAnalysisDbSource, researchSignalsDbSource, researchLeadsDbSource] = await Promise.all([
   fs.readFile(new URL('../src/App.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/db/index.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/stores/evidenceMatrixStore.ts', import.meta.url), 'utf8'),
@@ -41,6 +41,10 @@ const [appSource, dbSource, storeSource, typeSource, analysisSource, analysisPan
   fs.readFile(new URL('../src/db/files.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixPage.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/evidence-matrix/EvidenceRowEditor.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixWorkbench.tsx', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixWorkbench.module.css', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/features/evidence-matrix/EvidenceMatrixPage.module.css', import.meta.url), 'utf8'),
+  fs.readFile(new URL('../src/utils/graphEvidence.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/utils/sourceInvalidationEvents.ts', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/features/research-state/ResearchLeadReview.tsx', import.meta.url), 'utf8'),
   fs.readFile(new URL('../src/db/evidenceRows.ts', import.meta.url), 'utf8'),
@@ -88,6 +92,13 @@ for (const [label, source, marker] of [
   ['矩阵复制来源门禁', matrixPageSource, 'isCitationReadyEvidenceRow(row, files)'],
   ['矩阵回读 locator 门禁', matrixPageSource, 'isResolvableLocator(item.locator, file.type)'],
   ['证据行来源失效状态', rowEditorSource, '来源失效'],
+  ['工作台来源状态拆分', workbenchSource, 'sourceStateLabel(activeSource.state)'],
+  ['工作台定位不可回读', workbenchSource, '定位不可回读'],
+  ['工作台内部滚动', workbenchCss, 'overflow: auto'],
+  ['工作台边界裁切', workbenchCss, 'overflow: hidden'],
+  ['矩阵页面内部布局', pageCss, 'display: flex'],
+  ['来源/定位状态解析', graphEvidenceSource, 'resolveEvidenceSource'],
+  ['定位状态文案', graphEvidenceSource, '定位不可回读'],
   ['来源失效内存通知', eventSource, 'emitSourceInvalidation'],
   ['跨标签页来源失效广播', eventSource, 'BroadcastChannel'],
   ['stale 线索不可操作', leadReviewSource, "lead.status === 'stale'"],

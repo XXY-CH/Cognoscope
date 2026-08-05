@@ -5,7 +5,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Network } from 'lucide-react';
+import { Network, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { EmptyState, toast } from '../../components/common';
 import { listEvidenceRowsByFileIds } from '../../db/evidenceRows';
 import * as metaDb from '../../db/fileDocMeta';
@@ -71,7 +71,7 @@ function paperKeywordEdges(
         target: keyword.id,
         weight: 0.35,
         origin: 'cooccurrence',
-        reason: '论文元数据与主题词关联；仅作为导航线索',
+        reason: '主题来自论文元数据或关键词提取；可用于整理与回读，不能替代主张核验',
       });
     }
   }
@@ -86,7 +86,7 @@ function graphEdgeProjection(
     relationEvidenceByKey.get(graphRelationKey(edge.source, edge.target)) ?? {
       state: 'insufficient',
       label: '证据不足',
-      reason: '这条关系没有绑定到具体主张，仍只是导航线索，不是引用证据。',
+      reason: '这条关系尚未绑定到具体矩阵主张，不能直接作为引用证据。',
       rowIds: [],
     }
   );
@@ -216,6 +216,7 @@ export function KnowledgeGraphPage() {
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
   const [relationRows, setRelationRows] = useState<EvidenceRow[]>([]);
+  const [scopeRailCollapsed, setScopeRailCollapsed] = useState(false);
   const restoredSelectionRef = useRef<string | null>(null);
 
   const files = useFileStore((s) => s.files);
@@ -667,15 +668,36 @@ export function KnowledgeGraphPage() {
         />
       ) : null}
 
-      <div className={styles.workbench}>
-        <aside className={styles.scopeRail} aria-label="图谱范围">
-          <p className={styles.scopeLabel}>研究范围</p>
-          <strong>本地研究空间</strong>
-          <p className={styles.scopeMeta}>{visiblePaperNodes.length} 篇论文 · {visibleKeywordNodes.length} 个主题</p>
-          <div className={styles.scopeRule} />
-          <p className={styles.scopeNote}>
-            论文是来源，主题是整理线索；证据锚点只在选中对象后展开。
-          </p>
+      <div className={`${styles.workbench}${scopeRailCollapsed ? ` ${styles.workbenchCollapsed}` : ''}`}>
+        <aside
+          className={`${styles.scopeRail}${scopeRailCollapsed ? ` ${styles.scopeRailCollapsed}` : ''}`}
+          aria-label="图谱范围"
+        >
+          <button
+            type="button"
+            className={styles.scopeToggle}
+            aria-label={scopeRailCollapsed ? '展开图谱范围' : '收起图谱范围'}
+            aria-expanded={!scopeRailCollapsed}
+            title={scopeRailCollapsed ? '展开图谱范围' : '收起图谱范围'}
+            onClick={() => setScopeRailCollapsed((current) => !current)}
+          >
+            {scopeRailCollapsed ? (
+              <PanelLeftOpen size={16} strokeWidth={1.5} aria-hidden="true" />
+            ) : (
+              <PanelLeftClose size={16} strokeWidth={1.5} aria-hidden="true" />
+            )}
+          </button>
+          {!scopeRailCollapsed ? (
+            <>
+              <p className={styles.scopeLabel}>研究范围</p>
+              <strong>本地研究空间</strong>
+              <p className={styles.scopeMeta}>{visiblePaperNodes.length} 篇论文 · {visibleKeywordNodes.length} 个主题</p>
+              <div className={styles.scopeRule} />
+              <p className={styles.scopeNote}>
+                论文是来源，主题是整理线索；证据锚点只在选中对象后展开。
+              </p>
+            </>
+          ) : null}
         </aside>
 
         <section className={styles.canvasPane} aria-label={`${view} 图谱视图`}>
