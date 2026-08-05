@@ -78,12 +78,8 @@ export function SettingsDrawer() {
 
   const handleSave = () => {
     // 本地配置是阅读和离线 AI 链路的事实源；后端同步放到后台，不阻塞保存。
-    const prevAi = useUiStore.getState().aiSettings;
-    const aiChanged =
-      aiDraft.baseUrl !== prevAi.baseUrl ||
-      aiDraft.apiKey !== prevAi.apiKey ||
-      aiDraft.model !== prevAi.model;
-    const shouldSyncBackend = aiChanged && Boolean(aiDraft.apiKey && aiDraft.baseUrl);
+    // 每次保存都尝试同步完整配置，覆盖后端重启或本机已有配置尚未同步的情况。
+    const shouldSyncBackend = Boolean(aiDraft.apiKey && aiDraft.baseUrl);
 
     setAiSettings(aiDraft);
     closeSettings();
