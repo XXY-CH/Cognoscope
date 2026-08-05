@@ -76,33 +76,33 @@ export function SettingsDrawer() {
     };
   }, [open, closeSettings]);
 
-  const handleSave = async () => {
-    // 如果 AI 配置有变更，先同步到后端
+  const handleSave = () => {
+    // 本地配置是阅读和离线 AI 链路的事实源；后端同步放到后台，不阻塞保存。
     const prevAi = useUiStore.getState().aiSettings;
-    const aiChanged = 
+    const aiChanged =
       aiDraft.baseUrl !== prevAi.baseUrl ||
       aiDraft.apiKey !== prevAi.apiKey ||
       aiDraft.model !== prevAi.model;
-    
-    if (aiChanged && aiDraft.apiKey && aiDraft.baseUrl) {
-      try {
-        // 导入 AI 配置 API
-        const { updateAiConfig } = await import('../../services/aiConfigApi');
-        await updateAiConfig({
-          base_url: aiDraft.baseUrl,
-          api_key: aiDraft.apiKey,
-          model: aiDraft.model,
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : '同步 AI 配置到后端失败';
-        toast.error(message);
-        return;
-      }
-    }
-    
+    const shouldSyncBackend = aiChanged && Boolean(aiDraft.apiKey && aiDraft.baseUrl);
+
     setAiSettings(aiDraft);
-    toast.show('已保存');
     closeSettings();
+    toast.show('已保存');
+
+    if (shouldSyncBackend) {
+      void (async () => {
+        try {
+          const { updateAiConfig } = await import('../../services/aiConfigApi');
+          await updateAiConfig({
+            base_url: aiDraft.baseUrl,
+            api_key: aiDraft.apiKey,
+            model: aiDraft.model,
+          });
+        } catch {
+          toast.warning('已保存到本机；后端暂不可用，启动后端后可再次同步。');
+        }
+      })();
+    }
   };
 
   const patchAiDraft = (patch: Partial<AiSettingsDraft>) => {

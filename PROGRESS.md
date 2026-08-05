@@ -201,3 +201,4 @@
 | 2026-08-04 | UX-06 Apple Design 静态审计：研究状态指标在桌面/平板/移动端采用 4/2/1 列，契约探针通过；reader 真实 390/768/1280、主题、键盘和减弱动效已补证据，完整图谱/矩阵返回仍待验收 |
 | 2026-08-04 | D4 / MON-02：monitor 会话按 fileId 隔离，Reader 退出先 stop 再取 JSONL；短于 5 秒不进入统计，monitor 字段用事务合并并同步 `sessionStore`；硬删除同步清理 ReadingSession 孤儿；build、lint、静态探针通过，浏览器与 Python 视觉依赖仍阻塞 |
 | 2026-08-04 | READ-04：PDF CSS-module 文字层改用稳定偏移锚点，漂移保持 unavailable；EPUB `Contents[]` 高亮装饰、fragment 优先 TOC、主题刷新、宿主 SVG 聚焦、批注色板 token 和静态契约探针收口；真实 PDF/EPUB、390/768/1280、键盘、主题与减弱动效通过，Integration/Release checkpoint 已记录 |
+| 2026-08-05 | 修复 AI 设置保存：本机配置先写入并立即关闭设置抽屉，后端 `/preferences/ai-config` 改为后台 best-effort 同步；后端未启动或网络失败时不再丢失配置，新增 AI local-first 静态回归探针 |

@@ -13,7 +13,7 @@
 - ✅ `aiApi.ts` - AI 服务接口
 - ✅ `aiConfigApi.ts` - AI 配置管理接口
 - ✅ 设置面板 AI 配置（BaseURL、API Key、Model）
-- ✅ 配置自动同步到后端
+- ✅ 配置优先保存到本机；后端可用时 best-effort 同步，不阻塞本地保存
 
 ---
 
