@@ -38,6 +38,26 @@ npm run dev
 
 浏览器打开终端提示的地址（默认 [http://localhost:5173/](http://localhost:5173/)）。
 
+### 一键启动 / 停止
+
+启动脚本会同时拉起 Vite 前端（5173）、FastAPI 后端（8000）和本地阅读 monitor（8765），PID 与日志写入被忽略的 `.xuesen-runtime/`。脚本只停止自己记录的进程，不会误杀占用同一端口的其他程序。
+
+| 平台 | 启动 | 停止 |
+|---|---|---|
+| macOS（双击） | `scripts/start-xuesen.command` | `scripts/stop-xuesen.command` |
+| macOS / Linux | `./scripts/start-xuesen.sh` | `./scripts/stop-xuesen.sh` |
+| Windows CMD | `scripts\\start-xuesen.bat` | `scripts\\stop-xuesen.bat` |
+| Windows PowerShell | `powershell -ExecutionPolicy Bypass -File .\\scripts\\start-xuesen.ps1` | `powershell -ExecutionPolicy Bypass -File .\\scripts\\stop-xuesen.ps1` |
+
+monitor 的 Python 依赖或摄像头不可用时，可只启动前端和后端：
+
+```bash
+./scripts/start-xuesen.sh --skip-monitor
+# Windows: .\\scripts\\start-xuesen.bat --skip-monitor
+```
+
+也可以用 `npm run services:start`、`npm run services:stop` 和 `npm run services:status` 管理同一组服务。
+
 | 脚本 | 说明 |
 |---|---|
 | `npm run dev` | 开发服务器（HMR） |

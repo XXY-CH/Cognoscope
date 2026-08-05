@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "services:start": "node scripts/dev-services.mjs start",
+    "services:stop": "node scripts/dev-services.mjs stop",
+    "services:status": "node scripts/dev-services.mjs status",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
