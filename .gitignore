@@ -43,10 +43,10 @@ __pycache__/
 graft/
 
 # Local Agent/editor integration state — machine-specific, not project runtime.
+/AGENTS.md
 .claude/
 .cursor/
 .ignore
 .mcp.json
 opencode.json
-.omx/metrics.json
-.omx/state/
+.omx/
