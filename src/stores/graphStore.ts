@@ -21,6 +21,7 @@ import {
 } from '../utils/graphLinkAi';
 import { useUiStore } from './uiStore';
 import { useKeywordGraphStore } from './keywordGraphStore';
+import { toast } from './toastStore';
 
 interface GraphState {
   nodes: GraphNode[];
@@ -40,7 +41,8 @@ interface GraphState {
   setSelectedNode: (id: string | null) => void;
   persistNodePosition: (id: string, x: number, y: number) => Promise<void>;
   /**
-   * 将文件加入图谱：检查 AI → 建节点 → 用摘要/关键词与既有图建边
+   * 将文件加入图谱：检查 AI → 建节点 → 尝试用摘要/关键词与既有图建边；
+   * AI 关系建议失败时仍保留论文节点。
    * @returns 最终入图状态
    */
   addFileToGraph: (fileId: string) => Promise<GraphMemberStatus>;
@@ -187,18 +189,24 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       }
 
       let newEdges: GraphEdge[] = [];
+      let edgeAnalysisUnavailable = false;
       if (existingPayload.length > 0) {
-        newEdges = await suggestGraphEdgesWithAi({
-          settings: ui.aiSettings,
-          paper: {
-            nodeId,
-            fileId,
-            title: node.label,
-            keywords,
-            abstract,
-          },
-          existing: existingPayload,
-        });
+        try {
+          newEdges = await suggestGraphEdgesWithAi({
+            settings: ui.aiSettings,
+            paper: {
+              nodeId,
+              fileId,
+              title: node.label,
+              keywords,
+              abstract,
+            },
+            existing: existingPayload,
+          });
+        } catch {
+          // AI 建边只是导航增强；上游暂不可用时仍应保留论文节点。
+          edgeAnalysisUnavailable = true;
+        }
       }
 
       await graphDb.putGraphNode(node);
@@ -206,6 +214,10 @@ export const useGraphStore = create<GraphState>((set, get) => ({
 
       const ok = memberRecord(fileId, 'in', { nodeId });
       await graphDb.putGraphMember(ok);
+
+      if (edgeAnalysisUnavailable) {
+        toast.warning('论文已加入图谱，AI 关联分析暂不可用，可稍后重试');
+      }
 
       // 合并内存态：节点去重，边追加
       const nodes = [

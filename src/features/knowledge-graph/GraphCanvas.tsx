@@ -3,9 +3,17 @@
  * 使用 react-force-graph-2d；支持选中与联动高亮（dim 非高亮节点）
  * 规范参考：UI_spec.md §6.3
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import ForceGraph2D from 'react-force-graph-2d';
 import type { GraphNode, GraphEdge } from '../../types';
+import {
+  useReducedMotion,
+  type RenderGraphData,
+} from './graphCanvasPhysics';
+
+/** Keep zoom-to-fit from making sparse graphs visually dominate the workbench. */
+const GRAPH_MIN_ZOOM = 0.25;
+const GRAPH_MAX_ZOOM = 4;
 
 interface GraphCanvasProps {
   nodes: GraphNode[];
@@ -16,8 +24,8 @@ interface GraphCanvasProps {
   onNodeClick: (node: GraphNode) => void;
   onBackgroundClick?: () => void;
   onNodeDrag: (node: GraphNode, x: number, y: number) => void;
-  /** 传入预先计算的学术层级布局时冻结力导向，避免随机漂移。 */
-  freezeLayout?: boolean;
+  /** 视图或筛选变化时重新 fit；拖拽后的坐标变化不会触发视图跳动。 */
+  fitKey?: string;
 }
 
 /**
@@ -37,43 +45,110 @@ export function GraphCanvas({
   onNodeClick,
   onBackgroundClick,
   onNodeDrag,
-  freezeLayout = false,
+  fitKey = '',
 }: GraphCanvasProps) {
   // react-force-graph-2d 的 ref 类型与自定义字段不兼容，用宽松类型
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const graphRef = useRef<any>(null);
+  const graphDataRef = useRef<RenderGraphData | null>(null);
+  const graphDataKeyRef = useRef<string | null>(null);
+  const graphDataContentRef = useRef<string | null>(null);
+  const fitRequestedRef = useRef(true);
+  const previousGraphKeyRef = useRef<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const highlightSet = new Set(highlightedNodeIds);
   const hasHighlight = highlightSet.size > 0;
 
-  const graphData = {
-    nodes: nodes.map((n) => ({
-      id: n.id,
-      label: n.label,
-      kind: n.kind,
-      x: n.x ?? undefined,
-      y: n.y ?? undefined,
-    })),
-    links: edges.map((e) => ({
-      source: e.source,
-      target: e.target,
-      weight: e.weight,
-      origin: e.origin ?? 'unknown',
-      reason: e.reason,
-    })),
-  };
+  const graphKey = useMemo(
+    () =>
+      [
+        fitKey,
+        nodes.map((node) => node.id).join(','),
+        edges.map((edge) => `${edge.source}:${edge.target}`).join(','),
+      ].join('|'),
+    [edges, fitKey, nodes],
+  );
+
+  const graphData = useMemo<RenderGraphData>(() => {
+    const contentKey = [
+      nodes.map((node) => `${node.id}:${node.label}:${node.kind}`).join('|'),
+      edges
+        .map(
+          (edge) =>
+            `${edge.source}:${edge.target}:${edge.weight}:${edge.origin ?? 'unknown'}:${edge.reason ?? ''}`,
+        )
+        .join('|'),
+    ].join('||');
+    const sameLayout =
+      graphDataKeyRef.current === graphKey && graphDataRef.current !== null;
+
+    // A persisted drag only changes the source-of-truth coordinates. Keep the
+    // force graph's live node objects so that writing the drop position does
+    // not restart the simulation and move the node away from the cursor.
+    if (
+      sameLayout &&
+      graphDataContentRef.current === contentKey &&
+      graphDataRef.current
+    ) {
+      return graphDataRef.current;
+    }
+
+    const previousNodes = sameLayout
+      ? new Map(graphDataRef.current?.nodes.map((node) => [node.id, node]))
+      : null;
+    const next: RenderGraphData = {
+      nodes: nodes.map((node) => {
+        const previous = previousNodes?.get(node.id);
+        return previous
+          ? {
+              ...previous,
+              label: node.label,
+              kind: node.kind,
+            }
+          : {
+              id: node.id,
+              label: node.label,
+              kind: node.kind,
+              x: node.x ?? undefined,
+              y: node.y ?? undefined,
+            };
+      }),
+      links: edges.map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+        weight: edge.weight,
+        origin: edge.origin ?? 'unknown',
+        reason: edge.reason,
+      })),
+    };
+    graphDataRef.current = next;
+    graphDataKeyRef.current = graphKey;
+    graphDataContentRef.current = contentKey;
+    return next;
+  }, [edges, graphKey, nodes]);
 
   useEffect(() => {
-    if (graphRef.current && nodes.length > 0) {
-      if (!graphRef.current.__initialized) {
-        graphRef.current.__initialized = true;
-        graphRef.current.centerAt(0, 0, 0);
-      }
-      if (freezeLayout) {
-        graphRef.current.zoomToFit(0, 48);
-      }
+    const graph = graphRef.current;
+    if (!graph || nodes.length === 0) return;
+
+    if (previousGraphKeyRef.current !== graphKey) {
+      fitRequestedRef.current = true;
+      previousGraphKeyRef.current = graphKey;
     }
-  }, [freezeLayout, nodes.length]);
+
+    // Keep the scholarly starting positions, then let the graph settle like
+    // Obsidian: connected nodes attract, unrelated nodes repel, and the
+    // center force keeps sparse graphs inside the workbench.
+    const charge = graph.d3Force('charge');
+    charge?.strength(-180).distanceMax(720);
+    const link = graph.d3Force('link');
+    link
+      ?.distance((edge: any) => (edge.origin === 'cooccurrence' ? 96 : 122))
+      .strength((edge: any) => Math.max(0.24, Math.min(0.8, edge.weight ?? 0.5)));
+    graph.d3Force('center')?.strength(0.08);
+    graph.d3ReheatSimulation();
+  }, [graphData, graphKey, nodes.length, reducedMotion]);
 
   const isEmphasized = (id: string) =>
     id === selectedNodeId || (hasHighlight && highlightSet.has(id));
@@ -99,7 +174,7 @@ export function GraphCanvas({
   };
 
   const getNodeSize = (node: { id: string; kind: string }) => {
-    const baseSize = isEmphasized(node.id) ? 1.25 : 1.0;
+    const baseSize = isEmphasized(node.id) ? 1.1 : 1.0;
     switch (node.kind) {
       case 'file':
         return 5 * baseSize;
@@ -119,6 +194,8 @@ export function GraphCanvas({
       nodeLabel={(node: any) => node.label ?? ''}
       nodeColor={getNodeColor}
       nodeVal={getNodeSize}
+      minZoom={GRAPH_MIN_ZOOM}
+      maxZoom={GRAPH_MAX_ZOOM}
       nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
         if (node.x == null || node.y == null || !node.id) return;
         const dim =
@@ -178,6 +255,17 @@ export function GraphCanvas({
         return cssVars.getPropertyValue(token).trim() || '#b9c5c0';
       }}
       linkDirectionalParticles={0}
+      warmupTicks={reducedMotion ? 80 : 24}
+      cooldownTicks={reducedMotion ? 0 : 220}
+      cooldownTime={reducedMotion ? 0 : 4500}
+      d3AlphaDecay={reducedMotion ? 1 : 0.04}
+      d3VelocityDecay={reducedMotion ? 1 : 0.42}
+      onEngineStop={() => {
+        const graph = graphRef.current;
+        if (!graph || !fitRequestedRef.current) return;
+        fitRequestedRef.current = false;
+        graph.zoomToFit(reducedMotion ? 0 : 260, 48);
+      }}
       onNodeClick={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
         if (original) onNodeClick(original);
@@ -186,12 +274,12 @@ export function GraphCanvas({
       onNodeDragEnd={(node: any) => {
         const original = nodes.find((n) => n.id === node.id);
         if (original && node.x != null && node.y != null) {
+          // 保持手动布局：其它节点继续受力，用户刚放下的节点留在落点。
+          node.fx = node.x;
+          node.fy = node.y;
           onNodeDrag(original, node.x, node.y);
         }
       }}
-      cooldownTicks={freezeLayout ? 0 : 100}
-      d3AlphaDecay={freezeLayout ? 1 : 0.02}
-      d3VelocityDecay={freezeLayout ? 1 : 0.3}
     />
   );
 }

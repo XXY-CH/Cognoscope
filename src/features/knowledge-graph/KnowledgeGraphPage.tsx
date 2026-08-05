@@ -54,11 +54,15 @@ function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
   }));
 }
 
-function paperKeywordEdges(keywordNodes: KeywordNode[]): GraphEdge[] {
+function paperKeywordEdges(
+  keywordNodes: KeywordNode[],
+  visiblePaperIds: ReadonlySet<string>,
+): GraphEdge[] {
   const seen = new Set<string>();
   const edges: GraphEdge[] = [];
   for (const keyword of keywordNodes) {
     for (const paperNodeId of keyword.paperNodeIds) {
+      if (!visiblePaperIds.has(paperNodeId)) continue;
       const key = `${paperNodeId}::${keyword.id}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -116,8 +120,8 @@ function matchesAnchorFilter(
 }
 
 /**
- * 给画布投影稳定的列式位置。保留用户已经拖拽过的坐标，未定位节点不
- * 进入随机力导向，避免关系强弱被误读成空间距离。
+ * 给画布投影可读的初始位置。保留用户已经拖拽过的坐标；力导向随后
+ * 负责排斥与吸引，列式位置只作为新节点加入时的稳定起点。
  */
 function layoutGraphNodes(nodes: GraphNode[], view: GraphView): GraphNode[] {
   const buckets = new Map<GraphNode['kind'], GraphNode[]>();
@@ -276,9 +280,13 @@ export function KnowledgeGraphPage() {
     () => keywordToGraphNodes(visibleKeywordNodes),
     [visibleKeywordNodes],
   );
+  const visiblePaperIdSet = useMemo(
+    () => new Set(visiblePaperNodes.map((node) => node.id)),
+    [visiblePaperNodes],
+  );
   const paperTopicEdges = useMemo(
-    () => paperKeywordEdges(visibleKeywordNodes),
-    [visibleKeywordNodes],
+    () => paperKeywordEdges(visibleKeywordNodes, visiblePaperIdSet),
+    [visibleKeywordNodes, visiblePaperIdSet],
   );
   const projectedNodes = useMemo(() => {
     if (view === 'topics') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
@@ -704,7 +712,7 @@ export function KnowledgeGraphPage() {
                 highlightedNodeIds={[...highlightedPaperIds, ...highlightedKeywordIds]}
                 onNodeClick={handleProjectedNodeClick}
                 onBackgroundClick={clearSelection}
-                freezeLayout
+                fitKey={view}
                 onNodeDrag={(node, x, y) => {
                   if (node.kind === 'tag') void persistKeywordPosition(node.id, x, y);
                   else void persistNodePosition(node.id, x, y);
