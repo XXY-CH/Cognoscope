@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
 from cognoscope.api.dependencies import FixedUser, get_fixed_user, get_preference_service
 from cognoscope.api.errors import ApiError
@@ -42,10 +42,11 @@ def _response(preference: object) -> ResearchPreferenceResponse:
 
 @router.get("/preferences/ai-config", response_model=AiConfigResponse)
 async def get_ai_config(
+    request: Request,
     user: FixedUser = Depends(get_fixed_user),
 ) -> AiConfigResponse:
     """获取当前 AI 配置（不返回 API Key）"""
-    from cognoscope.infrastructure.config import settings
+    settings = request.app.state.settings
     
     return AiConfigResponse(
         base_url=settings.llm_base_url or "",
@@ -56,12 +57,13 @@ async def get_ai_config(
 
 @router.put("/preferences/ai-config")
 async def update_ai_config(
+    request: Request,
     body: AiConfigUpdate,
     user: FixedUser = Depends(get_fixed_user),
 ) -> AiConfigResponse:
     """更新 AI 配置（动态生效）"""
-    from cognoscope.infrastructure.config import settings
     from cognoscope.api.dependencies import _ai_client_cache
+    settings = request.app.state.settings
     
     # 动态更新配置
     settings.llm_base_url = body.base_url
