@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator
 from typing import Annotated
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
+from starlette.responses import StreamingResponse
 
 from cognoscope.api.dependencies import FixedUser, get_ai_client, get_fixed_user
 from cognoscope.application.ai_graph_service import AIGraphService
@@ -24,6 +28,24 @@ class ChatResponse(BaseModel):
     content: str
     model: str
     usage_tokens: int
+
+
+def _upstream_error(exc: Exception) -> HTTPException:
+    """Keep provider failures actionable while avoiding raw upstream leakage."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        return HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AI 上游请求失败（HTTP {exc.response.status_code}）",
+        )
+    if isinstance(exc, httpx.HTTPError):
+        return HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="AI 上游网络不可用，请检查 Base URL 和后端网络",
+        )
+    return HTTPException(
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        detail="AI 上游响应无效，请检查模型和接口配置",
+    )
 
 
 class SummaryResponse(BaseModel):
@@ -74,17 +96,61 @@ async def chat_completion(
             detail="AI service not configured (missing LLM_API_KEY)",
         )
     
-    response = await ai.chat_completion(
-        messages=request.messages,
-        temperature=request.temperature,
-        max_tokens=request.max_tokens,
-    )
+    try:
+        response = await ai.chat_completion(
+            messages=request.messages,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens,
+        )
+    except Exception as exc:
+        raise _upstream_error(exc) from exc
     
     return ChatResponse(
         content=response.content,
         model=response.model,
         usage_tokens=response.usage_tokens,
     )
+
+
+@router.post("/ai/chat/stream")
+async def stream_chat_completion(
+    request: ChatRequest,
+    user: FixedUser = Depends(get_fixed_user),
+    ai: AIClient | None = Depends(get_ai_client),
+) -> StreamingResponse:
+    """Proxy an OpenAI-compatible SSE stream for the reader Q&A panel."""
+    if ai is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured (missing LLM_API_KEY)",
+        )
+
+    async def generate() -> AsyncIterator[str]:
+        try:
+            async for line in ai.stream_chat_completion(
+                messages=request.messages,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+            ):
+                yield line
+        except httpx.HTTPStatusError as exc:
+            yield _stream_error(
+                f"AI 上游请求失败（HTTP {exc.response.status_code}）"
+            )
+        except httpx.HTTPError:
+            yield _stream_error("AI 上游网络不可用，请检查 Base URL 和后端网络")
+        except Exception:
+            yield _stream_error("AI 上游响应无效，请检查模型和接口配置")
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _stream_error(message: str) -> str:
+    return f"data: {json.dumps({'error': message}, ensure_ascii=False)}\n\n"
 
 
 class ContentNodeResponse(BaseModel):

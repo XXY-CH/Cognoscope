@@ -28,11 +28,40 @@ export interface StreamChatOptions {
   onDelta: (delta: string) => void;
 }
 
-/** 规范化 Base URL，保证以 /v1 结尾且无多余斜杠 */
-function normalizeBaseUrl(baseUrl: string): string {
-  const trimmed = baseUrl.trim().replace(/\/+$/, '');
-  if (trimmed.endsWith('/v1')) return trimmed;
-  return `${trimmed}/v1`;
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1';
+
+interface BackendChatResponse {
+  content?: string;
+  model?: string;
+  usage_tokens?: number;
+}
+
+async function readBackendError(response: Response): Promise<Error> {
+  const payload = await response.json().catch(() => null) as {
+    detail?: unknown;
+  } | null;
+  const detail = typeof payload?.detail === 'string' ? payload.detail : '';
+  return new Error(detail || `AI 后端请求失败（HTTP ${response.status}）`);
+}
+
+function backendUnavailable(error: unknown): Error {
+  if (error instanceof TypeError) {
+    return new Error('无法连接学森后端，请确认后端运行在 127.0.0.1:8000');
+  }
+  return error instanceof Error ? error : new Error('AI 请求失败');
+}
+
+function requestBody(
+  settings: AiChatSettings,
+  messages: ChatMessage[],
+  maxTokens?: number,
+): string {
+  return JSON.stringify({
+    messages,
+    temperature: settings.temperature,
+    max_tokens: maxTokens ?? settings.maxTokens,
+  });
 }
 
 /**
@@ -46,36 +75,19 @@ export async function streamChatCompletion(
     throw new Error('请先在设置中填写 API Key');
   }
 
-  const url = `${normalizeBaseUrl(settings.baseUrl)}/chat/completions`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${settings.apiKey.trim()}`,
-    },
-    body: JSON.stringify({
-      model: settings.model,
-      temperature: settings.temperature,
-      max_tokens: settings.maxTokens,
-      stream: true,
-      messages,
-    }),
-    signal,
-  });
-
-  if (!res.ok) {
-    let detail = '';
-    try {
-      detail = await res.text();
-    } catch {
-      /* ignore */
-    }
-    throw new Error(
-      detail.trim()
-        ? `AI 请求失败（${res.status}）：${detail.slice(0, 200)}`
-        : `AI 请求失败（HTTP ${res.status}）`,
-    );
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/ai/chat/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: requestBody(settings, messages),
+      signal,
+    });
+  } catch (error) {
+    throw backendUnavailable(error);
   }
+
+  if (!res.ok) throw await readBackendError(res);
 
   if (!res.body) {
     throw new Error('AI 响应不支持流式读取');
@@ -91,17 +103,21 @@ export async function streamChatCompletion(
     if (!line.startsWith('data:')) return;
     const data = line.slice(5).trim();
     if (!data || data === '[DONE]') return;
+    let json: {
+      error?: string;
+      choices?: Array<{ delta?: { content?: string } }>;
+    };
     try {
-      const json = JSON.parse(data) as {
-        choices?: Array<{ delta?: { content?: string } }>;
-      };
-      const delta = json.choices?.[0]?.delta?.content;
-      if (delta) {
-        full += delta;
-        onDelta(delta);
-      }
+      json = JSON.parse(data) as typeof json;
     } catch {
       // 忽略非 JSON 心跳行
+      return;
+    }
+    if (json.error) throw new Error(json.error);
+    const delta = json.choices?.[0]?.delta?.content;
+    if (delta) {
+      full += delta;
+      onDelta(delta);
     }
   };
 
@@ -149,41 +165,22 @@ export async function chatCompletion(
     throw new Error('请先在设置中填写 API Key');
   }
 
-  const url = `${normalizeBaseUrl(settings.baseUrl)}/chat/completions`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${settings.apiKey.trim()}`,
-    },
-    body: JSON.stringify({
-      model: settings.model,
-      temperature: settings.temperature,
-      max_tokens: options.maxTokens ?? settings.maxTokens,
-      stream: false,
-      messages,
-    }),
-    signal,
-  });
-
-  if (!res.ok) {
-    let detail = '';
-    try {
-      detail = await res.text();
-    } catch {
-      /* ignore */
-    }
-    throw new Error(
-      detail.trim()
-        ? `AI 请求失败（${res.status}）：${detail.slice(0, 200)}`
-        : `AI 请求失败（HTTP ${res.status}）`,
-    );
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/ai/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: requestBody(settings, messages, options.maxTokens),
+      signal,
+    });
+  } catch (error) {
+    throw backendUnavailable(error);
   }
 
-  const json = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string } }>;
-  };
-  const content = json.choices?.[0]?.message?.content?.trim() ?? '';
+  if (!res.ok) throw await readBackendError(res);
+
+  const json = (await res.json()) as BackendChatResponse;
+  const content = json.content?.trim() ?? '';
   if (!content) {
     throw new Error('未收到模型回复，请检查接口与模型配置');
   }

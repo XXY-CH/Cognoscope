@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from collections.abc import AsyncIterator
 from typing import Any
 
 import httpx
@@ -65,6 +66,41 @@ class AIClient:
         content = data["choices"][0]["message"]["content"]
         usage = data.get("usage", {}).get("total_tokens", 0)
         return AIResponse(content=content, model=self.model, usage_tokens=usage)
+
+    async def stream_chat_completion(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        temperature: float = 0.7,
+        max_tokens: int | None = None,
+    ) -> AsyncIterator[str]:
+        """Proxy an OpenAI-compatible SSE stream without exposing the API key."""
+        if not self.api_key:
+            raise ValueError("LLM API key is not configured")
+
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": temperature,
+            "stream": True,
+        }
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            async with client.stream(
+                "POST",
+                f"{self.base_url}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            ) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line:
+                        yield f"{line}\n\n"
 
     def parse_json_response(self, response: AIResponse) -> dict[str, Any]:
         """Extract and parse JSON from LLM response (tolerant of wrapping text)."""

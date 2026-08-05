@@ -73,6 +73,7 @@
     "Luna review findings were resolved for precise result locators, direct limitation/gap evidence chains, graph relation provenance, and evidence-state filtering.",
     "Luna Max static follow-up tightened selector-scoped responsive probes and removed unreachable graph/research-state CSS without changing behavior.",
     "AI 设置曾在后端同步失败时提前 return，导致本机配置不落盘；现已改为先保存本机、后台 best-effort 同步，并保留可解释 warning。",
+    "浏览器直连 OpenAI 兼容接口导致问答、图谱建边和关键词流水线统一 Failed to Fetch；现已统一改走后端 AI 代理，浏览器不再携带 API Key 请求供应商。",
     "Browser QA remains blocked and cannot be replaced by static probes."
   ],
   "lastVerification": [
@@ -82,10 +83,11 @@
     "Luna implementation and adversarial review completed",
     "Luna Max static cleanup completed: selector-scoped UI probe and dead CSS removal",
     "AI settings local-first regression probe passed: backend fetch failure cannot block local persistence",
+    "AI backend proxy static contract passed; local OpenAI-compatible fixture verified JSON chat, SSE chat, CORS preflight, and unconfigured 503 behavior",
     "AG-QA.static passed: build, lint, diff check, UI, READ-04, evidence matrix, source invalidation, and monitor probes",
     "AG-QA.browser blocked: no Chromium-compatible executable"
   ],
   "next": ["AG-QA.browser"],
   "iteration": 3,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> Luna Max static cleanup -> AI settings local-first fix -> AG-QA.static; AG-QA.browser remains blocked."
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> Luna Max static cleanup -> AI settings local-first fix -> AI backend proxy fix -> AG-QA.static; AG-QA.browser remains blocked."
 }
