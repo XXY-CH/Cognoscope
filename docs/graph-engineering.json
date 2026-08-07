@@ -2,7 +2,7 @@
   "schema": "xuesen.graph-engineering/v1",
   "project": "xuesen",
   "title": "学森 AI 时代科研环境迭代图",
-  "updatedAt": "2026-08-05",
+  "updatedAt": "2026-08-07",
   "purpose": "把产品目标、科研工作流、代码触点、数据合同和验证门组织成可执行的迭代图，供 Codex 恢复上下文并选择下一步。",
   "notThis": [
     "论文知识图谱",
@@ -10,12 +10,12 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
-    "next": ["UX-06", "P4"],
+    "current": ["P3", "C5", "UI-4", "RM-00", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
+    "next": ["RM-01", "UX-06", "P4"],
     "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: full graph/matrix return flow and screenshot evidence remain pending"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04 和 OUTPUT-05 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时。",
-    "lastVerified": "2026-08-05",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04 和 OUTPUT-05 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时；Phase 006 将图谱改为资料、论证、比较、演化和局部探索五种投影，RM-01 完成前不得继续增加全局画布节点或把相似度当证据强度。",
+    "lastVerified": "2026-08-07",
     "evidence": [
       "npm run build",
       "npm run lint",
@@ -40,7 +40,8 @@
       "READ-04 browser fixture: real PDF/EPUB selection and replay, duplicate PDF offsets, drift-unavailable state, CFI/TOC navigation, theme refresh, keyboard focus and host-SVG flash",
       "READ-04 browser matrix: 390/768/1280 no horizontal overflow; prefers-reduced-motion short-fade tokens observed",
       "Integration probes: evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session (pass)",
-      "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked"
+      "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked",
+      "Phase 006 design contract and execution plan: five research-map projections, typed relation/evidence references, Apple Design presentation, responsive wireframe, RM-00 to RM-06 DAG; documentation-only verification"
     ]
   },
   "edgeTypes": {
@@ -76,7 +77,7 @@
       "goal": "每个可复用结论都能回到原文 locator，并保留核验状态。",
       "sourceOfTruth": ["docs/plans/2026-08-01-001-feat-cross-paper-evidence-matrix-plan.md", "src/types/index.ts"],
       "acceptance": ["verified 材料具有可解析 locator", "图谱边不能直接复制为引用"],
-      "next": ["KG-05", "KG-06", "P4"]
+      "next": ["RM-01", "KG-05", "KG-06", "P4"]
     },
     {
       "id": "O3",
@@ -158,19 +159,129 @@
       "touchpoints": ["src/features/evidence-matrix", "src/stores/evidenceMatrixStore.ts", "src/db/evidence.ts", "src/utils/evidenceCitation.ts"],
       "contracts": ["3-5 local papers", "verified/pending/controversial lifecycle", "stale invalidation", "citation gate"],
       "acceptance": ["至少三篇才能称为跨论文共识", "检查反例、方法差异和数据集独立性", "只有 verified 且 locator 可用时才能复制引用"],
-      "next": ["KG-05", "KG-06", "P4"]
+      "next": ["RM-01", "KG-05", "KG-06", "P4"]
     },
     {
       "id": "C5",
       "type": "capability",
       "layer": "workflow",
-      "title": "分层个人研究图谱",
+      "title": "多视图个人研究地图",
       "status": "in_progress",
-      "goal": "把研究空间、文献、概念、证据和综合判断分层呈现，并提供可解释导航。",
-      "touchpoints": ["src/features/knowledge-graph", "src/stores/graphStore.ts", "src/stores/keywordGraphStore.ts", "src/db/graph.ts", "docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md"],
-      "contracts": ["L0-L4 hierarchy", "GraphEdge is navigation clue", "legacy origin/reason defaults", "3-5 paper matrix entry"],
-      "acceptance": ["概览/论文/主题/证据视图不复制持久化记录", "节点检查器能解释来源/理由/状态", "图谱关系不能直接成为证据"],
-      "next": ["KG-05", "KG-06", "UX-06"]
+      "goal": "把研究空间、文献、概念、主张、证据和判断通过不同任务视图呈现，并提供可解释导航。",
+      "touchpoints": ["src/features/knowledge-graph", "src/stores/graphStore.ts", "src/stores/keywordGraphStore.ts", "src/db/graph.ts", "docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
+      "contracts": ["L0-L4 hierarchy", "GraphEdge is navigation clue", "legacy origin/reason defaults", "3-5 paper matrix entry", "one canonical relation projection"],
+      "acceptance": ["资料/论证/比较/演化/探索视图不复制持久化记录", "节点检查器能解释来源/理由/状态", "图谱关系不能直接成为证据", "超过规模上限时先折叠为簇或局部列表"],
+      "next": ["RM-01", "KG-05", "KG-06", "UX-06"]
+    },
+    {
+      "id": "RM-00",
+      "type": "phase",
+      "layer": "phase",
+      "title": "多视图研究地图设计契约",
+      "status": "done",
+      "goal": "明确图谱如何从导航线索发展为可解释的资料、论证、比较、演化和局部探索视图。",
+      "dependsOn": ["C4", "C5", "P0"],
+      "sourceOfTruth": ["docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md", "docs/plans/2026-08-07-006-research-map-multiview-plan.md"],
+      "acceptance": ["视图职责不重叠", "关系类型和证据引用边界明确", "桌面/移动呈现和 Apple Design 交互预算可验证"],
+      "verification": ["Markdown link check", "JSON graph parse", "design-contract cross-reference review"],
+      "rollback": "保留 Phase 005 的证据边界和 Phase 003 的资料导航能力，不把旧边升级为事实。",
+      "next": ["RM-01"]
+    },
+    {
+      "id": "RM-01",
+      "type": "capability",
+      "layer": "next",
+      "title": "关系语义与投影适配器",
+      "status": "next",
+      "priority": 1,
+      "goal": "让同一关系记录能安全投影到资料、论证、比较和演化视图，同时保留旧图谱记录的可读性。",
+      "dependsOn": ["RM-00", "C4", "C5"],
+      "touchpoints": ["src/types/index.ts", "src/utils/graphEvidence.ts", "src/features/knowledge-graph/graphFilters.ts", "src/db/graph.ts", "src/db/keywordGraph.ts"],
+      "contracts": ["stable IDs only", "GraphEdge remains navigation input", "evidence matrix remains verification authority", "legacy records are explicit unknown"],
+      "acceptance": ["关系具备类型、来源、状态、理由和证据引用投影", "旧边显示来源未记录而不丢失", "没有 locator 的关系不能进入 citation-ready 输出"],
+      "verification": ["focused projection fixtures", "npm run build", "npm run lint", "git diff --check"],
+      "rollback": "保留现有边并降级为 relates/unknown，只关闭新视图入口。",
+      "next": ["RM-02", "RM-03", "RM-04"]
+    },
+    {
+      "id": "RM-02",
+      "type": "surface",
+      "layer": "next",
+      "title": "主张中心论证视图",
+      "status": "next",
+      "priority": 2,
+      "goal": "让研究者在一个研究问题范围内检查主张、支持、反驳、条件、局限和可回读证据。",
+      "dependsOn": ["RM-01", "KG-05"],
+      "touchpoints": ["src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/GraphInspector.tsx", "src/features/knowledge-graph"],
+      "contracts": ["claim-to-evidence-to-reader path", "3-10 claim scope", "AI candidates remain clues", "inspector action order"],
+      "acceptance": ["每条显示关系可解释类型/理由/来源/状态", "局部锚点可回读", "无定位关系不作为已核验证据"],
+      "verification": ["projection fixtures", "graph/evidence probe", "browser graph-to-reader return at 390/768/1280"],
+      "rollback": "回退到资料视图和既有证据矩阵入口，不删除关系记录。",
+      "next": ["RM-05", "RM-06"]
+    },
+    {
+      "id": "RM-03",
+      "type": "surface",
+      "layer": "next",
+      "title": "资料分层视图",
+      "status": "next",
+      "priority": 3,
+      "goal": "以范围、主题簇、论文、方法和数据集的稳定层级帮助研究者定位材料，而不是展示无限漂移网络。",
+      "dependsOn": ["RM-01", "C5"],
+      "touchpoints": ["src/features/knowledge-graph/GraphCanvas.tsx", "src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/graphFilters.ts"],
+      "contracts": ["bounded node/edge projections", "scope persists across view switch", "drag changes presentation only", "legacy keyword links remain readable"],
+      "acceptance": ["大范围默认折叠为簇", "主题/论文可双向高亮", "画布不以物理距离表达证据强度"],
+      "verification": ["projection cap fixtures", "canvas scale probe", "responsive browser screenshots"],
+      "rollback": "保留当前概览/论文/主题投影，隐藏分层入口。",
+      "next": ["RM-05", "RM-06"]
+    },
+    {
+      "id": "RM-04",
+      "type": "surface",
+      "layer": "next",
+      "title": "比较摘要与判断演化视图",
+      "status": "next",
+      "priority": 4,
+      "goal": "把主张跨论文差异和研究判断的变化呈现为矩阵摘要与时间线，而不复制编辑器或 Git 视觉。",
+      "dependsOn": ["RM-01", "C4", "C7"],
+      "touchpoints": ["src/features/knowledge-graph", "src/features/evidence-matrix", "src/features/research-state", "src/utils/evidenceAnalysisCitation.ts"],
+      "contracts": ["matrix remains source of truth", "judgment change references evidence IDs", "stale invalidation propagates"],
+      "acceptance": ["摘要可跳转到矩阵编辑器", "每个判断变化可回到论文/证据", "来源失效后状态降级"],
+      "verification": ["matrix source-state probes", "timeline selector fixtures", "browser route/return checks"],
+      "rollback": "隐藏摘要/时间线入口，保留既有矩阵和研究状态页面。",
+      "next": ["RM-06"]
+    },
+    {
+      "id": "RM-05",
+      "type": "surface",
+      "layer": "next",
+      "title": "局部探索与性能上限",
+      "status": "next",
+      "priority": 5,
+      "goal": "保留当前节点附近的 Obsidian 式直接探索，同时避免全局线团和视觉误导。",
+      "dependsOn": ["RM-02", "RM-03"],
+      "touchpoints": ["src/features/knowledge-graph/GraphCanvas.tsx", "src/features/knowledge-graph", "scripts"],
+      "contracts": ["one-to-two hops only", "30 node target", "zoom bounds", "reduced-motion fallback", "AI clue label"],
+      "acceptance": ["拖拽和缩放可中断且保留用户落点", "超限转为列表", "探索关系不能绕过证据门"],
+      "verification": ["canvas physics/scale probes", "keyboard accessible list alternative", "reduced-motion browser check"],
+      "rollback": "关闭探索入口，保留稳定资料与论证视图。",
+      "next": ["RM-06"]
+    },
+    {
+      "id": "RM-06",
+      "type": "verification",
+      "layer": "verification",
+      "title": "多视图研究地图集成验收",
+      "status": "next",
+      "priority": 6,
+      "goal": "证明各视图共享一份证据事实、能回读来源，并在真实文档和多视口下不误导或溢出。",
+      "dependsOn": ["RM-02", "RM-03", "RM-04", "RM-05", "UX-06"],
+      "touchpoints": ["scripts", "src/features/knowledge-graph", "src/features/evidence-matrix", "Codex in-app browser"],
+      "contracts": ["static and browser gates stay separate", "390/768/1280", "keyboard", "offline", "stale source", "reduced motion"],
+      "acceptance": ["资料/论证/比较/演化/探索均有明确空/错/离线状态", "graph -> evidence -> reader return works", "无页面级横向溢出", "citation-ready boundary holds"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "focused probes", "browser screenshots and interaction evidence"],
+      "rollback": "按视图独立隐藏未通过入口，不回滚已核验证据或路由。",
+      "next": ["P4"]
     },
     {
       "id": "C6",
@@ -225,11 +336,11 @@
       "layer": "phase",
       "title": "图谱分层与证据桥接",
       "status": "in_progress",
-      "goal": "把图谱从关系展示升级为带来源、状态和证据回读路径的研究导航。",
+      "goal": "把图谱从关系展示升级为带来源、状态、证据回读路径和任务型投影的研究导航。",
       "dependsOn": ["P2", "C4"],
-      "sourceOfTruth": ["docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-02-003-knowledge-graph-plan.md"],
-      "acceptance": ["L0-L4 层级可解释", "节点检查器能连接证据和 Reader", "图谱边不可直接引用"],
-      "next": ["KG-05", "KG-06", "P4"]
+      "sourceOfTruth": ["docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-02-003-knowledge-graph-plan.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
+      "acceptance": ["L0-L4 层级可解释", "节点检查器能连接证据和 Reader", "图谱边不可直接引用", "多视图投影共享稳定关系引用"],
+      "next": ["RM-01", "KG-05", "KG-06", "P4"]
     },
     {
       "id": "UI-4",

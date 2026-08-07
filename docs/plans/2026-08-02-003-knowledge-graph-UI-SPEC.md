@@ -9,6 +9,11 @@ source_ui_contract: docs/plans/2026-08-01-002-ui-UI-SPEC.md
 
 # Phase 003 - Knowledge Graph UI and Hierarchy Contract
 
+> **Presentation authority note:** Phase 006 supersedes this document's global view
+> switcher and canvas composition. The L0-L4 data hierarchy, evidence boundary,
+> relation vocabulary and compatibility mapping remain valid unless Phase 006
+> explicitly narrows them.
+
 ## 1. Decision summary
 
 The knowledge graph is a research navigation surface, not a second evidence

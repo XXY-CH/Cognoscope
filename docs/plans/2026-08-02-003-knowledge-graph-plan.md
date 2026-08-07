@@ -9,6 +9,11 @@ design_contract: docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md
 
 # Phase 003 - Knowledge Graph Hierarchy
 
+> **Continuation note:** Runtime presentation work now follows
+> [`Phase 006 多视图研究地图执行计划`](./2026-08-07-006-research-map-multiview-plan.md)。
+> This plan remains the compatibility baseline for existing graph records and
+> the graph-to-evidence boundary.
+
 ## Goal
 
 Turn the current paper/keyword graph into a layered research navigation tool.

@@ -1,7 +1,7 @@
 {
   "schema": "xuesen.agent-run-state/v1",
-  "runId": "run_2026-08-04_ui-hierarchy-redesign",
-  "objective": "在既有 Interview、Phase 005 与 Agent Graph 合同内，收敛学森前端信息架构为阅读/证据/图谱/成果四个研究工作区，重做单画布学术图谱、主张×论文证据矩阵和克制的 Apple 学术视觉层级。",
+  "runId": "run_2026-08-07_research-map-multiview-design",
+  "objective": "在既有 Interview、Phase 005 和 Phase 006 契约内，把图谱收敛为资料、论证、比较、演化和局部探索五种研究地图投影，并保持证据矩阵为唯一核验入口。",
   "scope": [
     "IA-01",
     "GRAPH-02",
@@ -9,6 +9,13 @@
     "TOKEN-04",
     "OUTPUT-05",
     "QA-06",
+    "RM-00",
+    "RM-01",
+    "RM-02",
+    "RM-03",
+    "RM-04",
+    "RM-05",
+    "RM-06",
     "src/App.tsx",
     "src/components/layout/Sidebar.tsx",
     "src/features/research-state/**",
@@ -35,7 +42,8 @@
     "GRAPH-02",
     "MATRIX-03",
     "TOKEN-04",
-    "OUTPUT-05"
+    "OUTPUT-05",
+    "RM-00"
   ],
   "blocked": [
     "AG-QA.browser: no Chromium-compatible executable is available for real-document, responsive, keyboard, theme, and stale-source interaction evidence",
@@ -53,6 +61,8 @@
     "docs/graph-engineering.json",
     "docs/AGENT_DEPENDENCY_GRAPH.md",
     "docs/agent-dependency-graph.json",
+    "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md",
+    "docs/plans/2026-08-07-006-research-map-multiview-plan.md",
     ".omx/context/research-environment-hierarchy-20260804T000000Z.md",
     ".omx/plans/ui-hierarchy-redesign-20260804.md",
     ".omx/plans/ui-hierarchy-redesign-luna-audit-20260804.md",
@@ -79,7 +89,8 @@
     "主题筛选会让论文节点为空但仍保留论文-主题边，D3 可能因 dangling link 抛 node not found；现已按可见论文闭合投影边端点。",
     "AI 建边上游失败此前会把整篇论文标成 failed；现已将建边降级为 best-effort，论文节点和入图成员不再被关系建议失败阻断。",
     "图谱与证据工作台的检查器现在使用内部滚动和窄栏换行；范围导引可收起；主题元数据关联、矩阵候选和可回读锚点分层展示；来源失效与定位不可回读分别呈现。",
-    "Browser QA remains blocked and cannot be replaced by static probes."
+    "Browser QA remains blocked and cannot be replaced by static probes.",
+    "Phase 006 design is documentation-complete; RM-01 relation semantics is the next executable node."
   ],
   "lastVerification": [
     "Phase 005, Phase 003 and Phase 004 contracts read",
@@ -95,9 +106,10 @@
     "Graph/evidence workbench boundary follow-up passed: npm run build, npm run lint, git diff --check, graph canvas/inclusion probes, and evidence matrix probe; browser runtime remains unavailable",
     "npm run build, npm run lint, git diff --check, and local Vite/API health checks passed; lint retains 3 pre-existing warnings",
     "AG-QA.static passed: build, lint, diff check, UI, READ-04, evidence matrix, source invalidation, and monitor probes",
-    "AG-QA.browser blocked: no Chromium-compatible executable"
+    "AG-QA.browser blocked: no Chromium-compatible executable",
+    "Phase 006 docs: JSON and relative Markdown link checks passed; no runtime code changed"
   ],
-  "next": ["AG-QA.browser"],
-  "iteration": 4,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> AG-EXEC -> AG-REVIEW -> graph physics + resilient inclusion fix -> workbench boundary follow-up -> AG-QA.static; AG-QA.browser remains blocked."
+  "next": ["AG-ARCH:RM-01", "AG-QA.browser"],
+  "iteration": 5,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 design contract -> AG-QA.static documentation checks; RM-01 is next and AG-QA.browser remains blocked."
 }

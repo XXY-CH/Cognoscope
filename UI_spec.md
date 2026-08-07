@@ -3,6 +3,11 @@
 > **Authority note:** 产品叙事、研究对象边界、证据可追溯性和功能验收以
 > [`docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md`](./docs/plans/2026-08-04-005-research-environment-UI-EVIDENCE-SPEC.md)
 > 为准；本文继续作为组件级、数据字段级和快捷键级实现规范。
+>
+> **Graph presentation note (Phase 006):** 图谱的多视图呈现、论证关系、分层资料地图、
+> 比较摘要、判断演化和局部探索以
+> [`docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md`](./docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md)
+> 为准；本文件中旧的双画布描述仅保留为兼容字段与迁移参考。
 
 > 面向 AI 辅助代码生成的完整前端设计规范。  
 > 覆盖：设计令牌 · 布局骨架 · 全部页面交互 · 数据模型 · 无障碍 · 快捷键。  
