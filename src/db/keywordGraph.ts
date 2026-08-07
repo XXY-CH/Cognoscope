@@ -3,8 +3,8 @@
  * 所属：C · 知识图谱 > 关键词画布
  */
 import type { KeywordEdge, KeywordNode } from '../types';
-import { edgeRecordId } from './graph';
-import { getDb, type GraphEdgeRecord } from './index';
+import { graphEdgeFromRecord, graphEdgeRecordFromEdge } from './graph';
+import { getDb } from './index';
 
 export async function listKeywordNodes(): Promise<KeywordNode[]> {
   const db = await getDb();
@@ -27,13 +27,7 @@ export async function putKeywordNodes(nodes: KeywordNode[]): Promise<void> {
 export async function listKeywordEdges(): Promise<KeywordEdge[]> {
   const db = await getDb();
   const all = await db.getAll('keywordEdges');
-  return all.map(({ source, target, weight, origin, reason }) => ({
-    source,
-    target,
-    weight,
-    ...(origin ? { origin } : {}),
-    ...(reason ? { reason } : {}),
-  }));
+  return all.map(graphEdgeFromRecord);
 }
 
 export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
@@ -42,16 +36,7 @@ export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
   const tx = db.transaction('keywordEdges', 'readwrite');
   await Promise.all(
     edges.map((e) => {
-      const id = edgeRecordId(e.source, e.target);
-      const record: GraphEdgeRecord = {
-        id,
-        source: e.source,
-        target: e.target,
-        weight: e.weight,
-        ...(e.origin ? { origin: e.origin } : {}),
-        ...(e.reason ? { reason: e.reason } : {}),
-      };
-      return tx.store.put(record);
+      return tx.store.put(graphEdgeRecordFromEdge(e));
     }),
   );
   await tx.done;

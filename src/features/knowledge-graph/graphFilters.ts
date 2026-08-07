@@ -1,13 +1,45 @@
 /** graphFilters - 图谱搜索、类型筛选与边裁剪的纯函数 */
-import type { GraphEdge, GraphNode, KeywordEdge, KeywordNode } from '../../types';
+import type {
+  GraphEdge,
+  GraphNode,
+  KeywordEdge,
+  KeywordNode,
+  ResearchRelationOrigin,
+  ResearchRelationProjection,
+  ResearchRelationStatus,
+  ResearchRelationType,
+} from '../../types';
 
 export type GraphKindFilter = 'all' | 'paper' | 'keyword';
+
+export interface ResearchRelationFilter {
+  relationTypes?: readonly ResearchRelationType[];
+  statuses?: readonly ResearchRelationStatus[];
+  origins?: readonly ResearchRelationOrigin[];
+}
 
 export interface FilteredGraphData {
   paperNodes: GraphNode[];
   paperEdges: GraphEdge[];
   keywordNodes: KeywordNode[];
   keywordEdges: KeywordEdge[];
+}
+
+/** Pure selector for relation projections; absent filters keep every relation. */
+export function filterResearchRelations(
+  relations: readonly ResearchRelationProjection[],
+  filter: ResearchRelationFilter = {},
+): ResearchRelationProjection[] {
+  const relationTypes = filter.relationTypes ? new Set(filter.relationTypes) : null;
+  const statuses = filter.statuses ? new Set(filter.statuses) : null;
+  const origins = filter.origins ? new Set(filter.origins) : null;
+
+  return relations.filter(
+    (relation) =>
+      (!relationTypes || relationTypes.has(relation.type)) &&
+      (!statuses || statuses.has(relation.status)) &&
+      (!origins || origins.has(relation.origin)),
+  );
 }
 
 export function filterGraphData(input: {

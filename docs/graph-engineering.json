@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "RM-00", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
-    "next": ["RM-01", "UX-06", "P4"],
+    "current": ["P3", "C5", "UI-4", "RM-00", "RM-01", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
+    "next": ["RM-02", "RM-03", "RM-04", "UX-06", "P4"],
     "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: full graph/matrix return flow and screenshot evidence remain pending"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04 和 OUTPUT-05 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时；Phase 006 将图谱改为资料、论证、比较、演化和局部探索五种投影，RM-01 完成前不得继续增加全局画布节点或把相似度当证据强度。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04、OUTPUT-05 和 RM-01 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时；Phase 006 的 RM-01 已把旧边统一投影为稳定关系语义和证据引用状态，RM-02/RM-03/RM-04 解锁前不得把相似度当证据强度。",
     "lastVerified": "2026-08-07",
     "evidence": [
       "npm run build",
@@ -41,7 +41,9 @@
       "READ-04 browser matrix: 390/768/1280 no horizontal overflow; prefers-reduced-motion short-fade tokens observed",
       "Integration probes: evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session (pass)",
       "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked",
-      "Phase 006 design contract and execution plan: five research-map projections, typed relation/evidence references, Apple Design presentation, responsive wireframe, RM-00 to RM-06 DAG; documentation-only verification"
+      "Phase 006 design contract and execution plan: five research-map projections, typed relation/evidence references, Apple Design presentation, responsive wireframe, RM-00 to RM-06 DAG; documentation-only verification",
+      "RM-01 relation adapter: legacy edge defaults, paper/concept relation mapping, stable reference-only metadata, evidence status reconciliation, semantic/directional IDs, typed DB keys, DB record roundtrip helper, source and executable fixtures; browser gate remains blocked",
+      "RM-01 adversarial review loop: request-changes findings for identity collisions, whitespace refs, sticky status and DB key collisions were fixed and reverified"
     ]
   },
   "edgeTypes": {
@@ -192,14 +194,14 @@
       "type": "capability",
       "layer": "next",
       "title": "关系语义与投影适配器",
-      "status": "next",
+      "status": "done",
       "priority": 1,
       "goal": "让同一关系记录能安全投影到资料、论证、比较和演化视图，同时保留旧图谱记录的可读性。",
       "dependsOn": ["RM-00", "C4", "C5"],
       "touchpoints": ["src/types/index.ts", "src/utils/graphEvidence.ts", "src/features/knowledge-graph/graphFilters.ts", "src/db/graph.ts", "src/db/keywordGraph.ts"],
       "contracts": ["stable IDs only", "GraphEdge remains navigation input", "evidence matrix remains verification authority", "legacy records are explicit unknown"],
       "acceptance": ["关系具备类型、来源、状态、理由和证据引用投影", "旧边显示来源未记录而不丢失", "没有 locator 的关系不能进入 citation-ready 输出"],
-      "verification": ["focused projection fixtures", "npm run build", "npm run lint", "git diff --check"],
+      "verification": ["node scripts/probe-graph-relations.mjs", "esbuild-bundled scripts/probe-graph-relations-fixture.mjs", "npm run build", "npm run lint", "git diff --check"],
       "rollback": "保留现有边并降级为 relates/unknown，只关闭新视图入口。",
       "next": ["RM-02", "RM-03", "RM-04"]
     },

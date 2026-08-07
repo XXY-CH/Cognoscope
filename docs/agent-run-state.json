@@ -43,7 +43,8 @@
     "MATRIX-03",
     "TOKEN-04",
     "OUTPUT-05",
-    "RM-00"
+    "RM-00",
+    "RM-01"
   ],
   "blocked": [
     "AG-QA.browser: no Chromium-compatible executable is available for real-document, responsive, keyboard, theme, and stale-source interaction evidence",
@@ -54,6 +55,7 @@
     "AG-EXEC": 1,
     "AG-REVIEW": 1,
     "AG-QA.static": 1,
+    "AG-REVIEW:RM-01": 2,
     "AG-QA.browser": 1
   },
   "artifacts": [
@@ -90,7 +92,7 @@
     "AI 建边上游失败此前会把整篇论文标成 failed；现已将建边降级为 best-effort，论文节点和入图成员不再被关系建议失败阻断。",
     "图谱与证据工作台的检查器现在使用内部滚动和窄栏换行；范围导引可收起；主题元数据关联、矩阵候选和可回读锚点分层展示；来源失效与定位不可回读分别呈现。",
     "Browser QA remains blocked and cannot be replaced by static probes.",
-    "Phase 006 design is documentation-complete; RM-01 relation semantics is the next executable node."
+    "Phase 006 design is documentation-complete; RM-01 relation semantics and projection adapter are implemented and statically verified; RM-02/RM-03/RM-04 are now unlocked while browser QA remains blocked."
   ],
   "lastVerification": [
     "Phase 005, Phase 003 and Phase 004 contracts read",
@@ -107,9 +109,12 @@
     "npm run build, npm run lint, git diff --check, and local Vite/API health checks passed; lint retains 3 pre-existing warnings",
     "AG-QA.static passed: build, lint, diff check, UI, READ-04, evidence matrix, source invalidation, and monitor probes",
     "AG-QA.browser blocked: no Chromium-compatible executable",
-    "Phase 006 docs: JSON and relative Markdown link checks passed; no runtime code changed"
+    "Phase 006 docs: JSON and relative Markdown link checks passed; no runtime code changed",
+    "RM-01: legacy relation adapter, stable references, evidence status reconciliation and graph/keyword DB passthrough verified by source probe and esbuild-bundled fixture",
+    "RM-01 static gate: npm run build, npm run lint, git diff --check passed; lint retains 3 pre-existing warnings",
+    "RM-01 review loop closed: semantic/directional IDs, trimmed references, source recovery revalidation, typed DB keys and pure record roundtrip fixture all pass"
   ],
-  "next": ["AG-ARCH:RM-01", "AG-QA.browser"],
-  "iteration": 5,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 design contract -> AG-QA.static documentation checks; RM-01 is next and AG-QA.browser remains blocked."
+  "next": ["AG-EXEC:RM-02", "AG-EXEC:RM-03", "AG-EXEC:RM-04", "AG-QA.browser"],
+  "iteration": 6,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 implementation/review/static QA; RM-02/RM-03/RM-04 are unlocked and AG-QA.browser remains blocked."
 }

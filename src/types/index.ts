@@ -478,13 +478,62 @@ export interface QaMessage {
 /** 知识图谱节点种类：文件、文件夹、标签 */
 export type GraphNodeKind = 'file' | 'folder' | 'tag';
 
-/** 图谱边的证据来源；旧版记录没有该字段时按 unknown 展示 */
-export type GraphEdgeOrigin =
-  | 'ai'
-  | 'cooccurrence'
-  | 'mixed'
-  | 'manual'
+/** 关系语义；旧图谱边缺少该字段时由投影适配器推导。 */
+export type ResearchRelationType =
+  | 'contains'
+  | 'mentions'
+  | 'relates'
+  | 'supports'
+  | 'contradicts'
+  | 'qualifies'
+  | 'extends'
+  | 'uses_method'
+  | 'uses_dataset'
+  | 'measures'
   | 'unknown';
+
+/** 关系核验状态；图谱关系本身不是 citation-ready 事实。 */
+export type ResearchRelationStatus =
+  | 'clue'
+  | 'review'
+  | 'verified'
+  | 'disputed'
+  | 'stale';
+
+/** 关系投影的规范来源；`cooccurrence` / `manual` 仅为旧记录兼容值。 */
+export type ResearchRelationOrigin = 'user' | 'rule' | 'ai' | 'mixed' | 'unknown';
+
+/** 图谱边的证据来源；旧版记录没有该字段时按 unknown 展示。 */
+export type GraphEdgeOrigin =
+  | ResearchRelationOrigin
+  | 'cooccurrence'
+  | 'manual';
+
+export type ResearchRelationRefKind =
+  | 'scope'
+  | 'paper'
+  | 'concept'
+  | 'claim'
+  | 'evidence';
+
+/** 不复制摘录文本，只保存跨事实源的稳定引用。 */
+export interface ResearchRelationReferences {
+  evidenceAnchorIds: string[];
+  evidenceRowIds: string[];
+  conditionIds: string[];
+}
+
+/** 统一的关系语义投影，供资料/论证/比较视图复用。 */
+export interface ResearchRelationProjection extends ResearchRelationReferences {
+  id: string;
+  type: ResearchRelationType;
+  sourceRef: { kind: ResearchRelationRefKind; id: string };
+  targetRef: { kind: ResearchRelationRefKind; id: string };
+  reason: string;
+  origin: ResearchRelationOrigin;
+  status: ResearchRelationStatus;
+  navigationWeight?: number;
+}
 
 /**
  * GraphNode - 知识图谱节点
@@ -524,6 +573,16 @@ export interface GraphEdge {
   origin?: GraphEdgeOrigin;
   /** AI 或人工确认时的简短理由 */
   reason?: string;
+  /** 关系语义；旧记录缺失时由 graphEvidence 投影为 relates/mentions/unknown */
+  relationType?: ResearchRelationType;
+  /** 关系核验状态；旧记录缺失时默认为 clue */
+  status?: ResearchRelationStatus;
+  /** 只引用现有批注/证据锚点，不复制原文 */
+  evidenceAnchorIds?: string[];
+  /** 只引用现有证据矩阵行，不复制行内容 */
+  evidenceRowIds?: string[];
+  /** 只引用已有条件实体，不复制条件文本 */
+  conditionIds?: string[];
 }
 
 /**
@@ -577,6 +636,16 @@ export interface KeywordEdge {
   origin?: GraphEdgeOrigin;
   /** AI 建边时的简短语义理由 */
   reason?: string;
+  /** 关系语义；旧记录缺失时由 graphEvidence 投影为 relates/mentions/unknown */
+  relationType?: ResearchRelationType;
+  /** 关系核验状态；旧记录缺失时默认为 clue */
+  status?: ResearchRelationStatus;
+  /** 只引用现有批注/证据锚点，不复制原文 */
+  evidenceAnchorIds?: string[];
+  /** 只引用现有证据矩阵行，不复制行内容 */
+  evidenceRowIds?: string[];
+  /** 只引用已有条件实体，不复制条件文本 */
+  conditionIds?: string[];
 }
 
 /**

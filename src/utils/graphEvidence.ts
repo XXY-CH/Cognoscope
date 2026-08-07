@@ -8,8 +8,15 @@ import type {
   EvidenceVerificationState,
   FileNode,
   FileType,
+  GraphEdge,
   GraphNode,
+  KeywordEdge,
   KeywordNode,
+  ResearchRelationOrigin,
+  ResearchRelationProjection,
+  ResearchRelationRefKind,
+  ResearchRelationStatus,
+  ResearchRelationType,
 } from '../types';
 
 export type GraphEvidenceSourceState = 'available' | 'unresolved' | 'missing';
@@ -24,6 +31,304 @@ export type GraphRelationEvidenceState =
   | 'disputed'
   | 'insufficient'
   | 'stale';
+
+const RELATION_TYPES = new Set<ResearchRelationType>([
+  'contains',
+  'mentions',
+  'relates',
+  'supports',
+  'contradicts',
+  'qualifies',
+  'extends',
+  'uses_method',
+  'uses_dataset',
+  'measures',
+  'unknown',
+]);
+
+const RELATION_STATUSES = new Set<ResearchRelationStatus>([
+  'clue',
+  'review',
+  'verified',
+  'disputed',
+  'stale',
+]);
+
+function stableStringCompare(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
+function stableReferenceIds(values: readonly string[] | undefined): string[] {
+  return [
+    ...new Set(
+      (values ?? [])
+        .map((value) => value.trim())
+        .filter((value) => value.length > 0),
+    ),
+  ]
+    .sort(stableStringCompare);
+}
+
+function relationProjectionId(
+  sourceKind: ResearchRelationRefKind,
+  sourceId: string,
+  targetKind: ResearchRelationRefKind,
+  targetId: string,
+  type: ResearchRelationType,
+): string {
+  const sourceToken = `${sourceKind}:${sourceId}`;
+  const targetToken = `${targetKind}:${targetId}`;
+  const symmetric = type === 'relates' || type === 'unknown';
+  const endpoints = symmetric
+    ? [sourceToken, targetToken].sort(stableStringCompare)
+    : [sourceToken, targetToken];
+  return `relation:${encodeURIComponent(endpoints[0])}->${encodeURIComponent(endpoints[1])}:${type}`;
+}
+
+/** Normalize old edge origins without rewriting the persisted record. */
+export function normalizeRelationOrigin(
+  origin: GraphEdge['origin'],
+): ResearchRelationOrigin {
+  if (origin === 'cooccurrence') return 'rule';
+  if (origin === 'manual') return 'user';
+  if (
+    origin === 'user' ||
+    origin === 'rule' ||
+    origin === 'ai' ||
+    origin === 'mixed' ||
+    origin === 'unknown'
+  ) {
+    return origin;
+  }
+  return 'unknown';
+}
+
+function relationTypeFromLegacyEdge(
+  edge: Pick<GraphEdge | KeywordEdge, 'origin' | 'reason' | 'relationType'>,
+  sourceKind: ResearchRelationRefKind,
+  targetKind: ResearchRelationRefKind,
+): ResearchRelationType {
+  if (edge.relationType && RELATION_TYPES.has(edge.relationType)) {
+    return edge.relationType;
+  }
+
+  const isPaperConcept =
+    (sourceKind === 'paper' && targetKind === 'concept') ||
+    (sourceKind === 'concept' && targetKind === 'paper');
+  if (isPaperConcept) {
+    return 'mentions';
+  }
+
+  if (sourceKind === 'scope' && targetKind === 'paper') return 'contains';
+  if (sourceKind === 'paper' && targetKind === 'scope') return 'contains';
+
+  if (
+    edge.origin === 'cooccurrence' ||
+    edge.origin === 'rule' ||
+    edge.origin === 'ai' ||
+    edge.origin === 'mixed' ||
+    edge.origin === 'manual' ||
+    edge.origin === 'user'
+  ) {
+    return 'relates';
+  }
+
+  return 'unknown';
+}
+
+function relationStatusFromLegacyEdge(
+  status: ResearchRelationStatus | undefined,
+): ResearchRelationStatus {
+  return status && RELATION_STATUSES.has(status) ? status : 'clue';
+}
+
+function relationRefKindForNode(
+  node: GraphNode | KeywordNode | undefined,
+): ResearchRelationRefKind | undefined {
+  if (!node) return undefined;
+  if ('kind' in node) {
+    if (node.kind === 'folder') return 'scope';
+    if (node.kind === 'tag') return 'concept';
+    return 'paper';
+  }
+  return 'concept';
+}
+
+export interface LegacyRelationProjectionOptions {
+  sourceKind?: ResearchRelationRefKind;
+  targetKind?: ResearchRelationRefKind;
+}
+
+/**
+ * Project a legacy graph edge into the canonical relation contract.
+ *
+ * This is intentionally a pure adapter: it reads explicit edge metadata,
+ * keeps stable references only, and never copies evidence text or promotes
+ * a graph edge into citation-ready material.
+ */
+export function projectLegacyEdgeToRelation(
+  edge: GraphEdge | KeywordEdge,
+  options: LegacyRelationProjectionOptions = {},
+): ResearchRelationProjection {
+  const sourceKind = options.sourceKind ?? 'paper';
+  const targetKind = options.targetKind ?? sourceKind;
+  const relationType = relationTypeFromLegacyEdge(edge, sourceKind, targetKind);
+  const origin = normalizeRelationOrigin(edge.origin);
+  const status = relationStatusFromLegacyEdge(edge.status);
+
+  return {
+    id: relationProjectionId(
+      sourceKind,
+      edge.source,
+      targetKind,
+      edge.target,
+      relationType,
+    ),
+    type: relationType,
+    sourceRef: { kind: sourceKind, id: edge.source },
+    targetRef: { kind: targetKind, id: edge.target },
+    reason: edge.reason?.trim() || '来源未记录',
+    origin,
+    status,
+    evidenceAnchorIds: stableReferenceIds(edge.evidenceAnchorIds),
+    evidenceRowIds: stableReferenceIds(edge.evidenceRowIds),
+    conditionIds: stableReferenceIds(edge.conditionIds),
+    ...(Number.isFinite(edge.weight)
+      ? { navigationWeight: Math.max(0, Math.min(1, edge.weight)) }
+      : {}),
+  };
+}
+
+/** Explicit aliases make the adapter easy to consume from paper/keyword views. */
+export const projectLegacyGraphEdge = projectLegacyEdgeToRelation;
+
+/** Resolve endpoint kinds once so every view shares the same legacy mapping. */
+export function projectGraphEdgeToRelation(
+  edge: GraphEdge,
+  nodes: readonly (GraphNode | KeywordNode)[],
+): ResearchRelationProjection {
+  const sourceNode = nodes.find((node) => node.id === edge.source);
+  const targetNode = nodes.find((node) => node.id === edge.target);
+  return projectLegacyEdgeToRelation(edge, {
+    sourceKind: relationRefKindForNode(sourceNode) ?? 'paper',
+    targetKind: relationRefKindForNode(targetNode) ?? 'paper',
+  });
+}
+
+export const projectLegacyKeywordEdge = (
+  edge: KeywordEdge,
+): ResearchRelationProjection =>
+  projectLegacyEdgeToRelation(edge, {
+    sourceKind: 'concept',
+    targetKind: 'concept',
+  });
+
+/**
+ * Graph relations are navigation projections only. Citation-ready output is
+ * owned by the evidence matrix and must pass its locator/source gate.
+ */
+export function isCitationReadyResearchRelation(
+  _relation: ResearchRelationProjection,
+): false {
+  return false;
+}
+
+export interface ResearchRelationEvidenceInput {
+  rows: EvidenceRow[];
+  files: FileNode[];
+}
+
+function relationStatusFromEvidenceState(
+  state: GraphRelationEvidenceState,
+): ResearchRelationStatus {
+  if (state === 'stale') return 'stale';
+  if (state === 'disputed') return 'disputed';
+  if (state === 'review') return 'review';
+  return 'clue';
+}
+
+/**
+ * Reconcile explicitly referenced relation evidence without copying any
+ * source text into the relation. Candidate matrix co-membership is kept out
+ * of this function on purpose: only row/anchor IDs already bound to the edge
+ * can affect its status.
+ */
+export function reconcileResearchRelationEvidence(
+  relation: ResearchRelationProjection,
+  input: ResearchRelationEvidenceInput,
+): ResearchRelationProjection {
+  const rowIds = stableReferenceIds(relation.evidenceRowIds);
+  const anchorIds = stableReferenceIds(relation.evidenceAnchorIds);
+  if (rowIds.length === 0 && anchorIds.length === 0) {
+    return {
+      ...relation,
+      status: relation.status === 'verified' ? 'review' : relation.status,
+    };
+  }
+
+  const rowsById = new Map(input.rows.map((row) => [row.id, row]));
+  const referencedRows = rowIds.map((rowId) => rowsById.get(rowId));
+  if (referencedRows.some((row): row is undefined => !row)) {
+    return { ...relation, status: 'stale' };
+  }
+  if (referencedRows.some((row) => row?.verification === 'disputed')) {
+    return { ...relation, status: 'disputed' };
+  }
+
+  const candidateRows = rowIds.length > 0 ? referencedRows : input.rows;
+  const anchorSet = new Set(anchorIds);
+  const referencedItems: Array<{ row: EvidenceRow; item: EvidenceRow['evidence'][number] }> = [];
+  for (const row of candidateRows) {
+    if (!row) continue;
+    for (const item of row.evidence) {
+      const derivedAnchorId = `${row.matrixId}:${row.id}:${item.id}`;
+      if (anchorSet.has(item.id) || anchorSet.has(derivedAnchorId)) {
+        referencedItems.push({ row, item });
+      }
+    }
+  }
+
+  if (
+    anchorIds.length > 0 &&
+    referencedItems.length !== anchorIds.length
+  ) {
+    return { ...relation, status: 'stale' };
+  }
+  if (anchorIds.length === 0) {
+    return { ...relation, status: 'review' };
+  }
+
+  const fileById = new Map(input.files.map((file) => [file.id, file]));
+  if (
+    referencedItems.some(({ row, item }) => {
+      const file = fileById.get(item.fileId);
+      return (
+        row.verification === 'disputed' ||
+        item.verification === 'disputed' ||
+        !file ||
+        file.deletedAt !== null ||
+        !isResolvableLocator(item.locator, file.type)
+      );
+    })
+  ) {
+    const hasDispute = referencedItems.some(
+      ({ row, item }) =>
+        row.verification === 'disputed' || item.verification === 'disputed',
+    );
+    return { ...relation, status: hasDispute ? 'disputed' : 'stale' };
+  }
+
+  const allVerified = referencedItems.every(
+    ({ row, item }) =>
+      row.verification === 'verified' && item.verification === 'verified',
+  );
+  return {
+    ...relation,
+    status: allVerified
+      ? 'verified'
+      : relationStatusFromEvidenceState('review'),
+  };
+}
 
 export interface GraphRelationProjection {
   state: GraphRelationEvidenceState;

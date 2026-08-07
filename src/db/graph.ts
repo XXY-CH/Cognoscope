@@ -6,9 +6,70 @@
 import type { GraphEdge, GraphMember, GraphNode } from '../types';
 import { getDb, type GraphEdgeRecord } from './index';
 
-export function edgeRecordId(source: string, target: string): string {
-  // 无向去重：字典序拼接
-  return source < target ? `${source}__${target}` : `${target}__${source}`;
+export function edgeRecordId(
+  source: string,
+  target: string,
+  relationType?: GraphEdge['relationType'],
+): string {
+  // Legacy edges keep their endpoint-only key; typed relations add a semantic
+  // suffix so distinct relation types cannot overwrite one another.
+  const symmetric =
+    relationType === undefined ||
+    relationType === 'relates' ||
+    relationType === 'unknown';
+  const endpoints = symmetric
+    ? source < target
+      ? `${source}__${target}`
+      : `${target}__${source}`
+    : `${source}__${target}`;
+  return relationType
+    ? `${endpoints}__${encodeURIComponent(relationType)}`
+    : endpoints;
+}
+
+export function graphEdgeRecordFromEdge(edge: GraphEdge): GraphEdgeRecord {
+  return {
+    id: edgeRecordId(edge.source, edge.target, edge.relationType),
+    source: edge.source,
+    target: edge.target,
+    weight: edge.weight,
+    ...(edge.origin ? { origin: edge.origin } : {}),
+    ...(edge.reason ? { reason: edge.reason } : {}),
+    ...(edge.relationType ? { relationType: edge.relationType } : {}),
+    ...(edge.status ? { status: edge.status } : {}),
+    ...(edge.evidenceAnchorIds
+      ? { evidenceAnchorIds: edge.evidenceAnchorIds }
+      : {}),
+    ...(edge.evidenceRowIds ? { evidenceRowIds: edge.evidenceRowIds } : {}),
+    ...(edge.conditionIds ? { conditionIds: edge.conditionIds } : {}),
+  };
+}
+
+export function graphEdgeFromRecord({
+  id: _id,
+  source,
+  target,
+  weight,
+  origin,
+  reason,
+  relationType,
+  status,
+  evidenceAnchorIds,
+  evidenceRowIds,
+  conditionIds,
+}: GraphEdgeRecord): GraphEdge {
+  return {
+    source,
+    target,
+    weight,
+    ...(origin ? { origin } : {}),
+    ...(reason ? { reason } : {}),
+    ...(relationType ? { relationType } : {}),
+    ...(status ? { status } : {}),
+    ...(evidenceAnchorIds ? { evidenceAnchorIds } : {}),
+    ...(evidenceRowIds ? { evidenceRowIds } : {}),
+    ...(conditionIds ? { conditionIds } : {}),
+  };
 }
 
 export async function listGraphNodes(): Promise<GraphNode[]> {
@@ -63,13 +124,7 @@ export async function removeFilesFromGraphDb(fileIds: string[]): Promise<void> {
 export async function listGraphEdges(): Promise<GraphEdge[]> {
   const db = await getDb();
   const all = await db.getAll('graphEdges');
-  return all.map(({ source, target, weight, origin, reason }) => ({
-    source,
-    target,
-    weight,
-    ...(origin ? { origin } : {}),
-    ...(reason ? { reason } : {}),
-  }));
+  return all.map(graphEdgeFromRecord);
 }
 
 export async function putGraphEdges(edges: GraphEdge[]): Promise<void> {
@@ -78,16 +133,7 @@ export async function putGraphEdges(edges: GraphEdge[]): Promise<void> {
   const tx = db.transaction('graphEdges', 'readwrite');
   await Promise.all(
     edges.map((e) => {
-      const id = edgeRecordId(e.source, e.target);
-      const record: GraphEdgeRecord = {
-        id,
-        source: e.source,
-        target: e.target,
-        weight: e.weight,
-        ...(e.origin ? { origin: e.origin } : {}),
-        ...(e.reason ? { reason: e.reason } : {}),
-      };
-      return tx.store.put(record);
+      return tx.store.put(graphEdgeRecordFromEdge(e));
     }),
   );
   await tx.done;
