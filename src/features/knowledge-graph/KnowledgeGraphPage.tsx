@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Network, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { EmptyState, toast } from '../../components/common';
 import { listEvidenceRowsByFileIds } from '../../db/evidenceRows';
+import { listEvidenceMatrices } from '../../db/evidenceMatrices';
 import * as metaDb from '../../db/fileDocMeta';
 import { useFileStore } from '../../stores/fileStore';
 import { useGraphStore } from '../../stores/graphStore';
@@ -15,6 +16,7 @@ import { useKeywordGraphStore } from '../../stores/keywordGraphStore';
 import { useReaderStore } from '../../stores/readerStore';
 import type {
   EvidenceRow,
+  EvidenceMatrix,
   FileDocMeta,
   GraphEdge,
   GraphNode,
@@ -24,16 +26,22 @@ import {
   canOpenGraphEvidence,
   fileIdsForGraphSelection,
   graphRelationKey,
-  locatorLabel,
   projectGraphRelationEvidence,
   selectGraphEvidenceAnchors,
-  sourceStateLabel,
   type GraphEvidenceAnchor,
   type GraphRelationProjection,
-  verificationLabel,
 } from '../../utils/graphEvidence';
 import { GraphCanvas } from './GraphCanvas';
 import { GraphInspector } from './GraphInspector';
+import { ArgumentView } from './ArgumentView';
+import { ComparisonEvolutionView } from './ComparisonEvolutionView';
+import { MaterialsHierarchyView } from './MaterialsHierarchyView';
+import {
+  buildArgumentProjection,
+  buildComparisonProjection,
+  buildEvolutionEvents,
+  buildMaterialsHierarchy,
+} from './researchMapProjections';
 import {
   GraphToolbar,
   type GraphEvidenceFilter,
@@ -99,26 +107,6 @@ function matchesEvidenceFilter(
   return filter === 'all' || projection.state === filter;
 }
 
-function matchesAnchorFilter(
-  anchor: GraphEvidenceAnchor,
-  filter: GraphEvidenceFilter,
-): boolean {
-  if (filter === 'all') return true;
-  if (filter === 'stale') return anchor.sourceState !== 'available';
-  if (filter === 'disputed') {
-    return anchor.verification === 'disputed' || anchor.rowVerification === 'disputed';
-  }
-  if (filter === 'review') {
-    return (
-      anchor.verification === 'proposed' ||
-      anchor.verification === 'unresolved' ||
-      anchor.rowVerification === 'proposed' ||
-      anchor.rowVerification === 'unresolved'
-    );
-  }
-  return anchor.match === 'none' || anchor.sourceState !== 'available';
-}
-
 /**
  * 给画布投影可读的初始位置。保留用户已经拖拽过的坐标；力导向随后
  * 负责排斥与吸引，列式位置只作为新节点加入时的稳定起点。
@@ -131,9 +119,9 @@ function layoutGraphNodes(nodes: GraphNode[], view: GraphView): GraphNode[] {
     buckets.set(node.kind, bucket);
   }
   const offsets: Record<GraphNode['kind'], number> = {
-    file: view === 'topics' ? -240 : 0,
+    file: view === 'explore' ? 0 : 0,
     folder: -240,
-    tag: view === 'papers' ? 240 : 240,
+    tag: 240,
   };
   const positions = new Map<string, { x: number; y: number }>();
   for (const [kind, bucket] of buckets) {
@@ -149,64 +137,13 @@ function layoutGraphNodes(nodes: GraphNode[], view: GraphView): GraphNode[] {
   return nodes.map((node) => ({ ...node, ...positions.get(node.id) }));
 }
 
-function EvidenceView({
-  anchors,
-  loading,
-  error,
-  onOpenEvidence,
-}: {
-  anchors: GraphEvidenceAnchor[];
-  loading: boolean;
-  error: string | null;
-  onOpenEvidence: (anchor: GraphEvidenceAnchor) => void;
-}) {
-  if (loading) return <p className={styles.paneEmpty} role="status">正在读取证据锚点…</p>;
-  if (error) return <p className={styles.paneEmpty} role="alert">{error}</p>;
-  if (anchors.length === 0) {
-    return (
-      <div className={styles.paneEmpty}>
-        先选择一篇论文或一个主题；这里显示最多 20 条可回读证据。图谱关系本身不是引用材料。
-      </div>
-    );
-  }
-  return (
-    <ol className={styles.evidenceList}>
-      {anchors.map((anchor) => {
-        const canOpen = canOpenGraphEvidence(anchor);
-        return (
-          <li className={styles.evidenceItem} key={anchor.id}>
-            <div className={styles.evidenceItemHeader}>
-              <strong>{anchor.conclusion}</strong>
-              <span>{sourceStateLabel(anchor.sourceState)}</span>
-            </div>
-            <blockquote>{anchor.quotedText || '（没有摘录）'}</blockquote>
-            <div className={styles.evidenceItemMeta}>
-              <span>{anchor.fileName}</span>
-              <span>{locatorLabel(anchor.locator)}</span>
-              <span>{verificationLabel(anchor.rowVerification)}</span>
-            </div>
-            <button
-              type="button"
-              disabled={!canOpen}
-              aria-label={canOpen ? `回读 ${anchor.fileName}` : '来源不可回读'}
-              onClick={() => onOpenEvidence(anchor)}
-            >
-              回读来源
-            </button>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
 /**
- * KnowledgeGraphPage - 单一画布上的论文、主题与证据视图，配合来源检查器。
+ * KnowledgeGraphPage - 资料、论证、比较、演化和局部探索五种任务投影，配合来源检查器。
  */
 export function KnowledgeGraphPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [view, setView] = useState<GraphView>('overview');
+  const [view, setView] = useState<GraphView>('materials');
   const [query, setQuery] = useState('');
   const [kindFilter, setKindFilter] = useState<GraphKindFilter>('all');
   const [evidenceFilter, setEvidenceFilter] = useState<GraphEvidenceFilter>('all');
@@ -216,6 +153,10 @@ export function KnowledgeGraphPage() {
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState<string | null>(null);
   const [relationRows, setRelationRows] = useState<EvidenceRow[]>([]);
+  const [matrices, setMatrices] = useState<EvidenceMatrix[]>([]);
+  const [matricesLoading, setMatricesLoading] = useState(false);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
   const [scopeRailCollapsed, setScopeRailCollapsed] = useState(false);
   const restoredSelectionRef = useRef<string | null>(null);
 
@@ -254,6 +195,30 @@ export function KnowledgeGraphPage() {
     if (files.length === 0) void loadFiles();
   }, [files.length, loadFiles, loadGraph, loadKeywordGraph]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setMatricesLoading(true);
+    void listEvidenceMatrices()
+      .then((nextMatrices) => {
+        if (cancelled) return;
+        setMatrices(nextMatrices);
+        setSelectedQuestionId((current) =>
+          current && nextMatrices.some((matrix) => matrix.id === current)
+            ? current
+            : nextMatrices[0]?.id ?? null,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setMatrices([]);
+      })
+      .finally(() => {
+        if (!cancelled) setMatricesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   /** 点词时高亮的论文节点 id */
   const highlightedPaperIds = useMemo(() => {
     if (!selectedKeywordId) return [] as string[];
@@ -289,19 +254,19 @@ export function KnowledgeGraphPage() {
     () => paperKeywordEdges(visibleKeywordNodes, visiblePaperIdSet),
     [visibleKeywordNodes, visiblePaperIdSet],
   );
+  const materialsData = useMemo(
+    () => buildMaterialsHierarchy(filteredGraph.paperNodes, filteredGraph.keywordNodes),
+    [filteredGraph.keywordNodes, filteredGraph.paperNodes],
+  );
   const projectedNodes = useMemo(() => {
-    if (view === 'topics') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
-    if (view === 'overview') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
-    return visiblePaperNodes;
+    if (view === 'explore') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
+    return [];
   }, [view, visibleKeywordGraphNodes, visiblePaperNodes]);
   const projectedEdges = useMemo(() => {
-    if (view === 'topics') {
+    if (view === 'explore') {
       return [...visiblePaperEdges, ...visibleKeywordEdges, ...paperTopicEdges].slice(0, 160);
     }
-    if (view === 'overview') {
-      return [...visiblePaperEdges, ...paperTopicEdges].slice(0, 160);
-    }
-    return visiblePaperEdges;
+    return [];
   }, [paperTopicEdges, view, visibleKeywordEdges, visiblePaperEdges]);
   const graphFileIds = useMemo(
     () =>
@@ -311,6 +276,14 @@ export function KnowledgeGraphPage() {
           Boolean(fileId) && fileIds.indexOf(fileId) === index,
         ),
     [nodes],
+  );
+  const evidenceFileIds = useMemo(
+    () =>
+      [...new Set([
+        ...graphFileIds,
+        ...matrices.flatMap((matrix) => matrix.fileIds),
+      ])],
+    [graphFileIds, matrices],
   );
 
   const selectedPaper = useMemo(
@@ -343,11 +316,11 @@ export function KnowledgeGraphPage() {
 
   useEffect(() => {
     let cancelled = false;
-    if (graphFileIds.length === 0) {
+    if (evidenceFileIds.length === 0) {
       setRelationRows([]);
       return;
     }
-    void listEvidenceRowsByFileIds(graphFileIds)
+    void listEvidenceRowsByFileIds(evidenceFileIds)
       .then((rows) => {
         if (!cancelled) setRelationRows(rows);
       })
@@ -357,7 +330,49 @@ export function KnowledgeGraphPage() {
     return () => {
       cancelled = true;
     };
-  }, [graphFileIds]);
+  }, [evidenceFileIds]);
+
+  const argumentProjection = useMemo(
+    () => buildArgumentProjection(matrices, relationRows, files),
+    [files, matrices, relationRows],
+  );
+  const selectedMatrix = useMemo(
+    () => matrices.find((matrix) => matrix.id === selectedQuestionId) ?? null,
+    [matrices, selectedQuestionId],
+  );
+  const allEvidenceAnchors = useMemo(
+    () =>
+      selectGraphEvidenceAnchors(
+        relationRows,
+        files,
+        evidenceFileIds,
+        2000,
+      ),
+    [evidenceFileIds, files, relationRows],
+  );
+  const comparisonProjection = useMemo(
+    () => buildComparisonProjection(selectedMatrix, relationRows, files, allEvidenceAnchors),
+    [allEvidenceAnchors, files, relationRows, selectedMatrix],
+  );
+  const evolutionEvents = useMemo(
+    () => buildEvolutionEvents(relationRows, files, allEvidenceAnchors),
+    [allEvidenceAnchors, files, relationRows],
+  );
+  const argumentClaimById = useMemo(
+    () => new Map(argumentProjection.claims.map((claim) => [claim.id, claim])),
+    [argumentProjection.claims],
+  );
+
+  useEffect(() => {
+    const claimsForQuestion = argumentProjection.claims.filter(
+      (claim) => claim.questionId === selectedQuestionId,
+    );
+    setSelectedClaimId((current) =>
+      current && claimsForQuestion.some((claim) => claim.id === current)
+        ? current
+        : claimsForQuestion[0]?.id ?? null,
+    );
+  }, [argumentProjection.claims, selectedQuestionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -413,10 +428,6 @@ export function KnowledgeGraphPage() {
     }
     return projectedNodes.filter((node) => connectedIds.has(node.id));
   }, [evidenceFilter, evidenceFilteredEdges, projectedNodes]);
-  const visibleEvidenceAnchors = useMemo(
-    () => evidenceAnchors.filter((anchor) => matchesAnchorFilter(anchor, evidenceFilter)),
-    [evidenceAnchors, evidenceFilter],
-  );
   const laidOutNodes = useMemo(
     () => layoutGraphNodes(evidenceFilteredNodes, view),
     [evidenceFilteredNodes, view],
@@ -441,6 +452,7 @@ export function KnowledgeGraphPage() {
   );
 
   useEffect(() => {
+    if (view !== 'explore') return;
     if (selectedNodeId && !visiblePaperIds.has(selectedNodeId)) {
       setSelectedNode(null);
     }
@@ -454,6 +466,7 @@ export function KnowledgeGraphPage() {
     setHighlightedKeywords,
     setSelectedKeyword,
     setSelectedNode,
+    view,
     visibleKeywordIds,
     visiblePaperIds,
   ]);
@@ -594,6 +607,22 @@ export function KnowledgeGraphPage() {
     navigate(`/read/${encodeURIComponent(anchor.fileId)}?${params.toString()}`);
   };
 
+  const handleOpenEvidenceMatrix = (matrixId: string, rowId?: string) => {
+    const query = rowId ? `?rowId=${encodeURIComponent(rowId)}` : '';
+    navigate(`/evidence-matrix/${encodeURIComponent(matrixId)}${query}`);
+  };
+
+  const handleArgumentMatrixAction = (claimId: string, rowIds: string[]) => {
+    const rowId = rowIds[0];
+    const claim = argumentClaimById.get(claimId);
+    const matrixId = claim?.questionId;
+    if (!matrixId) {
+      toast.warning('该主张尚未绑定证据矩阵');
+      return;
+    }
+    handleOpenEvidenceMatrix(matrixId, rowId);
+  };
+
   const handleCreateComparison = (fileIds: string[]) => {
     const uniqueFileIds = [...new Set(fileIds)].slice(0, 5);
     if (uniqueFileIds.length < 3) {
@@ -691,7 +720,7 @@ export function KnowledgeGraphPage() {
             <>
               <p className={styles.scopeLabel}>研究范围</p>
               <strong>本地研究空间</strong>
-              <p className={styles.scopeMeta}>{visiblePaperNodes.length} 篇论文 · {visibleKeywordNodes.length} 个主题</p>
+              <p className={styles.scopeMeta}>{filteredGraph.paperNodes.length} 篇论文 · {filteredGraph.keywordNodes.length} 个主题</p>
               <div className={styles.scopeRule} />
               <p className={styles.scopeNote}>
                 论文是来源，主题是整理线索；证据锚点只在选中对象后展开。
@@ -700,27 +729,80 @@ export function KnowledgeGraphPage() {
           ) : null}
         </aside>
 
-        <section className={styles.canvasPane} aria-label={`${view} 图谱视图`}>
+        <section className={styles.canvasPane} aria-label={`${view} 研究地图视图`}>
           <div className={styles.canvasHeader}>
             <div>
               <p className={styles.scopeLabel}>当前视图</p>
               <h2 className={styles.canvasTitle}>
-                {view === 'overview' ? '研究空间概览' : view === 'papers' ? '论文关系' : view === 'topics' ? '主题与论文' : '证据锚点'}
+                {view === 'materials'
+                  ? '资料分层'
+                  : view === 'argument'
+                    ? '主张中心论证'
+                    : view === 'comparison'
+                      ? '比较摘要'
+                      : view === 'evolution'
+                        ? '判断演化'
+                        : '局部探索'}
               </h2>
             </div>
             <span className={styles.canvasMeta}>
-              {view === 'evidence'
-                ? `${visibleEvidenceAnchors.length} 条局部锚点`
-                : `${laidOutNodes.length} 个节点`}
+              {view === 'materials'
+                ? `${materialsData.clusters.length} 个主题簇`
+                : view === 'argument'
+                  ? `${argumentProjection.claims.filter((claim) => claim.questionId === selectedQuestionId).length} 条主张`
+                  : view === 'comparison'
+                    ? `${comparisonProjection.claims.length} 条主张`
+                    : view === 'evolution'
+                      ? `${evolutionEvents.length} 个判断节点`
+                      : `${laidOutNodes.length} 个节点`}
             </span>
           </div>
           <div className={styles.graph}>
-            {view === 'evidence' ? (
-              <EvidenceView
-                anchors={visibleEvidenceAnchors}
-                loading={evidenceLoading}
-                error={evidenceError}
-                onOpenEvidence={handleOpenEvidence}
+            {view === 'materials' ? (
+              <MaterialsHierarchyView
+                data={materialsData}
+                selectedId={selectedPaper?.id ?? selectedKeyword?.id}
+                onNavigate={(target) => {
+                  if (target.kind !== 'paper') return;
+                  const node = nodes.find((candidate) => candidate.id === target.id);
+                  if (node) handlePaperClick(node);
+                }}
+              />
+            ) : view === 'argument' ? (
+              <ArgumentView
+                questions={argumentProjection.questions}
+                selectedQuestionId={selectedQuestionId}
+                onSelectQuestion={setSelectedQuestionId}
+                claims={argumentProjection.claims}
+                relations={argumentProjection.relations}
+                evidenceAnchors={argumentProjection.anchors}
+                selectedClaimId={selectedClaimId}
+                onSelectClaim={setSelectedClaimId}
+                referenceLabels={argumentProjection.referenceLabels}
+                loading={matricesLoading}
+                onOpenEvidenceMatrix={handleArgumentMatrixAction}
+                onAddToEvidenceMatrix={handleArgumentMatrixAction}
+                onOpenReader={handleOpenEvidence}
+              />
+            ) : view === 'comparison' ? (
+              <ComparisonEvolutionView
+                mode="comparison"
+                question={comparisonProjection.question}
+                columns={comparisonProjection.columns}
+                claims={comparisonProjection.claims}
+                events={[]}
+                onOpenEvidenceMatrix={handleOpenEvidenceMatrix}
+                onOpenReader={handleOpenEvidence}
+              />
+            ) : view === 'evolution' ? (
+              <ComparisonEvolutionView
+                mode="evolution"
+                question={selectedMatrix?.comparisonQuestion ?? ''}
+                columns={[]}
+                claims={[]}
+                events={evolutionEvents}
+                onOpenEvidenceMatrix={handleOpenEvidenceMatrix}
+                onOpenReader={handleOpenEvidence}
               />
             ) : laidOutNodes.length === 0 ? (
               <p className={styles.paneEmpty}>
@@ -742,7 +824,7 @@ export function KnowledgeGraphPage() {
               />
             )}
           </div>
-          {view !== 'evidence' && laidOutNodes.length > 0 ? (
+          {view === 'explore' && laidOutNodes.length > 0 ? (
             <details className={styles.graphListFallback}>
               <summary>用列表查看当前视图</summary>
               <ul>

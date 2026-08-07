@@ -1,0 +1,297 @@
+.container {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--sp-2);
+  overflow: auto;
+  padding: var(--sp-2) var(--sp-1) var(--sp-4);
+  color: var(--text-primary);
+}
+
+.scopeHeader {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  padding-bottom: var(--sp-2);
+  background: var(--bg-base);
+}
+
+.nodeButton {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: var(--sp-2);
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-press) var(--ease-standard),
+    border-color var(--motion-press) var(--ease-standard);
+}
+
+.nodeButton:hover {
+  border-color: var(--border-subtle);
+  background: var(--bg-hover);
+}
+
+.nodeButton:focus-visible,
+.toggleButton:focus-visible,
+.leafButton:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.selected {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.scopeButton {
+  border-color: var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.scopeButton strong {
+  font-size: var(--text-h3);
+}
+
+.nodeIcon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+}
+
+.nodeCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nodeCopy strong,
+.nodeCopy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nodeCopy small,
+.eyebrow {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.connector {
+  width: 1px;
+  height: var(--sp-4);
+  margin-left: 22px;
+  background: var(--border-default);
+}
+
+.clusterList {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.cluster {
+  position: relative;
+  min-width: 0;
+  padding: var(--sp-2) 0 var(--sp-2) var(--sp-4);
+  border-left: 1px solid var(--border-default);
+}
+
+.cluster::before {
+  position: absolute;
+  top: 25px;
+  left: -1px;
+  width: var(--sp-4);
+  border-top: 1px solid var(--border-default);
+  content: '';
+}
+
+.clusterHeader {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+  gap: var(--sp-1);
+}
+
+.toggleButton {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-target-size);
+  min-height: var(--touch-target-size);
+  margin-left: calc(-1 * var(--sp-6));
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.toggleButton:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.clusterButton {
+  padding-left: var(--sp-2);
+}
+
+.clusterDescription {
+  margin: 0 0 var(--sp-2) calc(var(--touch-target-size) + var(--sp-1));
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.paperList {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin: var(--sp-2) 0 0 var(--sp-6);
+  padding-left: var(--sp-3);
+  border-left: 1px dashed var(--border-subtle);
+}
+
+.paperRow {
+  min-width: 0;
+}
+
+.paperButton {
+  padding: var(--sp-2);
+}
+
+.leafList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  margin: var(--sp-1) 0 0 var(--sp-8);
+}
+
+.leafButton {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.leafButton:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.leafButton .nodeCopy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: var(--sp-2);
+}
+
+.leafButton .nodeCopy small {
+  color: var(--text-tertiary);
+}
+
+.localEmpty {
+  margin: var(--sp-2) 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.capNotice {
+  margin: var(--sp-3) 0 0;
+  padding: var(--sp-3);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.emptyState {
+  display: grid;
+  justify-items: center;
+  gap: var(--sp-2);
+  margin: auto;
+  padding: var(--sp-12) var(--sp-6);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.emptyState h2,
+.emptyState p {
+  margin: 0;
+}
+
+.emptyState h2 {
+  color: var(--text-primary);
+  font-size: var(--text-h3);
+}
+
+.emptyState p {
+  max-width: 420px;
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 767px) {
+  .container {
+    padding-inline: 0;
+  }
+
+  .scopeHeader {
+    position: static;
+  }
+
+  .cluster {
+    padding-left: var(--sp-3);
+  }
+
+  .toggleButton {
+    margin-left: calc(-1 * var(--sp-5));
+  }
+
+  .paperList {
+    margin-left: var(--sp-3);
+  }
+
+  .leafList {
+    margin-left: var(--sp-5);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodeButton {
+    transition: none;
+  }
+}

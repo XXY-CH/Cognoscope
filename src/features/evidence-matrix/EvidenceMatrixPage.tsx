@@ -112,6 +112,14 @@ export function EvidenceMatrixPage() {
     setSelectedFileId(activeFirstFileId);
   }, [activeFirstFileId, activeMatrix?.id, activeMatrix?.comparisonQuestion]);
 
+  useEffect(() => {
+    const requestedRowId = searchParams.get('rowId');
+    if (!requestedRowId || !activeMatrix || !rows.some((row) => row.id === requestedRowId)) return;
+    const requestedRow = rows.find((row) => row.id === requestedRowId);
+    setActiveRowId(requestedRowId);
+    setSelectedFileId(requestedRow?.evidence[0]?.fileId ?? activeMatrix.fileIds[0] ?? null);
+  }, [activeMatrix, rows, searchParams]);
+
   const activeFiles = useMemo(
     () => files.filter((file) => activeMatrix?.fileIds.includes(file.id)),
     [files, activeMatrix?.fileIds],

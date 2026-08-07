@@ -51,6 +51,7 @@
   display: flex;
   align-items: center;
   gap: var(--sp-3);
+  flex-wrap: wrap;
   width: 100%;
 }
 
@@ -95,9 +96,16 @@
 }
 
 .search {
-  flex: 1;
+  flex: 1 1 280px;
+  min-width: 220px;
   width: 100%;
-  max-width: var(--search-input-width);
+  max-width: 420px;
+}
+
+.filterSelect {
+  flex: 1 1 220px;
+  min-width: 180px;
+  max-width: 360px;
 }
 
 .explanation {
@@ -318,96 +326,6 @@
   font-size: var(--text-sm);
 }
 
-.evidenceList {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-  gap: var(--sp-3);
-  overflow: auto;
-  margin: 0;
-  padding: var(--sp-2) var(--sp-1) var(--sp-4) 0;
-  list-style: none;
-  counter-reset: evidence;
-}
-
-.evidenceItem {
-  min-width: 0;
-  padding: var(--sp-3) 0 var(--sp-3) var(--sp-4);
-  border-left: var(--quote-border-width) solid var(--border-default);
-  counter-increment: evidence;
-}
-
-.evidenceItem::before {
-  display: block;
-  margin-bottom: var(--sp-1);
-  color: var(--text-tertiary);
-  content: counter(evidence, decimal-leading-zero);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-}
-
-.evidenceItemHeader,
-.evidenceItemMeta {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--sp-3);
-}
-
-.evidenceItemHeader strong {
-  min-width: 0;
-  color: var(--text-primary);
-  font-size: var(--text-body);
-  line-height: var(--text-body-lh);
-}
-
-.evidenceItemHeader span,
-.evidenceItemMeta {
-  color: var(--text-tertiary);
-  font-size: var(--text-xs);
-  line-height: var(--text-xs-lh);
-}
-
-.evidenceItem blockquote {
-  margin: var(--sp-2) 0;
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  line-height: var(--text-sm-lh);
-}
-
-.evidenceItemMeta {
-  flex-wrap: wrap;
-  justify-content: flex-start;
-}
-
-.evidenceItem button {
-  min-height: var(--touch-target-size);
-  margin-top: var(--sp-2);
-  padding: 0 var(--sp-3);
-  border: var(--border-width) solid var(--border-default);
-  border-radius: var(--radius-sm);
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font: inherit;
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-
-.evidenceItem button:hover:not(:disabled) {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.evidenceItem button:disabled {
-  color: var(--text-disabled);
-  cursor: not-allowed;
-}
-
-.evidenceItem button:focus-visible {
-  outline: var(--focus-ring-width) solid var(--accent);
-  outline-offset: var(--focus-ring-offset);
-}
-
 .mobileInspectorScrim {
   display: none;
 }
@@ -460,6 +378,11 @@
     max-width: none;
   }
 
+  .filterSelect {
+    width: 100%;
+    max-width: none;
+  }
+
   .workbench {
     display: flex;
     flex-direction: column;
@@ -492,16 +415,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .viewTab,
-  .evidenceItem button {
+  .viewTab {
     transition: none;
   }
 }
 
 @media (prefers-contrast: more) {
   .viewSwitcher,
-  .graph,
-  .evidenceItem button {
+  .graph {
     border-color: var(--border-strong);
   }
 }

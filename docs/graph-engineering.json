@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "RM-00", "RM-01", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
-    "next": ["RM-02", "RM-03", "RM-04", "UX-06", "P4"],
+    "current": ["P3", "C5", "UI-4", "RM-00", "RM-01", "RM-02", "RM-03", "RM-04", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
+    "next": ["RM-05", "RM-06", "UX-06", "P4"],
     "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: full graph/matrix return flow and screenshot evidence remain pending"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04、OUTPUT-05 和 RM-01 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；UX-06 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时；Phase 006 的 RM-01 已把旧边统一投影为稳定关系语义和证据引用状态，RM-02/RM-03/RM-04 解锁前不得把相似度当证据强度。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘/减弱动效和多视口验收；本轮 IA-01、GRAPH-02、MATRIX-03、TOKEN-04、OUTPUT-05、RM-01、RM-02、RM-03 和 RM-04 已完成静态实现与审查，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；比较与演化视图只投影矩阵行和来源引用，不复制编辑器或使用提交历史；UX-06/AG-QA.browser 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时。",
     "lastVerified": "2026-08-07",
     "evidence": [
       "npm run build",
@@ -43,7 +43,9 @@
       "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked",
       "Phase 006 design contract and execution plan: five research-map projections, typed relation/evidence references, Apple Design presentation, responsive wireframe, RM-00 to RM-06 DAG; documentation-only verification",
       "RM-01 relation adapter: legacy edge defaults, paper/concept relation mapping, stable reference-only metadata, evidence status reconciliation, semantic/directional IDs, typed DB keys, DB record roundtrip helper, source and executable fixtures; browser gate remains blocked",
-      "RM-01 adversarial review loop: request-changes findings for identity collisions, whitespace refs, sticky status and DB key collisions were fixed and reverified"
+      "RM-01 adversarial review loop: request-changes findings for identity collisions, whitespace refs, sticky status and DB key collisions were fixed and reverified",
+      "RM-02/03/04 multiview implementation: claim-first argument lanes, bounded materials hierarchy, comparison summary and evidence-backed evolution timeline integrated into KnowledgeGraphPage; evidence-matrix row deep links pass build/lint/static probes; browser gate remains blocked",
+      "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed"
     ]
   },
   "edgeTypes": {
@@ -210,14 +212,14 @@
       "type": "surface",
       "layer": "next",
       "title": "主张中心论证视图",
-      "status": "next",
+      "status": "done",
       "priority": 2,
       "goal": "让研究者在一个研究问题范围内检查主张、支持、反驳、条件、局限和可回读证据。",
       "dependsOn": ["RM-01", "KG-05"],
       "touchpoints": ["src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/GraphInspector.tsx", "src/features/knowledge-graph"],
       "contracts": ["claim-to-evidence-to-reader path", "3-10 claim scope", "AI candidates remain clues", "inspector action order"],
       "acceptance": ["每条显示关系可解释类型/理由/来源/状态", "局部锚点可回读", "无定位关系不作为已核验证据"],
-      "verification": ["projection fixtures", "graph/evidence probe", "browser graph-to-reader return at 390/768/1280"],
+      "verification": ["ArgumentView projection and bounded-anchor implementation", "node scripts/probe-graph-relations.mjs", "npm run build", "npm run lint", "git diff --check", "browser graph-to-reader return at 390/768/1280 (blocked: no Chromium executable)"],
       "rollback": "回退到资料视图和既有证据矩阵入口，不删除关系记录。",
       "next": ["RM-05", "RM-06"]
     },
@@ -226,14 +228,14 @@
       "type": "surface",
       "layer": "next",
       "title": "资料分层视图",
-      "status": "next",
+      "status": "done",
       "priority": 3,
       "goal": "以范围、主题簇、论文、方法和数据集的稳定层级帮助研究者定位材料，而不是展示无限漂移网络。",
       "dependsOn": ["RM-01", "C5"],
       "touchpoints": ["src/features/knowledge-graph/GraphCanvas.tsx", "src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/graphFilters.ts"],
       "contracts": ["bounded node/edge projections", "scope persists across view switch", "drag changes presentation only", "legacy keyword links remain readable"],
       "acceptance": ["大范围默认折叠为簇", "主题/论文可双向高亮", "画布不以物理距离表达证据强度"],
-      "verification": ["projection cap fixtures", "canvas scale probe", "responsive browser screenshots"],
+      "verification": ["MaterialsHierarchyView bounded-cluster implementation", "node scripts/probe-graph-canvas.mjs", "npm run build", "npm run lint", "git diff --check", "responsive browser screenshots (blocked: no Chromium executable)"],
       "rollback": "保留当前概览/论文/主题投影，隐藏分层入口。",
       "next": ["RM-05", "RM-06"]
     },
@@ -242,14 +244,14 @@
       "type": "surface",
       "layer": "next",
       "title": "比较摘要与判断演化视图",
-      "status": "next",
+      "status": "done",
       "priority": 4,
       "goal": "把主张跨论文差异和研究判断的变化呈现为矩阵摘要与时间线，而不复制编辑器或 Git 视觉。",
       "dependsOn": ["RM-01", "C4", "C7"],
       "touchpoints": ["src/features/knowledge-graph", "src/features/evidence-matrix", "src/features/research-state", "src/utils/evidenceAnalysisCitation.ts"],
       "contracts": ["matrix remains source of truth", "judgment change references evidence IDs", "stale invalidation propagates"],
       "acceptance": ["摘要可跳转到矩阵编辑器", "每个判断变化可回到论文/证据", "来源失效后状态降级"],
-      "verification": ["matrix source-state probes", "timeline selector fixtures", "browser route/return checks"],
+      "verification": ["ComparisonEvolutionView matrix/timeline implementation", "evidence-matrix row deep-link implementation", "node scripts/probe-evidence-matrix.mjs", "npm run build", "npm run lint", "git diff --check", "browser route/return checks (blocked: no Chromium executable)"],
       "rollback": "隐藏摘要/时间线入口，保留既有矩阵和研究状态页面。",
       "next": ["RM-06"]
     },

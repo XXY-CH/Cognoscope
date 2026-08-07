@@ -1,0 +1,393 @@
+.root {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  gap: var(--sp-4);
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+.header,
+.claimHeading,
+.relationHeader,
+.anchorHeader,
+.actions {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.header,
+.claimHeading,
+.actions {
+  justify-content: space-between;
+}
+
+.header {
+  flex-shrink: 0;
+  padding-bottom: var(--sp-3);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.kicker {
+  margin: 0 0 var(--sp-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.title,
+.claimTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: var(--text-h2-weight);
+}
+
+.title {
+  font-size: var(--text-h2);
+  line-height: var(--text-h2-lh);
+}
+
+.claimTitle {
+  max-width: 58rem;
+  font-size: var(--text-h3);
+  line-height: var(--text-h3-lh);
+}
+
+.description,
+.questionDescription,
+.claimContext,
+.muted,
+.moreClaims,
+.actionHint {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.questionField {
+  display: grid;
+  flex: 0 1 320px;
+  gap: var(--sp-1);
+}
+
+.questionField label {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.body {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: minmax(190px, 0.78fr) minmax(0, 2.22fr);
+  gap: var(--sp-5);
+  overflow: hidden;
+}
+
+.claimRail {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding-right: var(--sp-4);
+  border-right: var(--border-width) solid var(--border-subtle);
+}
+
+.laneHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-2);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.laneHeader > :last-child {
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.claimList,
+.relationList,
+.anchorList {
+  display: grid;
+  gap: var(--sp-2);
+  margin: var(--sp-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.claimButton {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--sp-2);
+  min-height: var(--touch-target-size);
+  padding: var(--sp-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.claimButton:hover {
+  background: var(--bg-hover);
+}
+
+.claimButton:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.claimButtonActive {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.claimIndex {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.claimText {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  overflow-wrap: anywhere;
+}
+
+.moreClaims {
+  padding-top: var(--sp-3);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.detail {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: auto;
+  padding-right: var(--sp-1);
+}
+
+.claimHeading {
+  flex-shrink: 0;
+  padding-bottom: var(--sp-4);
+  border-bottom: var(--border-width) solid var(--border-subtle);
+}
+
+.claimContext {
+  max-width: 60rem;
+  color: var(--text-secondary);
+}
+
+.laneGrid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(220px, 0.95fr) minmax(280px, 1.2fr);
+  gap: var(--sp-5);
+  padding-top: var(--sp-4);
+}
+
+.relationLane,
+.evidenceLane {
+  min-width: 0;
+}
+
+.relation {
+  min-width: 0;
+  padding: var(--sp-3);
+  border: var(--border-width) solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+}
+
+.relationClue {
+  border-style: dashed;
+}
+
+.relationHeader {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.relationTarget {
+  display: block;
+  margin-top: var(--sp-3);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  overflow-wrap: anywhere;
+}
+
+.relationReason {
+  margin: var(--sp-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+  overflow-wrap: anywhere;
+}
+
+.relationSource {
+  display: block;
+  margin-top: var(--sp-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.anchor {
+  min-width: 0;
+  padding: var(--sp-3) 0;
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.anchorHeader {
+  justify-content: space-between;
+}
+
+.anchorSource {
+  display: grid;
+  min-width: 0;
+  gap: var(--sp-1);
+}
+
+.anchorSource strong,
+.anchorSource span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+.anchorSource strong {
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.anchorSource span,
+.anchorMeta {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.quote {
+  margin: var(--sp-3) 0 0;
+  padding-left: var(--sp-3);
+  border-left: var(--border-width) solid var(--accent);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.anchorMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+
+.unavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-1);
+  margin: var(--sp-2) 0 0;
+  color: var(--warning);
+  font-size: var(--text-xs);
+  line-height: var(--text-xs-lh);
+}
+
+.anchorAction {
+  min-height: var(--touch-target-size);
+  margin-top: var(--sp-2);
+}
+
+.actions {
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: var(--sp-4);
+  border-top: var(--border-width) solid var(--border-subtle);
+}
+
+.actions > :first-child {
+  margin-left: 0;
+}
+
+.actionHint {
+  margin: 0 0 0 auto;
+}
+
+.empty {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  padding: var(--sp-5);
+  border: var(--border-width) dashed var(--border-subtle);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm-lh);
+  text-align: center;
+}
+
+@media (max-width: 1199px) {
+  .body {
+    grid-template-columns: minmax(180px, 0.65fr) minmax(0, 2.35fr);
+  }
+
+  .laneGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .root {
+    overflow: auto;
+  }
+
+  .header,
+  .claimHeading {
+    flex-direction: column;
+  }
+
+  .questionField {
+    width: 100%;
+    flex-basis: auto;
+  }
+
+  .body {
+    grid-template-columns: 1fr;
+    overflow: visible;
+  }
+
+  .claimRail {
+    max-height: 260px;
+    padding: 0 0 var(--sp-4);
+    border-right: 0;
+    border-bottom: var(--border-width) solid var(--border-subtle);
+  }
+
+  .detail {
+    overflow: visible;
+  }
+
+  .actionHint {
+    width: 100%;
+    margin-left: 0;
+  }
+}
