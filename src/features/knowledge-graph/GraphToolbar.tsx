@@ -146,8 +146,8 @@ export function GraphToolbar({
       </p>
       <div className={styles.legend} aria-label="关系来源图例">
         <span className={styles.legendLabel}>关系来源</span>
-        <span className={styles.legendItem}>自动语义线索</span>
-        <span className={styles.legendItem}>关键词共现</span>
+        <span className={styles.legendItem}>语义线索</span>
+        <span className={styles.legendItem}>共现线索</span>
         <span className={styles.legendItem}>用户确认</span>
         <span className={styles.legendItem}>来源未记录</span>
       </div>

@@ -47,7 +47,7 @@ assert.match(source, /isEmphasized\(node\.id\) \? 1\.1 : 1\.0/);
 assert.match(source, /case 'file':[\s\S]*?return 5 \* baseSize;/);
 assert.match(source, /case 'folder':[\s\S]*?return 7 \* baseSize;/);
 assert.match(source, /case 'tag':[\s\S]*?return 4 \* baseSize;/);
-assert.match(pageSource, /fitKey=\{view\}/);
+assert.match(pageSource, /fitKey=\{exploreProjection\.hasSeed \? `explore:\$\{exploreProjection\.seedId \?\? 'seed'\}` : view\}/);
 assert.doesNotMatch(pageSource, /freezeLayout/);
 assert.match(pageSource, /paperKeywordEdges\(visibleKeywordNodes, visiblePaperIdSet\)/);
 assert.match(pageSource, /scopeRailCollapsed/);

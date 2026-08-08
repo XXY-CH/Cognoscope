@@ -42,13 +42,27 @@ import {
   buildEvolutionEvents,
   buildMaterialsHierarchy,
 } from './researchMapProjections';
+import { buildExploreProjection } from './exploreProjection';
 import {
   GraphToolbar,
   type GraphEvidenceFilter,
   type GraphView,
 } from './GraphToolbar';
 import { filterGraphData, type GraphKindFilter } from './graphFilters';
+import { useReducedMotion } from './graphCanvasPhysics';
 import styles from './KnowledgeGraphPage.module.css';
+
+const VIEW_TITLE: Record<GraphView, string> = {
+  materials: '资料',
+  argument: '论证',
+  comparison: '比较',
+  evolution: '演化',
+  explore: '探索',
+};
+
+const EXPLORE_NODE_TARGET = 30;
+const EXPLORE_HOP_LIMIT = 2;
+const EXPLORE_LIST_TARGET = 120;
 
 /** 关键词节点转画布所需 GraphNode 形态。L2 概念仍由现有关键词记录提供。 */
 function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
@@ -60,6 +74,17 @@ function keywordToGraphNodes(kws: KeywordNode[]): GraphNode[] {
     x: k.x,
     y: k.y,
   }));
+}
+
+function keywordToGraphNode(keyword: KeywordNode): GraphNode {
+  return {
+    id: keyword.id,
+    fileId: null,
+    label: keyword.label,
+    kind: 'tag' as const,
+    x: keyword.x,
+    y: keyword.y,
+  };
 }
 
 function paperKeywordEdges(
@@ -159,6 +184,7 @@ export function KnowledgeGraphPage() {
   const [selectedClaimId, setSelectedClaimId] = useState<string | null>(null);
   const [scopeRailCollapsed, setScopeRailCollapsed] = useState(false);
   const restoredSelectionRef = useRef<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const files = useFileStore((s) => s.files);
   const loadFiles = useFileStore((s) => s.loadFiles);
@@ -258,16 +284,6 @@ export function KnowledgeGraphPage() {
     () => buildMaterialsHierarchy(filteredGraph.paperNodes, filteredGraph.keywordNodes),
     [filteredGraph.keywordNodes, filteredGraph.paperNodes],
   );
-  const projectedNodes = useMemo(() => {
-    if (view === 'explore') return [...visiblePaperNodes, ...visibleKeywordGraphNodes];
-    return [];
-  }, [view, visibleKeywordGraphNodes, visiblePaperNodes]);
-  const projectedEdges = useMemo(() => {
-    if (view === 'explore') {
-      return [...visiblePaperEdges, ...visibleKeywordEdges, ...paperTopicEdges].slice(0, 160);
-    }
-    return [];
-  }, [paperTopicEdges, view, visibleKeywordEdges, visiblePaperEdges]);
   const graphFileIds = useMemo(
     () =>
       nodes
@@ -409,25 +425,98 @@ export function KnowledgeGraphPage() {
           graphRelationKey(edge.source, edge.target),
           projectGraphRelationEvidence(edge, nodes, relationRows, files),
         ]),
-      ),
+    ),
     [edges, files, nodes, relationRows],
   );
 
+  const exploreSeed = useMemo(() => {
+    if (selectedPaper) return selectedPaper;
+    if (selectedKeyword) return keywordToGraphNode(selectedKeyword);
+    return null;
+  }, [selectedKeyword, selectedPaper]);
+  const exploreProjection = useMemo(
+    () =>
+      buildExploreProjection({
+        seed: exploreSeed,
+        nodes: [...visiblePaperNodes, ...visibleKeywordGraphNodes],
+        edges: [...visiblePaperEdges, ...visibleKeywordEdges, ...paperTopicEdges],
+        nodeCap: EXPLORE_NODE_TARGET,
+        hopLimit: EXPLORE_HOP_LIMIT,
+      }),
+    [
+      exploreSeed,
+      paperTopicEdges,
+      visibleKeywordEdges,
+      visibleKeywordGraphNodes,
+      visiblePaperEdges,
+      visiblePaperNodes,
+    ],
+  );
+  const exploreCanvasNodes = useMemo(
+    () =>
+      layoutGraphNodes(
+        exploreProjection.frames
+          .slice(0, EXPLORE_NODE_TARGET)
+          .map((frame) => frame.node),
+        view,
+      ),
+    [exploreProjection.frames, view],
+  );
+  const exploreNodeIds = useMemo(
+    () => new Set(exploreProjection.frames.map((frame) => frame.node.id)),
+    [exploreProjection.frames],
+  );
+  const exploreListFallback =
+    view === 'explore' &&
+    (!exploreProjection.hasSeed ||
+      exploreProjection.overflowCount > 0 ||
+      reducedMotion);
   const evidenceFilteredEdges = useMemo(() => {
-    if (evidenceFilter === 'all') return projectedEdges;
-    return projectedEdges.filter((edge) =>
+    const activeEdges = view === 'explore' ? exploreProjection.edges : [];
+    if (evidenceFilter === 'all') return activeEdges;
+    return activeEdges.filter((edge) =>
       matchesEvidenceFilter(graphEdgeProjection(edge, relationEvidenceByKey), evidenceFilter),
     );
-  }, [evidenceFilter, projectedEdges, relationEvidenceByKey]);
-  const evidenceFilteredNodes = useMemo(() => {
-    if (evidenceFilter === 'all') return projectedNodes;
+  }, [evidenceFilter, exploreProjection.edges, relationEvidenceByKey, view]);
+  const exploreListFrames = useMemo(() => {
+    if (evidenceFilter === 'all') return exploreProjection.frames;
     const connectedIds = new Set<string>();
     for (const edge of evidenceFilteredEdges) {
       connectedIds.add(edge.source);
       connectedIds.add(edge.target);
     }
-    return projectedNodes.filter((node) => connectedIds.has(node.id));
-  }, [evidenceFilter, evidenceFilteredEdges, projectedNodes]);
+    return exploreProjection.frames.filter((frame) => connectedIds.has(frame.node.id));
+  }, [evidenceFilter, evidenceFilteredEdges, exploreProjection.frames]);
+  const exploreListNodes = useMemo(
+    () =>
+      exploreListFrames
+        .slice(0, EXPLORE_LIST_TARGET)
+        .map((frame) => frame.node),
+    [exploreListFrames],
+  );
+  const exploreHiddenListCount = Math.max(
+    0,
+    exploreListFrames.length - EXPLORE_LIST_TARGET,
+  );
+  const exploreFallbackReason = exploreProjection.hasSeed
+    ? evidenceFilter !== 'all' && exploreListFrames.length === 0
+      ? '当前证据筛选没有匹配的局部关系。'
+      : exploreProjection.overflowCount > 0
+        ? `当前邻域超过 ${EXPLORE_NODE_TARGET} 个节点，已折叠为列表。`
+        : reducedMotion
+          ? '已开启减少动效，局部探索使用列表替代画布。'
+          : ''
+    : '请先选中一个论文或主题，再查看它附近的一到两跳线索。';
+  const evidenceFilteredNodes = useMemo(() => {
+    const activeNodes = view === 'explore' ? exploreCanvasNodes : [];
+    if (evidenceFilter === 'all') return activeNodes;
+    const connectedIds = new Set<string>();
+    for (const edge of evidenceFilteredEdges) {
+      connectedIds.add(edge.source);
+      connectedIds.add(edge.target);
+    }
+    return activeNodes.filter((node) => connectedIds.has(node.id));
+  }, [evidenceFilter, evidenceFilteredEdges, exploreCanvasNodes, view]);
   const laidOutNodes = useMemo(
     () => layoutGraphNodes(evidenceFilteredNodes, view),
     [evidenceFilteredNodes, view],
@@ -435,40 +524,39 @@ export function KnowledgeGraphPage() {
   const visiblePaperIds = useMemo(
     () =>
       new Set(
-        evidenceFilteredNodes
-          .filter((node) => node.kind !== 'tag')
-          .map((node) => node.id),
+        exploreProjection.frames
+          .filter((frame) => frame.node.kind !== 'tag')
+          .map((frame) => frame.node.id),
       ),
-    [evidenceFilteredNodes],
+    [exploreProjection.frames],
   );
   const visibleKeywordIds = useMemo(
     () =>
       new Set(
-        evidenceFilteredNodes
-          .filter((node) => node.kind === 'tag')
-          .map((node) => node.id),
+        exploreProjection.frames
+          .filter((frame) => frame.node.kind === 'tag')
+          .map((frame) => frame.node.id),
       ),
-    [evidenceFilteredNodes],
+    [exploreProjection.frames],
   );
 
   useEffect(() => {
     if (view !== 'explore') return;
-    if (selectedNodeId && !visiblePaperIds.has(selectedNodeId)) {
+    if (selectedNodeId && !exploreNodeIds.has(selectedNodeId)) {
       setSelectedNode(null);
     }
-    if (selectedKeywordId && !visibleKeywordIds.has(selectedKeywordId)) {
+    if (selectedKeywordId && !exploreNodeIds.has(selectedKeywordId)) {
       setSelectedKeyword(null);
       setHighlightedKeywords([]);
     }
   }, [
+    exploreNodeIds,
     selectedKeywordId,
     selectedNodeId,
     setHighlightedKeywords,
     setSelectedKeyword,
     setSelectedNode,
     view,
-    visibleKeywordIds,
-    visiblePaperIds,
   ]);
 
   useEffect(() => {
@@ -734,15 +822,7 @@ export function KnowledgeGraphPage() {
             <div>
               <p className={styles.scopeLabel}>当前视图</p>
               <h2 className={styles.canvasTitle}>
-                {view === 'materials'
-                  ? '资料分层'
-                  : view === 'argument'
-                    ? '主张中心论证'
-                    : view === 'comparison'
-                      ? '比较摘要'
-                      : view === 'evolution'
-                        ? '判断演化'
-                        : '局部探索'}
+                {VIEW_TITLE[view]}
               </h2>
             </div>
             <span className={styles.canvasMeta}>
@@ -804,19 +884,49 @@ export function KnowledgeGraphPage() {
                 onOpenEvidenceMatrix={handleOpenEvidenceMatrix}
                 onOpenReader={handleOpenEvidence}
               />
+            ) : exploreListFallback ? (
+              <div>
+                <p className={styles.paneEmpty}>
+                  {exploreFallbackReason}
+                  {exploreProjection.hasSeed
+                    ? ` 当前显示 ${exploreListNodes.length} 个局部节点，范围为 ${EXPLORE_HOP_LIMIT} 跳。${
+                        exploreHiddenListCount > 0
+                          ? ` 其余 ${exploreHiddenListCount} 个节点仍保持折叠。`
+                          : ''
+                      }`
+                    : ''}
+                </p>
+                <details className={styles.graphListFallback} open>
+                  <summary>用列表查看局部探索</summary>
+                  <ul>
+                    {exploreListNodes.map((node) => (
+                      <li key={node.id}>
+                        <button
+                          type="button"
+                          aria-label={`选择${node.kind === 'tag' ? '主题' : '论文'} ${node.label}`}
+                          onClick={() => handleProjectedNodeClick(node)}
+                        >
+                          <span>{node.label}</span>
+                          <small>{node.kind === 'tag' ? '主题' : '论文'}</small>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </div>
             ) : laidOutNodes.length === 0 ? (
               <p className={styles.paneEmpty}>
                 {nodes.length === 0 ? '暂无论文节点；先从资料库加入研究空间。' : '没有匹配的节点'}
               </p>
             ) : (
               <GraphCanvas
-                nodes={laidOutNodes}
-                edges={evidenceFilteredEdges}
+                nodes={exploreProjection.hasSeed ? exploreCanvasNodes : laidOutNodes}
+                edges={exploreProjection.hasSeed ? evidenceFilteredEdges : []}
                 selectedNodeId={selectedNodeId ?? selectedKeywordId}
                 highlightedNodeIds={[...highlightedPaperIds, ...highlightedKeywordIds]}
                 onNodeClick={handleProjectedNodeClick}
                 onBackgroundClick={clearSelection}
-                fitKey={view}
+                fitKey={exploreProjection.hasSeed ? `explore:${exploreProjection.seedId ?? 'seed'}` : view}
                 onNodeDrag={(node, x, y) => {
                   if (node.kind === 'tag') void persistKeywordPosition(node.id, x, y);
                   else void persistNodePosition(node.id, x, y);
@@ -824,11 +934,11 @@ export function KnowledgeGraphPage() {
               />
             )}
           </div>
-          {view === 'explore' && laidOutNodes.length > 0 ? (
+          {view === 'explore' && !exploreListFallback && exploreCanvasNodes.length > 0 ? (
             <details className={styles.graphListFallback}>
-              <summary>用列表查看当前视图</summary>
+              <summary>用列表查看局部探索</summary>
               <ul>
-                {laidOutNodes.map((node) => (
+                {exploreCanvasNodes.map((node) => (
                   <li key={node.id}>
                     <button
                       type="button"

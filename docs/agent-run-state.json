@@ -47,7 +47,8 @@
     "RM-01",
     "RM-02",
     "RM-03",
-    "RM-04"
+    "RM-04",
+    "RM-05"
   ],
   "blocked": [
     "AG-QA.browser: no Chromium-compatible executable is available for real-document, responsive, keyboard, theme, and stale-source interaction evidence",
@@ -57,7 +58,7 @@
   "attempts": {
     "AG-EXEC": 1,
     "AG-REVIEW": 1,
-    "AG-QA.static": 1,
+    "AG-QA.static": 2,
     "AG-REVIEW:RM-01": 2,
     "AG-QA.browser": 1
   },
@@ -117,9 +118,10 @@
     "RM-01 static gate: npm run build, npm run lint, git diff --check passed; lint retains 3 pre-existing warnings",
     "RM-01 review loop closed: semantic/directional IDs, trimmed references, source recovery revalidation, typed DB keys and pure record roundtrip fixture all pass",
     "RM-02/RM-03/RM-04 static gate: claim-first argument lanes, bounded materials clusters, matrix summary, source-backed evolution states, row deep-link return, npm run build/lint, git diff --check, and graph/evidence probes pass; browser gate remains blocked",
-    "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed"
+    "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed",
+    "RM-05 static gate: esbuild-bundled BFS projection fixture, one-to-two hop local explore, 30-node cap, reduced-motion list fallback, graph zoom/physics probes, npm run build, npm run lint, and git diff --check passed; browser gate remains blocked"
   ],
-  "next": ["AG-EXEC:RM-05", "AG-EXEC:RM-06", "AG-QA.browser"],
-  "iteration": 7,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 implementation/static QA; RM-05/RM-06 remain next and AG-QA.browser remains blocked."
+  "next": ["AG-EXEC:RM-06", "AG-QA.browser"],
+  "iteration": 8,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 implementation/static QA; RM-05 completed with a pure BFS projection fixture; RM-06 remains next and AG-QA.browser remains blocked."
 }

@@ -43,16 +43,26 @@ assert.match(page, /<ArgumentView/, 'argument view is not integrated');
 assert.match(page, /<MaterialsHierarchyView/, 'materials view is not integrated');
 assert.match(page, /<ComparisonEvolutionView/, 'comparison/evolution view is not integrated');
 assert.match(page, /evidence-matrix\/\$\{encodeURIComponent\(matrixId\)\}/, 'matrix return route is missing');
+assert.match(page, /buildExploreProjection/, 'explore projection helper is not integrated');
+assert.match(page, /EXPLORE_NODE_TARGET = 30/, 'explore node target cap missing');
+assert.match(page, /EXPLORE_HOP_LIMIT = 2/, 'explore hop cap missing');
+assert.match(page, /EXPLORE_LIST_TARGET = 120/, 'explore list fallback cap missing');
+assert.match(page, /exploreListFallback/, 'explore fallback gate is missing');
+assert.match(page, /exploreProjection\.overflowCount > 0/, 'dense explore fallback is not wired');
+assert.match(page, /exploreListNodes/, 'explore list projection is not wired');
+assert.match(page, /用列表查看局部探索/, 'explore list fallback label is missing');
+assert.match(page, /useReducedMotion/, 'explore reduced-motion fallback is missing');
 
 console.log(JSON.stringify({
   ok: true,
-  scope: 'RM-02/RM-03/RM-04',
+  scope: 'RM-02/RM-03/RM-04/RM-05',
   guarantees: [
     'five-task-view-toolbar',
     'claim-and-anchor-bounds',
     'bounded-materials-hierarchy',
     'matrix-summary-and-evolution-return',
     'stale-source-downgrade',
+    'bounded-local-explore',
     'browser-gate-separate',
   ],
 }, null, 2));

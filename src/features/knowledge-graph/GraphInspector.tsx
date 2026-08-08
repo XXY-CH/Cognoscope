@@ -55,9 +55,9 @@ interface GraphInspectorProps {
 }
 
 function originLabel(origin: GraphEdge['origin']): string {
-  if (origin === 'ai') return '自动语义线索';
+  if (origin === 'ai') return '语义线索';
   if (origin === 'cooccurrence') return '关键词共现';
-  if (origin === 'mixed') return '共现 + 自动语义';
+  if (origin === 'mixed') return '共现 + 语义';
   if (origin === 'manual') return '用户确认';
   return '来源未记录';
 }
@@ -91,9 +91,9 @@ function relationReason(
     (origin === 'cooccurrence'
       ? '两篇论文的关键词在图谱中共同出现'
       : origin === 'ai'
-        ? '自动语义分析提供关系导航建议'
+        ? '语义分析提供关系导航建议'
         : origin === 'mixed'
-          ? '关键词共现与自动语义分析共同提供导航建议'
+          ? '关键词共现与语义分析共同提供导航建议'
           : origin === 'manual'
             ? '由用户确认的关系'
             : '该关系在早期版本中生成，来源尚未记录')
