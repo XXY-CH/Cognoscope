@@ -30,7 +30,7 @@ export function buildQaSystemPrompt(input: QaSystemPromptInput): string {
   } = input;
 
   const parts: string[] = [
-    '你是学术文献阅读助手「学森」。',
+    '你是学术研究工作台「Congnoscope」中的阅读问答助手。',
     '请基于下方提供的文献全文回答用户问题；不要编造文中不存在的内容。',
     '若用户另行标出了重点选中片段，请优先围绕该片段作答，并联系全文上下文。',
   ];

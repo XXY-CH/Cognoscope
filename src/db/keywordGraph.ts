@@ -4,7 +4,19 @@
  */
 import type { KeywordEdge, KeywordNode } from '../types';
 import { graphEdgeFromRecord, graphEdgeRecordFromEdge } from './graph';
-import { getDb } from './index';
+import { getDb, type GraphEdgeRecord } from './index';
+
+export function keywordEdgeRecordFromEdge(
+  edge: KeywordEdge,
+): GraphEdgeRecord {
+  return graphEdgeRecordFromEdge(edge);
+}
+
+export function keywordEdgeFromRecord(
+  record: GraphEdgeRecord,
+): KeywordEdge {
+  return graphEdgeFromRecord(record);
+}
 
 export async function listKeywordNodes(): Promise<KeywordNode[]> {
   const db = await getDb();
@@ -27,7 +39,7 @@ export async function putKeywordNodes(nodes: KeywordNode[]): Promise<void> {
 export async function listKeywordEdges(): Promise<KeywordEdge[]> {
   const db = await getDb();
   const all = await db.getAll('keywordEdges');
-  return all.map(graphEdgeFromRecord);
+  return all.map(keywordEdgeFromRecord);
 }
 
 export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
@@ -36,7 +48,7 @@ export async function putKeywordEdges(edges: KeywordEdge[]): Promise<void> {
   const tx = db.transaction('keywordEdges', 'readwrite');
   await Promise.all(
     edges.map((e) => {
-      return tx.store.put(graphEdgeRecordFromEdge(e));
+      return tx.store.put(keywordEdgeRecordFromEdge(e));
     }),
   );
   await tx.done;

@@ -105,8 +105,12 @@ for (const [label, source] of [['paper graph DB', graphDbSource]]) {
 assert.match(graphDbSource, /edgeRecordId\(edge\.source, edge\.target, edge\.relationType\)/);
 assert.match(graphDbSource, /export function graphEdgeFromRecord/);
 assert.match(graphDbSource, /export function graphEdgeRecordFromEdge/);
-assert.match(keywordDbSource, /graphEdgeRecordFromEdge\(e\)/);
-assert.match(keywordDbSource, /graphEdgeFromRecord/);
+assert.match(keywordDbSource, /export function keywordEdgeRecordFromEdge/);
+assert.match(keywordDbSource, /export function keywordEdgeFromRecord/);
+assert.match(keywordDbSource, /return graphEdgeRecordFromEdge\(edge\)/);
+assert.match(keywordDbSource, /return graphEdgeFromRecord\(record\)/);
+assert.match(keywordDbSource, /all\.map\(keywordEdgeFromRecord\)/);
+assert.match(keywordDbSource, /keywordEdgeRecordFromEdge\(e\)/);
 
 console.log(
   JSON.stringify(

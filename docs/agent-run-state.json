@@ -26,7 +26,7 @@
     ".omx/plans/ui-hierarchy-redesign-20260804.md",
     ".omx/specs/deep-interview-frontend-research-environment.md"
   ],
-  "active": ["AG-QA.browser"],
+  "active": [],
   "done": [
     "AG-ORCH",
     "AG-STATE",
@@ -48,19 +48,22 @@
     "RM-02",
     "RM-03",
     "RM-04",
-    "RM-05"
+    "RM-05",
+    "RM-06",
+    "AG-QA.browser",
+    "AG-INTEGRATION",
+    "AG-RELEASE"
   ],
   "blocked": [
-    "AG-QA.browser: no Chromium-compatible executable is available for real-document, responsive, keyboard, theme, and stale-source interaction evidence",
-    "AG-INTEGRATION: browser-required gate is blocked",
-    "AG-RELEASE: integration is not eligible while AG-QA.browser is blocked"
+    "KG-06: real browser delete/restore transaction was not exercised; source invalidation and hard-purge contracts remain covered by data probes",
+    "MON-02: Python visual dependencies and camera runtime are unavailable; monitor fallback and session-merge contracts remain covered"
   ],
   "attempts": {
     "AG-EXEC": 1,
     "AG-REVIEW": 1,
     "AG-QA.static": 2,
     "AG-REVIEW:RM-01": 2,
-    "AG-QA.browser": 1
+    "AG-QA.browser": 2
   },
   "artifacts": [
     "docs/GRAPH_ENGINEERING.md",
@@ -95,8 +98,10 @@
     "主题筛选会让论文节点为空但仍保留论文-主题边，D3 可能因 dangling link 抛 node not found；现已按可见论文闭合投影边端点。",
     "AI 建边上游失败此前会把整篇论文标成 failed；现已将建边降级为 best-effort，论文节点和入图成员不再被关系建议失败阻断。",
     "图谱与证据工作台的检查器现在使用内部滚动和窄栏换行；范围导引可收起；主题元数据关联、矩阵候选和可回读锚点分层展示；来源失效与定位不可回读分别呈现。",
-    "Browser QA remains blocked and cannot be replaced by static probes.",
-    "Phase 006 design is documentation-complete; RM-01 relation semantics and projection adapter plus RM-02/RM-03/RM-04 multiview projections are implemented and statically verified; comparison actions deep-link to matrix rows, while browser QA remains blocked."
+    "Browser QA completed in the Codex browser with a real IndexedDB PDF fixture; remaining runtime boundaries are isolated to KG-06 delete/restore and MON-02 camera dependencies.",
+    "Phase 006 design and runtime integration are complete through RM-06; RM-01 relation semantics, RM-02/RM-03/RM-04 projections, evidence-matrix deep links, and browser return paths are verified.",
+    "Graph inclusion now keeps local membership when AI/keyword enrichment is unavailable, exposes a retry action, preserves node coordinates, and guards queued keyword writes with the file operation token.",
+    "Reader QA surface now sends with plain Enter while preserving Shift+Enter and IME composition, and renders Markdown plus common LaTeX as safe React/MathML; digest Markdown-only output uses the same formatter."
   ],
   "lastVerification": [
     "Phase 005, Phase 003 and Phase 004 contracts read",
@@ -109,19 +114,21 @@
     "Knowledge graph scale probe passed: max zoom 4, min zoom 0.25, and 40/32/56px node diameters at max zoom",
     "Knowledge graph canvas probe passed: D3 charge/link forces, stable drag data identity, pinned drop coordinates, reduced-motion synchronous layout, bounded cooldown, engine-stop fit, endpoint-closed topic projection, and no freezeLayout call",
     "Knowledge graph inclusion probe passed: AI edge suggestion failure is caught before node/member persistence and emits a non-blocking warning",
-    "Graph/evidence workbench boundary follow-up passed: npm run build, npm run lint, git diff --check, graph canvas/inclusion probes, and evidence matrix probe; browser runtime remains unavailable",
+    "Graph/evidence workbench boundary follow-up passed: internal scrolling, collapsible scope rail, relation/evidence wording, source-versus-locator status split, and real browser return paths were verified",
     "npm run build, npm run lint, git diff --check, and local Vite/API health checks passed; lint retains 3 pre-existing warnings",
     "AG-QA.static passed: build, lint, diff check, UI, READ-04, evidence matrix, source invalidation, and monitor probes",
-    "AG-QA.browser blocked: no Chromium-compatible executable",
+    "AG-QA.browser passed: real PDF Reader text/TOC, annotation Enter persistence, Q&A Enter/Shift+Enter, Markdown/MathML rendering, reduced-motion, light/dark theme, 390/768/1280 overflow, mobile inspector/scope collapse, focus ring, five map views, graph evidence anchor, and matrix source-reader return",
     "Phase 006 docs: JSON and relative Markdown link checks passed; no runtime code changed",
     "RM-01: legacy relation adapter, stable references, evidence status reconciliation and graph/keyword DB passthrough verified by source probe and esbuild-bundled fixture",
     "RM-01 static gate: npm run build, npm run lint, git diff --check passed; lint retains 3 pre-existing warnings",
     "RM-01 review loop closed: semantic/directional IDs, trimmed references, source recovery revalidation, typed DB keys and pure record roundtrip fixture all pass",
-    "RM-02/RM-03/RM-04 static gate: claim-first argument lanes, bounded materials clusters, matrix summary, source-backed evolution states, row deep-link return, npm run build/lint, git diff --check, and graph/evidence probes pass; browser gate remains blocked",
+    "RM-02/RM-03/RM-04 integration gate: claim-first argument lanes, bounded materials clusters, matrix summary, source-backed evolution states, row deep-link return, and real graph/matrix/reader navigation pass",
     "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed",
-    "RM-05 static gate: esbuild-bundled BFS projection fixture, one-to-two hop local explore, 30-node cap, reduced-motion list fallback, graph zoom/physics probes, npm run build, npm run lint, and git diff --check passed; browser gate remains blocked"
+    "RM-05 integration gate: esbuild-bundled BFS projection fixture, one-to-two hop local explore, 30-node cap, reduced-motion list fallback, graph zoom/physics probes, and real five-view tab switching pass",
+    "RM-06 release gate: build, lint (three pre-existing warnings), diff check, graph inclusion/retry, message formatting, research-map, graph-canvas, evidence-matrix probes, and real PDF graph/matrix/reader return pass",
+    "AG-INTEGRATION and AG-RELEASE completed after the browser gate; remaining blockers are scoped to KG-06 real delete/restore interaction and MON-02 camera runtime"
   ],
-  "next": ["AG-EXEC:RM-06", "AG-QA.browser"],
-  "iteration": 8,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 implementation/static QA; RM-05 completed with a pure BFS projection fixture; RM-06 remains next and AG-QA.browser remains blocked."
+  "next": ["P4"],
+  "iteration": 10,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 -> RM-05 -> RM-06 -> AG-QA.browser -> AG-INTEGRATION -> AG-RELEASE; KG-06 delete/restore and MON-02 camera remain bounded follow-ups before P4."
 }

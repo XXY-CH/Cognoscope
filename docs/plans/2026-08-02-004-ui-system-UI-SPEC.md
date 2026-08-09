@@ -7,11 +7,11 @@ supersedes: docs/plans/2026-08-01-002-ui-UI-SPEC.md
 incorporates: docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md
 ---
 
-# Phase 004 - 学森系统级 UI 设计契约
+# Phase 004 - Congnoscope系统级 UI 设计契约
 
 ## 1. Design intent
 
-学森是一个本地优先的学术研究工作台，不是论文搜索首页，也不是把多个
+Congnoscope是一个本地优先的学术研究工作台，不是论文搜索首页，也不是把多个
 AI 工具拼在一起的控制台。UI 的第一责任是让用户始终知道：
 
 1. 我现在处于研究流程的哪一步；
@@ -38,7 +38,7 @@ AI 工具拼在一起的控制台。UI 的第一责任是让用户始终知道�
 
 ```mermaid
 flowchart TD
-  X["学森研究工作台"] --> L["资料库"]
+  X["Congnoscope研究工作台"] --> L["资料库"]
   X --> R["研究工作台"]
   X --> F["专注进展"]
   X --> RE["沉浸阅读"]

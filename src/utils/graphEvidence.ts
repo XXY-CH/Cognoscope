@@ -113,14 +113,12 @@ function relationTypeFromLegacyEdge(
   }
 
   const isPaperConcept =
-    (sourceKind === 'paper' && targetKind === 'concept') ||
-    (sourceKind === 'concept' && targetKind === 'paper');
+    sourceKind === 'paper' && targetKind === 'concept';
   if (isPaperConcept) {
     return 'mentions';
   }
 
   if (sourceKind === 'scope' && targetKind === 'paper') return 'contains';
-  if (sourceKind === 'paper' && targetKind === 'scope') return 'contains';
 
   if (
     edge.origin === 'cooccurrence' ||

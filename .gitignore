@@ -43,9 +43,12 @@ __pycache__/
 graft/
 .xuesen-runtime/
 xuesen-main.zip
+output/
+.playwright-cli/
 
 # Local Agent/editor integration state — machine-specific, not project runtime.
 /AGENTS.md
+/Agents.md
 .claude/
 .cursor/
 .ignore

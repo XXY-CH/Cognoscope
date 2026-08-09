@@ -1,17 +1,17 @@
-# Reading Monitor（学森 · 行为检测）
+# Reading Monitor（Congnoscope · 行为检测）
 
 单人学习行为监测：摄像头 → 五路检测 → JSONL 事件流 → 离线专注分析。  
-作为 **学森** 子模块位于仓库 `monitor/`；浏览器经 HTTP API 启停检测。
+作为 **Congnoscope** 子模块位于仓库 `monitor/`；浏览器经 HTTP API 启停检测。
 
 > 前端进度与待办见根目录 [`PROGRESS.md`](../PROGRESS.md)。  
 > TypeScript 客户端：`src/utils/monitorApi.ts`；会话转换雏形：`src/utils/monitorAdapter.ts`。
 
 ---
 
-## 与学森的集成
+## 与 Congnoscope 的集成
 
 ```
-Browser (xuesen)                     Python (monitor/)
+Browser (Congnoscope)                Python (monitor/)
 ─────────────────                    ─────────────────
 ReaderPage ──POST /api/detect/start──→ server.py → ReadingMonitor
          ←── sessionId / status ─────
@@ -45,7 +45,7 @@ Dashboard ← sessionStore / IndexedDB   （结束时合并已落地；实时推
 
 CORS 已开，供 `http://localhost:5173` 调用。
 
-### 标签 → 学森 `DistractionKind`
+### 标签 → Congnoscope `DistractionKind`
 
 | Monitor label | DistractionKind | 说明 |
 |---|---|---|
@@ -54,7 +54,7 @@ CORS 已开，供 `http://localhost:5173` 调用。
 | `chatting` | `talk` | 直接 |
 | `head_down` | `away` | 低头 ≈ 未专注 |
 | `gaze_center: false` | `gaze_off` | 优先级最低 |
-| — | `yawn` | 学森类型有，monitor 暂未检 |
+| — | `yawn` | Congnoscope 类型有，monitor 暂未检 |
 
 ### 当前缺口（与 PROGRESS P1/P2 对齐）
 
@@ -112,7 +112,7 @@ FocusScore = w1×GazeRatio + w2×(1−PERCLOS) + w3×(1−HeadVar_norm)
 ```
 monitor/
 ├── main.py              # ReadingMonitor + CLI
-├── server.py            # Flask HTTP API（学森对接入口）
+├── server.py            # Flask HTTP API（Congnoscope对接入口）
 ├── analyze.py           # 会话分析 + 终端报告
 ├── requirements.txt
 ├── README.md
@@ -144,7 +144,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-### 1. HTTP 服务（推荐，对接学森）
+### 1. HTTP 服务（推荐，对接Congnoscope）
 
 ```bash
 python monitor/server.py              # :8765
@@ -243,4 +243,4 @@ report(result)
 
 | 日期 | 说明 |
 |---|---|
-| 2026-07-30 | 对齐学森仓库：Flask `server.py`、前端 API、集成图与 P1 待办；修正目录结构描述 |
+| 2026-07-30 | 对齐Congnoscope仓库：Flask `server.py`、前端 API、集成图与 P1 待办；修正目录结构描述 |

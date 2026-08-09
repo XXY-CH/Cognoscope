@@ -1,9 +1,9 @@
-# 学森 · 模块交接说明（AI 能力优先）
+# Congnoscope · 历史模块交接说明（AI 能力优先）
 
 > 更新时间：2026-08-03
 > 读者：**接入 AI 问答 / 整理习得 / 知识图谱建边** 的前后端开发者
-> 设计权威：[`UI_spec.md`](./UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）
-> 工程约束：[`.cursorrules`](./.cursorrules) · 进度：[`PROGRESS.md`](./PROGRESS.md) · 检测：[`monitor/README.md`](./monitor/README.md)
+> 设计权威：[`UI_spec.md`](../../UI_spec.md)（§2.4 设置 · §6 图谱 · §8.6–8.9 阅读侧栏 · §9 模型 · §13–14）
+> 工程约束：[`.cursorrules`](../../.cursorrules) · 进度：[`PROGRESS.md`](../../PROGRESS.md) · 检测：[`monitor/README.md`](../../monitor/README.md)
 
 本文说明：**AI 相关能力已具备哪些 UI/配置、还缺什么、该改哪些文件、类型与产品约束是什么**。当前知识图谱已经从占位进入可用切片：它负责论文获取后的跨论文理解与证据整理，不替代外部检索和写作工具。
 
@@ -214,7 +214,7 @@ interface QaMessage {
 - 建边中：顶栏 32px 进度条（§6.4）。
 - 离线：只展示已有边，不重新计算（§14）。
 - 当前详情面板展示摘要、关键词、关联论文、关系来源/理由，并可直接打开阅读器。
-- 待深化：把批注、引用句和页码纳入边证据，并提供人工确认状态；在此之前不把关系表述为事实引用。分级结构与新 UI 的设计边界见 [Phase 003 知识图谱设计契约](./docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md)。
+- 待深化：把批注、引用句和页码纳入边证据，并提供人工确认状态；在此之前不把关系表述为事实引用。分级结构与新 UI 的设计边界见 [Phase 003 知识图谱设计契约](../../docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md)。
 
 ### 6.2 类型（已有）
 
@@ -369,12 +369,12 @@ npm install react-force-graph-2d
 
 | 文档 | 用途 |
 |---|---|
-| [`UI_spec.md`](./UI_spec.md) §2.4 / §6 / §8.6–8.9 / §9 / §13 / §14 | 交互与模型权威 |
-| [`PROGRESS.md`](./PROGRESS.md) | 总进度、P0 AI 待办 |
-| [`docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md`](./docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md) | 五级数据层、视图与证据边界 |
-| [`docs/plans/2026-08-02-003-knowledge-graph-plan.md`](./docs/plans/2026-08-02-003-knowledge-graph-plan.md) | 分阶段实现与验证计划 |
-| [`docs/plans/2026-08-02-004-ui-system-UI-SPEC.md`](./docs/plans/2026-08-02-004-ui-system-UI-SPEC.md) | 全系统页面分级、表面层级、状态与动画契约 |
-| [`docs/plans/2026-08-02-004-ui-system-plan.md`](./docs/plans/2026-08-02-004-ui-system-plan.md) | 全系统 UI 分阶段实现与验证计划 |
-| [`monitor/README.md`](./monitor/README.md) | 行为检测（与聊天无关） |
-| [`README.md`](./README.md) | 启动与排障 |
-| [`.cursorrules`](./.cursorrules) | Agent / 工程习惯 |
+| [`UI_spec.md`](../../UI_spec.md) §2.4 / §6 / §8.6–8.9 / §9 / §13 / §14 | 交互与模型权威 |
+| [`PROGRESS.md`](../../PROGRESS.md) | 总进度、P0 AI 待办 |
+| [`docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md`](../../docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md) | 五级数据层、视图与证据边界 |
+| [`docs/plans/2026-08-02-003-knowledge-graph-plan.md`](../../docs/plans/2026-08-02-003-knowledge-graph-plan.md) | 分阶段实现与验证计划 |
+| [`docs/plans/2026-08-02-004-ui-system-UI-SPEC.md`](../../docs/plans/2026-08-02-004-ui-system-UI-SPEC.md) | 全系统页面分级、表面层级、状态与动画契约 |
+| [`docs/plans/2026-08-02-004-ui-system-plan.md`](../../docs/plans/2026-08-02-004-ui-system-plan.md) | 全系统 UI 分阶段实现与验证计划 |
+| [`monitor/README.md`](../../monitor/README.md) | 行为检测（与聊天无关） |
+| [`README.md`](../../README.md) | 启动与排障 |
+| [`.cursorrules`](../../.cursorrules) | Agent / 工程习惯 |

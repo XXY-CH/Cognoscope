@@ -1,1 +1,1 @@
-# Xuesen Backend - Beat integration without auth
+# Congnoscope Backend - Beat integration without auth

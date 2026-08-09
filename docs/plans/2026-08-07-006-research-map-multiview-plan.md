@@ -3,7 +3,7 @@ title: Phase 006 Research Map - Execution Plan
 type: feature/design
 phase: 006
 date: 2026-08-07
-status: ready
+status: implementation-browser-verified
 design_contract: docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md
 ---
 
@@ -52,7 +52,7 @@ RM-01 关系语义与投影适配器
 ```
 
 RM-02、RM-03、RM-04 在 RM-01 完成后可并行；RM-05 需要至少一个稳定投影；
-RM-06 等待所有视图收敛。浏览器门与静态门必须分开记录。
+RM-06 已完成静态门准备；浏览器门与静态门必须分开记录，当前浏览器门因缺少 Chromium-compatible runtime 保持 blocked。
 
 ## Work packages
 
@@ -134,6 +134,8 @@ new pure selectors and small view components, `GraphInspector` styles.
 - 线索/核验图例和可访问列表替代。
 
 ### RM-06 - QA 与集成
+
+当前状态：静态构建、lint、关系/图谱/消息格式化探针已通过；真实 PDF/EPUB、多视口、键盘、主题和跨页面集成仍待可用浏览器运行时。
 
 **Ownership:** static probes, browser QA, integration evidence and docs state.
 

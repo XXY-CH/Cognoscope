@@ -83,7 +83,7 @@ export function buildDigestMessages(input: DigestPromptInput): ChatMessage[] {
   } = input;
 
   const system = [
-    '你是学术文献阅读助手「学森」中的「整理习得」模块。',
+    '你是学术研究工作台「Congnoscope」中的「整理习得」模块。',
     '任务：根据用户在本篇文献上的批注，并结合文献文字稿，归纳用户的阅读习得。',
     '要求：',
     '1. 以用户批注为线索与重心，不要无视批注去写泛泛的全文摘要。',

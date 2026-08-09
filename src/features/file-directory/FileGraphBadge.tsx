@@ -26,15 +26,22 @@ export function FileGraphBadge({
   joining,
 }: FileGraphBadgeProps) {
   const addFileToGraph = useGraphStore((s) => s.addFileToGraph);
+  const retryGraphEnrichment = useGraphStore((s) => s.retryGraphEnrichment);
 
   if (!visible) return null;
 
   const status = joining ? 'pending' : (member?.status ?? 'out');
 
-  const handleJoin = async () => {
-    const result = await addFileToGraph(fileId);
-    if (result === 'in') toast.success('已加入知识图谱');
-    else if (result === 'failed') {
+  const handleJoin = async (retry = false) => {
+    const result = retry
+      ? await retryGraphEnrichment(fileId)
+      : await addFileToGraph(fileId);
+    const currentMember = useGraphStore.getState().membersByFileId[fileId];
+    if (result === 'in' && currentMember?.errorMessage) {
+      toast.warning(`已加入图谱，但${currentMember.errorMessage}`);
+    } else if (result === 'in') {
+      toast.success(retry ? '关联与关键词增强已完成' : '已加入知识图谱');
+    } else if (result === 'failed') {
       const msg =
         useGraphStore.getState().membersByFileId[fileId]?.errorMessage ??
         '加入图谱失败';
@@ -43,10 +50,34 @@ export function FileGraphBadge({
   };
 
   if (status === 'in') {
+    const retryable = Boolean(member?.errorMessage);
     return (
-      <Tag aria-label="已加入知识图谱" tone="success">
-        已入图谱
-      </Tag>
+      <div className={styles.row}>
+        <Tag
+          aria-label={
+            retryable
+              ? `已加入知识图谱，${member?.errorMessage}`
+              : '已加入知识图谱'
+          }
+          tone="success"
+        >
+          已入图谱
+        </Tag>
+        {retryable ? (
+          <Button
+            aria-label="重试关联与关键词增强"
+            variant="secondary"
+            size="sm"
+            disabled={joining}
+            onClick={(e) => {
+              e.stopPropagation();
+              void handleJoin(true);
+            }}
+          >
+            重试关联
+          </Button>
+        ) : null}
+      </div>
     );
   }
 

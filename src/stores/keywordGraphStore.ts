@@ -50,6 +50,7 @@ interface KeywordGraphState {
     title: string;
     pdfKeywords: string[];
     abstract: string | null;
+    shouldContinue?: () => boolean;
   }) => Promise<void>;
 }
 
@@ -79,6 +80,9 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
   },
 
   clearKeywordGraph: async () => {
+    // Removal/clear is a lifecycle boundary. Let queued enrichment finish its
+    // current IndexedDB transaction, then clear the resulting records.
+    await keywordSyncChain;
     await kwDb.clearKeywordGraph();
     set({
       nodes: [],
@@ -105,6 +109,10 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
 
   detachPapers: async (paperNodeIds) => {
     if (paperNodeIds.length === 0) return;
+    // A stale enrichment may already be inside an IndexedDB transaction. The
+    // queue makes removal happen after that transaction, so it cannot leave
+    // orphan keyword attachments behind.
+    await keywordSyncChain;
     const { nodes, edges } = await kwDb.detachPapersFromKeywords(paperNodeIds);
     const selected = get().selectedKeywordId;
     set({
@@ -118,9 +126,16 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
     });
   },
 
-  syncAfterPaperIn: ({ paperNodeId, title, pdfKeywords, abstract }) => {
+  syncAfterPaperIn: ({
+    paperNodeId,
+    title,
+    pdfKeywords,
+    abstract,
+    shouldContinue,
+  }) => {
     // 排队执行：后一篇等前一篇写完再读 IDB，防止旧词被 stale set 冲掉
     const run = async () => {
+      if (shouldContinue && !shouldContinue()) return;
       const ui = useUiStore.getState();
       keywordSyncInFlight += 1;
       set({ syncing: true, error: null });
@@ -130,6 +145,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
           kwDb.listKeywordNodes(),
           kwDb.listKeywordEdges(),
         ]);
+        if (shouldContinue && !shouldContinue()) return;
         const existingIdsBefore = existingBefore.map((n) => n.id);
 
         // 原文词先截断，保证单篇最终 ≤5
@@ -149,6 +165,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
                 maxCount: remainingSlots,
               })
             : [];
+        if (shouldContinue && !shouldContinue()) return;
 
         const merged = await mergeKeywordClusters({
           settings: ui.aiSettings,
@@ -162,6 +179,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
           pdfLimited,
           MAX_KEYWORDS_PER_PAPER,
         );
+        if (shouldContinue && !shouldContinue()) return;
 
         if (clusters.length === 0) {
           set({
@@ -220,6 +238,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
         }
 
         const upserts = touchedIds.map((id) => byId.get(id)!);
+        if (shouldContinue && !shouldContinue()) return;
         await kwDb.putKeywordNodes(upserts);
 
         // 先本地共现建边（同篇 ≥2 词即有边，不依赖 AI / 不要求已有旧词）
@@ -243,6 +262,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
         // 再请 AI 打语义分并与共现综合；失败则保留共现边
         let aiEdges: KeywordEdge[] = [];
         try {
+          if (shouldContinue && !shouldContinue()) return;
           aiEdges = await suggestKeywordEdgesWithAi({
             settings: ui.aiSettings,
             keywords: kwSnapshot,
@@ -257,6 +277,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
 
         // 将本次证据与历史边合并：AI 暂时不可用时，不覆盖既有语义证据。
         const newEdges = mergeKeywordEdges(existingEdges, coEdges, aiEdges);
+        if (shouldContinue && !shouldContinue()) return;
         if (newEdges.length > 0) await kwDb.putKeywordEdges(newEdges);
 
         // 写完后从 IDB 全量回读，保证 UI 与持久化一致、旧词不丢
@@ -264,6 +285,7 @@ export const useKeywordGraphStore = create<KeywordGraphState>((set, get) => ({
           kwDb.listKeywordNodes(),
           kwDb.listKeywordEdges(),
         ]);
+        if (shouldContinue && !shouldContinue()) return;
         set({
           nodes,
           edges,

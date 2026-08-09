@@ -47,7 +47,7 @@ async function readBackendError(response: Response): Promise<Error> {
 
 function backendUnavailable(error: unknown): Error {
   if (error instanceof TypeError) {
-    return new Error('无法连接学森后端，请确认后端运行在 127.0.0.1:8000');
+    return new Error('无法连接 Congnoscope 后端，请确认后端运行在 127.0.0.1:8000');
   }
   return error instanceof Error ? error : new Error('AI 请求失败');
 }

@@ -30,7 +30,7 @@ export function AppShellLayout() {
       const candidate = matches[i]?.handle as AppRouteHandle | undefined;
       if (candidate?.title) return candidate;
     }
-    return { title: '学森' } satisfies AppRouteHandle;
+    return { title: 'Congnoscope' } satisfies AppRouteHandle;
   }, [matches]);
 
   const routeBreadcrumb = useMemo(() => {

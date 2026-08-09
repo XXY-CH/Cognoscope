@@ -1,4 +1,4 @@
-# Xuesen Backend
+# Congnoscope Backend
 
 基于 Beat 的后端 API，移除了 authority/auth 体系，简化为单用户模式。
 

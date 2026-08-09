@@ -1,0 +1,38 @@
+.root {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.root > :first-child { margin-top: 0; }
+.root > :last-child { margin-bottom: 0; }
+.root p,
+.root h1,
+.root h2,
+.root h3,
+.root h4,
+.root h5,
+.root h6,
+.root blockquote,
+.root ul,
+.root ol,
+.root pre,
+.root hr { margin: 0 0 var(--sp-2); }
+
+.root h1,
+.root h2,
+.root h3,
+.root h4,
+.root h5,
+.root h6 { color: var(--text-primary); font-size: var(--text-sm); line-height: var(--text-sm-lh); font-weight: 650; }
+
+.root ul,
+.root ol { padding-left: var(--sp-5); }
+.root li + li { margin-top: var(--sp-1); }
+.root blockquote { padding-left: var(--sp-2); border-left: var(--quote-border-width) solid var(--border-subtle); color: var(--text-secondary); }
+.root a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.root code { padding: 0.1em 0.3em; border-radius: var(--radius-sm); background: var(--bg-hover); font-family: var(--font-mono); font-size: 0.92em; }
+.code { max-width: 100%; padding: var(--sp-2); overflow: auto; border: var(--border-width) solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-base); }
+.code code { display: block; padding: 0; white-space: pre; background: transparent; }
+.displayMath { max-width: 100%; overflow-x: auto; padding: var(--sp-1) 0; text-align: center; }
+.math { font-family: "STIX Two Math", "Cambria Math", "Latin Modern Math", serif; font-size: 1.05em; }

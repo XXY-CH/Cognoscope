@@ -24,6 +24,10 @@ const {
   graphEdgeFromRecord,
   graphEdgeRecordFromEdge,
 } = await import('../src/db/graph.ts');
+const {
+  keywordEdgeFromRecord,
+  keywordEdgeRecordFromEdge,
+} = await import('../src/db/keywordGraph.ts');
 
 const legacy = projectLegacyEdgeToRelation({
   source: 'file-a',
@@ -64,6 +68,43 @@ assert.deepEqual(paperConcept.targetRef, {
   kind: 'concept',
   id: 'topic-method',
 });
+const reversePaperConcept = projectLegacyEdgeToRelation(
+  {
+    source: 'topic-method',
+    target: 'file-a',
+    origin: 'cooccurrence',
+  },
+  { sourceKind: 'concept', targetKind: 'paper' },
+);
+assert.equal(reversePaperConcept.type, 'relates');
+const reversePaperConceptUnknown = projectLegacyEdgeToRelation(
+  { source: 'topic-method', target: 'file-a' },
+  { sourceKind: 'concept', targetKind: 'paper' },
+);
+assert.equal(reversePaperConceptUnknown.type, 'unknown');
+const scopePaper = projectLegacyEdgeToRelation(
+  {
+    source: 'scope-a',
+    target: 'file-a',
+    origin: 'cooccurrence',
+  },
+  { sourceKind: 'scope', targetKind: 'paper' },
+);
+assert.equal(scopePaper.type, 'contains');
+const reverseScopePaper = projectLegacyEdgeToRelation(
+  {
+    source: 'file-a',
+    target: 'scope-a',
+    origin: 'cooccurrence',
+  },
+  { sourceKind: 'paper', targetKind: 'scope' },
+);
+assert.equal(reverseScopePaper.type, 'relates');
+const reverseScopePaperUnknown = projectLegacyEdgeToRelation(
+  { source: 'file-a', target: 'scope-a' },
+  { sourceKind: 'paper', targetKind: 'scope' },
+);
+assert.equal(reverseScopePaperUnknown.type, 'unknown');
 const paperConceptFromNodes = projectGraphEdgeToRelation(
   {
     source: 'paper-node',
@@ -157,6 +198,20 @@ assert.equal(
   edgeRecordId('claim-1', 'evidence-1', 'supports'),
 );
 assert.deepEqual(graphEdgeFromRecord(typedRecord), typedEdge);
+const keywordTypedEdge = {
+  source: 'concept-a',
+  target: 'concept-b',
+  weight: 0.6,
+  origin: 'ai',
+  reason: '语义相似',
+  relationType: 'relates',
+  status: 'review',
+  evidenceAnchorIds: ['anchor-1'],
+  evidenceRowIds: ['row-1'],
+  conditionIds: ['condition-1'],
+};
+const keywordTypedRecord = keywordEdgeRecordFromEdge(keywordTypedEdge);
+assert.deepEqual(keywordEdgeFromRecord(keywordTypedRecord), keywordTypedEdge);
 const contradictRecord = graphEdgeRecordFromEdge({
   source: 'claim-1',
   target: 'evidence-1',

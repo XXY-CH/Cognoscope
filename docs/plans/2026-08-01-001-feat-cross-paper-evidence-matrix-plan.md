@@ -15,7 +15,7 @@ deepened: 2026-08-01
 ## Goal Capsule
 
 - **Objective:** Turn a researcher's existing annotations into a citable comparison of conclusions and supporting evidence across a small set of locally managed papers.
-- **Product authority:** This work extends Xuesen's post-retrieval understanding and evidence layer. It does not become an external search engine or a Word/LaTeX replacement.
+- **Product authority:** This work extends Congnoscope's post-retrieval understanding and evidence layer. It does not become an external search engine or a Word/LaTeX replacement.
 - **Open blockers:** None. Locator fallbacks, extraction boundaries, local matching, deletion semantics, and the first citation-copy format are settled in the Planning Contract; exact helper names and renderer tuning remain execution-time details.
 
 ---
@@ -24,7 +24,7 @@ deepened: 2026-08-01
 
 ### Summary
 
-Xuesen will provide a cross-paper evidence matrix for a user-selected set of local papers, built by extending the existing annotation, metadata, reader-navigation, AI-client, and IndexedDB patterns while keeping comparison evidence in its own domain. Each conclusion will retain source text and a PDF/EPUB locator when available, plus the user's annotation context when available; missing support remains visibly unresolved so verified rows can be reused in a literature review without hiding uncertainty.
+Congnoscope will provide a cross-paper evidence matrix for a user-selected set of local papers, built by extending the existing annotation, metadata, reader-navigation, AI-client, and IndexedDB patterns while keeping comparison evidence in its own domain. Each conclusion will retain source text and a PDF/EPUB locator when available, plus the user's annotation context when available; missing support remains visibly unresolved so verified rows can be reused in a literature review without hiding uncertainty.
 
 ### Problem Frame
 
@@ -71,26 +71,26 @@ The current product already stores quoted annotations with file and page context
 ### Actors
 
 - A1. **Researcher:** Selects papers, frames the comparison, verifies evidence, edits conclusions, and reuses verified rows.
-- A2. **Xuesen:** Reads the selected local research material, presents the matrix and provenance, preserves user edits, and links rows back to source papers.
+- A2. **Congnoscope:** Reads the selected local research material, presents the matrix and provenance, preserves user edits, and links rows back to source papers.
 - A3. **Configured AI service:** Proposes conclusion and evidence associations from the selected material; it is not the authority for verification.
 
 ### Key Flows
 
 - F1. **Build a matrix**
   - **Trigger:** The researcher selects three to five papers and enters a `comparisonQuestion`.
-  - **Actors:** A1 researcher, A2 Xuesen, A3 configured AI service.
-  - **Steps:** Xuesen proposes conclusion rows; each row displays its source excerpt, location and annotation context when available, plus its verification state; the researcher verifies or edits rows; Xuesen saves the matrix as reusable research material.
+  - **Actors:** A1 researcher, A2 Congnoscope, A3 configured AI service.
+  - **Steps:** Congnoscope proposes conclusion rows; each row displays its source excerpt, location and annotation context when available, plus its verification state; the researcher verifies or edits rows; Congnoscope saves the matrix as reusable research material.
   - **Outcome:** The researcher has a comparison whose claims can be checked against the selected papers.
   - **Covers:** R1, R2, R3, R4, R5, R6, R7, R8, R12, R13.
 - F2. **Trace a conclusion back to a paper**
   - **Trigger:** The researcher selects a matrix row or evidence excerpt.
-  - **Actors:** A1 researcher, A2 Xuesen.
-  - **Steps:** Xuesen shows the provenance details and opens the source paper at the stored location when possible; the researcher can correct the row when the location is incomplete or wrong.
+  - **Actors:** A1 researcher, A2 Congnoscope.
+  - **Steps:** Congnoscope shows the provenance details and opens the source paper at the stored location when possible; the researcher can correct the row when the location is incomplete or wrong.
   - **Outcome:** A matrix row does not become a detached AI statement.
   - **Covers:** R4, R5, R7, R8, R10, R11.
 - F3. **Reuse verified material**
   - **Trigger:** The researcher has one or more verified rows.
-  - **Actors:** A1 researcher, A2 Xuesen.
+  - **Actors:** A1 researcher, A2 Congnoscope.
   - **Steps:** The researcher selects rows and copies a citation-ready evidence bundle containing the conclusion, each source identity and location, each excerpt, and annotation context when available.
   - **Outcome:** The researcher can move verified material into a writing tool without rebuilding the comparison.
   - **Covers:** R7, R8, R9.
@@ -152,7 +152,7 @@ This plan owns the first evidence-reuse layer after paper acquisition: turning a
 
 ### Dependencies and Assumptions
 
-- The comparison operates on papers already imported into Xuesen or otherwise present in its local paper collection.
+- The comparison operates on papers already imported into Congnoscope or otherwise present in its local paper collection.
 - Source locators vary between PDF and EPUB; a locator that cannot be verified must remain visibly unresolved rather than being silently normalized.
 - The researcher is the final authority for whether a conclusion and its evidence are correct.
 - The first release uses existing annotations and extracted paper metadata as primary inputs, with bounded PDF transcript support; OCR and uniform EPUB full-text extraction are out of scope.
@@ -168,7 +168,7 @@ This plan owns the first evidence-reuse layer after paper acquisition: turning a
 
 - `README.md:50-56,77` establishes the current reader, annotation, graph, and post-retrieval product boundary, and identifies citation/page evidence as unfinished.
 - `PROGRESS.md:66-70,101-110,123-129` records the current graph evidence gap and the planned expansion from graph relations to annotations, quoted text, page context, and manual confirmation.
-- `HANDOFF.md:208-217,241-250` defines the current graph boundary and the intended direction of adding annotation, quote, page, and confirmation evidence.
+- `docs/archive/HANDOFF.md:208-217,241-250` defines the current graph boundary and the intended direction of adding annotation, quote, page, and confirmation evidence.
 - `src/types/index.ts:185-204` confirms that annotations already carry file, page, anchor, quoted text, and user-authored body fields.
 - `src/types/index.ts:270-285` confirms that graph edges already expose origin and reason, but not source excerpts or page-level evidence.
 - `src/types/index.ts:347-359` confirms that paper metadata currently stores abstract and keyword extraction separately from annotations.
@@ -456,7 +456,7 @@ stateDiagram-v2
 
 ### U6. Citation-ready reuse and integration hardening
 
-**Goal:** Make verified rows reusable outside Xuesen and close cross-cutting cleanup, offline, accessibility, and regression gaps.
+**Goal:** Make verified rows reusable outside Congnoscope and close cross-cutting cleanup, offline, accessibility, and regression gaps.
 
 **Requirements:** R7, R8, R9, R10, R12, R13; F2, F3; AE4, AE5, AE6.
 

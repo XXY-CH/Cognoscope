@@ -4,7 +4,7 @@
  * 规范参考：UI_spec.md §8.9
  */
 import { Copy, Download } from 'lucide-react';
-import { Button, Dialog, toast } from '../../components/common';
+import { Button, Dialog, FormattedMessage, toast } from '../../components/common';
 import type { ResearchDigestStructure } from '../../types';
 import { downloadDigestMarkdown } from '../../utils/runDigest';
 import styles from './DigestDialog.module.css';
@@ -90,9 +90,10 @@ export function DigestDialog({
           </details>
         </div>
       ) : (
-        <pre className={styles.markdown} tabIndex={0}>
-          {markdown}
-        </pre>
+        <FormattedMessage
+          className={styles.formatted}
+          content={markdown}
+        />
       )}
     </Dialog>
   );

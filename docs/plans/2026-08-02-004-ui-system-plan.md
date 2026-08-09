@@ -11,7 +11,7 @@ design_contract: docs/plans/2026-08-02-004-ui-system-UI-SPEC.md
 
 ## Goal
 
-Make the entire Xuesen interface feel like one research workbench. The redesign
+Make the entire Congnoscope interface feel like one research workbench. The redesign
 must unify page hierarchy, navigation, surfaces, states, responsive behavior, and
 animation while preserving the current local-first data and research contracts.
 

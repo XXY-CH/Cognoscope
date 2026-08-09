@@ -9,6 +9,7 @@ import { MessageCircle, Square, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button, EmptyState, IconButton, toast } from '../../../components/common';
+import { FormattedMessage } from '../../../components/common/FormattedMessage';
 import { useFileStore } from '../../../stores/fileStore';
 import { useQaStore } from '../../../stores/qaStore';
 import { useReaderStore } from '../../../stores/readerStore';
@@ -134,10 +135,13 @@ export function QAPanel() {
                     {m.quotedText}
                   </blockquote>
                 ) : null}
-                <p className={styles.bubbleText}>
-                  {m.content ||
-                    (m.status === 'streaming' ? '思考中…' : '')}
-                </p>
+                <div className={styles.bubbleText}>
+                  {m.content ? (
+                    <FormattedMessage content={m.content} />
+                  ) : m.status === 'streaming' ? (
+                    '思考中…'
+                  ) : null}
+                </div>
                 {m.status === 'error' ? (
                   <p className={styles.bubbleError} role="alert">
                     本次问答未完成
@@ -186,8 +190,12 @@ export function QAPanel() {
             }
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              // Ctrl/Cmd + Enter 发送（§8 快捷键）
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              // 普通 Enter 发送；Shift+Enter 保留换行，IME 组字期间不抢回车。
+              if (
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing
+              ) {
                 e.preventDefault();
                 void handleSend();
               }

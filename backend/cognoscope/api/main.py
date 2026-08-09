@@ -54,7 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             await database.dispose()
 
     app = FastAPI(
-        title="Xuesen Backend API",
+        title="Congnoscope Backend API",
         version="0.1.0",
         description="Single-user research workspace API (Beat integration without auth).",
         lifespan=lifespan,

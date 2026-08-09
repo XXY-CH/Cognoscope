@@ -41,16 +41,51 @@ interface GraphState {
   setSelectedNode: (id: string | null) => void;
   persistNodePosition: (id: string, x: number, y: number) => Promise<void>;
   /**
-   * 将文件加入图谱：检查 AI → 建节点 → 尝试用摘要/关键词与既有图建边；
-   * AI 关系建议失败时仍保留论文节点。
+   * 将文件加入图谱：先校验并持久化节点/成员，再尽力用摘要/关键词增强；
+   * AI 关系与关键词增强失败时仍保留论文节点。
    * @returns 最终入图状态
    */
   addFileToGraph: (fileId: string) => Promise<GraphMemberStatus>;
+  /** 对已入图但尚未完成增强的论文重试 AI 关联/关键词流水线。 */
+  retryGraphEnrichment: (fileId: string) => Promise<GraphMemberStatus>;
   /** 批量：导入后对新 PDF 尝试入图 */
   addFilesToGraph: (fileIds: string[]) => Promise<void>;
   /** 删除文档后：从论文图与关键词图移除 */
   removeFilesFromGraph: (fileIds: string[]) => Promise<void>;
 }
+
+interface GraphJoinOperationController {
+  begin: (fileId: string) => number;
+  isCurrent: (fileId: string, token: number) => boolean;
+  finish: (fileId: string, token: number) => void;
+  invalidateMany: (fileIds: string[]) => void;
+  invalidateAll: () => void;
+}
+
+function createGraphJoinOperationController(): GraphJoinOperationController {
+  let seq = 0;
+  const activeTokens = new Map<string, number>();
+
+  return {
+    begin: (fileId) => {
+      const token = ++seq;
+      activeTokens.set(fileId, token);
+      return token;
+    },
+    isCurrent: (fileId, token) => activeTokens.get(fileId) === token,
+    finish: (fileId, token) => {
+      if (activeTokens.get(fileId) === token) activeTokens.delete(fileId);
+    },
+    invalidateMany: (fileIds) => {
+      for (const fileId of fileIds) activeTokens.delete(fileId);
+    },
+    invalidateAll: () => {
+      activeTokens.clear();
+    },
+  };
+}
+
+const graphJoinOperationController = createGraphJoinOperationController();
 
 function memberRecord(
   fileId: string,
@@ -66,7 +101,186 @@ function memberRecord(
   };
 }
 
-export const useGraphStore = create<GraphState>((set, get) => ({
+export const useGraphStore = create<GraphState>((set, get) => {
+  const finishJoinOperation = async (
+    fileId: string,
+    node: GraphNode,
+    operationToken: number,
+    notify: boolean,
+  ): Promise<GraphMemberStatus> => {
+    const isCurrent = () =>
+      graphJoinOperationController.isCurrent(fileId, operationToken);
+    const updateMember = async (errorMessage: string | null) => {
+      if (!isCurrent()) return false;
+      const next = memberRecord(fileId, 'in', {
+        nodeId: node.id,
+        errorMessage,
+      });
+      await graphDb.putGraphMember(next);
+      if (!isCurrent()) return false;
+      set((state) => ({
+        membersByFileId: {
+          ...state.membersByFileId,
+          [fileId]: next,
+        },
+      }));
+      return true;
+    };
+
+    if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+
+    const ui = useUiStore.getState();
+    const aiAvailable = isAiAvailable(ui.aiSettings, ui.isOnline);
+    if (!aiAvailable) {
+      const message = ui.isOnline
+        ? '未配置 AI，关联与关键词增强未运行，请稍后重试'
+        : '当前离线，关联与关键词增强未运行，请联网后重试';
+      await updateMember(message);
+      if (notify) toast.warning(`论文已加入图谱，${message}`);
+      return get().membersByFileId[fileId]?.status ?? 'in';
+    }
+
+    let keywords: string[] = [];
+    let abstract: string | null = null;
+    try {
+      const meta = await metaDb.getFileDocMeta(fileId);
+      keywords = meta?.keywords ?? [];
+      abstract = meta?.abstract ?? null;
+    } catch {
+      const message = '文档元数据暂不可用，关联与关键词增强未运行，请稍后重试';
+      await updateMember(message);
+      if (notify) toast.warning(`论文已加入图谱，${message}`);
+      return get().membersByFileId[fileId]?.status ?? 'in';
+    }
+
+    let enrichmentIssue: string | null = null;
+    try {
+      if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+      const existingNodes = get().nodes.filter((n) => n.id !== node.id);
+      const existingPayload: ExistingGraphPaper[] = [];
+      for (const existingNode of existingNodes) {
+        if (!existingNode.fileId) continue;
+        if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+        const meta = await metaDb.getFileDocMeta(existingNode.fileId);
+        existingPayload.push({
+          nodeId: existingNode.id,
+          title: existingNode.label,
+          keywords: meta?.keywords ?? [],
+          abstract: meta?.abstract ?? null,
+        });
+      }
+
+      let newEdges: GraphEdge[] = [];
+      if (existingPayload.length > 0) {
+        try {
+          newEdges = await suggestGraphEdgesWithAi({
+            settings: ui.aiSettings,
+            paper: {
+              nodeId: node.id,
+              fileId,
+              title: node.label,
+              keywords,
+              abstract,
+            },
+            existing: existingPayload,
+          });
+        } catch {
+          enrichmentIssue = 'AI 关联分析暂不可用，可稍后重试';
+        }
+      }
+
+      if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+      if (newEdges.length > 0) await graphDb.putGraphEdges(newEdges);
+      if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+
+      const edgeKey = (edge: GraphEdge) =>
+        edge.source < edge.target
+          ? `${edge.source}__${edge.target}`
+          : `${edge.target}__${edge.source}`;
+      const edgeMap = new Map(get().edges.map((edge) => [edgeKey(edge), edge]));
+      for (const edge of newEdges) edgeMap.set(edgeKey(edge), edge);
+      set((state) =>
+        isCurrent()
+          ? {
+              edges: [...edgeMap.values()],
+            }
+          : state,
+      );
+    } catch {
+      enrichmentIssue = 'AI 关联分析暂不可用，可稍后重试';
+    }
+
+    if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+
+    await useKeywordGraphStore.getState().syncAfterPaperIn({
+      paperNodeId: node.id,
+      title: node.label,
+      pdfKeywords: keywords,
+      abstract,
+      shouldContinue: isCurrent,
+    });
+    if (!isCurrent()) return get().membersByFileId[fileId]?.status ?? 'out';
+
+    const keywordError = useKeywordGraphStore.getState().error;
+    if (!enrichmentIssue && keywordError) {
+      enrichmentIssue = '关键词增强暂不可用，可稍后重试';
+    }
+    if (enrichmentIssue) {
+      await updateMember(enrichmentIssue);
+      if (notify) toast.warning(`论文已加入图谱，${enrichmentIssue}`);
+    } else {
+      await updateMember(null);
+    }
+    return get().membersByFileId[fileId]?.status ?? 'in';
+  };
+
+  const beginEnrichment = async (
+    fileId: string,
+    node: GraphNode,
+    notify: boolean,
+  ): Promise<GraphMemberStatus> => {
+    const operationToken = graphJoinOperationController.begin(fileId);
+    set({ joiningIds: [...get().joiningIds, fileId] });
+    try {
+      return await finishJoinOperation(fileId, node, operationToken, notify);
+    } catch (error) {
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
+      }
+      const message =
+        error instanceof Error ? error.message : '关联与关键词增强失败，请稍后重试';
+      const current = get().membersByFileId[fileId];
+      if (current?.status === 'in') {
+        const next = memberRecord(fileId, 'in', {
+          nodeId: node.id,
+          errorMessage: message,
+        });
+        await graphDb.putGraphMember(next);
+        if (graphJoinOperationController.isCurrent(fileId, operationToken)) {
+          set((state) => ({
+            membersByFileId: {
+              ...state.membersByFileId,
+              [fileId]: next,
+            },
+          }));
+        }
+      }
+      return get().membersByFileId[fileId]?.status ?? 'in';
+    } finally {
+      const isCurrent = graphJoinOperationController.isCurrent(
+        fileId,
+        operationToken,
+      );
+      if (isCurrent) {
+        graphJoinOperationController.finish(fileId, operationToken);
+        set((state) => ({
+          joiningIds: state.joiningIds.filter((id) => id !== fileId),
+        }));
+      }
+    }
+  };
+
+  return {
   nodes: [],
   edges: [],
   membersByFileId: {},
@@ -96,6 +310,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
   },
 
   clearGraph: async () => {
+    graphJoinOperationController.invalidateAll();
     await graphDb.clearGraphAll();
     await useKeywordGraphStore.getState().clearKeywordGraph();
     set({
@@ -104,6 +319,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       membersByFileId: {},
       selectedNodeId: null,
       error: null,
+      joiningIds: [],
     });
   },
 
@@ -123,49 +339,46 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     if (get().joiningIds.includes(fileId)) {
       return get().membersByFileId[fileId]?.status ?? 'pending';
     }
-    // 已成功入图则跳过
     if (get().membersByFileId[fileId]?.status === 'in') return 'in';
 
+    const operationToken = graphJoinOperationController.begin(fileId);
     set({ joiningIds: [...get().joiningIds, fileId] });
-    const pending = memberRecord(fileId, 'pending');
-    await graphDb.putGraphMember(pending);
-    set({
-      membersByFileId: { ...get().membersByFileId, [fileId]: pending },
-    });
-
     try {
-      const ui = useUiStore.getState();
-      if (!isAiAvailable(ui.aiSettings, ui.isOnline)) {
-        const failed = memberRecord(fileId, 'failed', {
-          errorMessage: ui.isOnline
-            ? '未配置 AI，请先在设置中填写 API Key'
-            : '离线状态下无法调用 AI 入图',
-        });
-        await graphDb.putGraphMember(failed);
-        set({
-          membersByFileId: { ...get().membersByFileId, [fileId]: failed },
-        });
-        return 'failed';
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
       }
+      const pending = memberRecord(fileId, 'pending');
+      await graphDb.putGraphMember(pending);
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
+      }
+      set((state) => ({
+        membersByFileId: { ...state.membersByFileId, [fileId]: pending },
+      }));
 
       const file = await filesDb.getFile(fileId);
       if (!file || file.deletedAt || file.type === 'folder') {
         const failed = memberRecord(fileId, 'failed', {
           errorMessage: '文件不存在或不可用',
         });
+        if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+          return get().membersByFileId[fileId]?.status ?? 'out';
+        }
         await graphDb.putGraphMember(failed);
-        set({
-          membersByFileId: { ...get().membersByFileId, [fileId]: failed },
-        });
+        if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+          return get().membersByFileId[fileId]?.status ?? 'out';
+        }
+        set((state) => ({
+          membersByFileId: { ...state.membersByFileId, [fileId]: failed },
+        }));
         return 'failed';
       }
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
+      }
 
-      const meta = await metaDb.getFileDocMeta(fileId);
-      const keywords = meta?.keywords ?? [];
-      const abstract = meta?.abstract ?? null;
-      const nodeId = graphNodeIdForFile(fileId);
       const node: GraphNode = {
-        id: nodeId,
+        id: graphNodeIdForFile(fileId),
         fileId,
         label: file.name.replace(/\.[^.]+$/, '') || file.name,
         kind: 'file',
@@ -173,93 +386,69 @@ export const useGraphStore = create<GraphState>((set, get) => ({
         x: null,
         y: null,
       };
-
-      // 收集已有节点的摘要/关键词，供 AI 对照
-      const existingNodes = get().nodes.filter((n) => n.id !== nodeId);
-      const existingPayload: ExistingGraphPaper[] = [];
-      for (const n of existingNodes) {
-        if (!n.fileId) continue;
-        const m = await metaDb.getFileDocMeta(n.fileId);
-        existingPayload.push({
-          nodeId: n.id,
-          title: n.label,
-          keywords: m?.keywords ?? [],
-          abstract: m?.abstract ?? null,
-        });
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
       }
-
-      let newEdges: GraphEdge[] = [];
-      let edgeAnalysisUnavailable = false;
-      if (existingPayload.length > 0) {
-        try {
-          newEdges = await suggestGraphEdgesWithAi({
-            settings: ui.aiSettings,
-            paper: {
-              nodeId,
-              fileId,
-              title: node.label,
-              keywords,
-              abstract,
-            },
-            existing: existingPayload,
-          });
-        } catch {
-          // AI 建边只是导航增强；上游暂不可用时仍应保留论文节点。
-          edgeAnalysisUnavailable = true;
-        }
-      }
-
       await graphDb.putGraphNode(node);
-      if (newEdges.length > 0) await graphDb.putGraphEdges(newEdges);
-
-      const ok = memberRecord(fileId, 'in', { nodeId });
-      await graphDb.putGraphMember(ok);
-
-      if (edgeAnalysisUnavailable) {
-        toast.warning('论文已加入图谱，AI 关联分析暂不可用，可稍后重试');
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
       }
+      const ok = memberRecord(fileId, 'in', { nodeId: node.id });
+      await graphDb.putGraphMember(ok);
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
+      }
+      set((state) => ({
+        nodes: [...state.nodes.filter((n) => n.id !== node.id), node],
+        membersByFileId: { ...state.membersByFileId, [fileId]: ok },
+      }));
 
-      // 合并内存态：节点去重，边追加
-      const nodes = [
-        ...get().nodes.filter((n) => n.id !== nodeId),
-        node,
-      ];
-      const edgeKey = (e: GraphEdge) =>
-        e.source < e.target
-          ? `${e.source}__${e.target}`
-          : `${e.target}__${e.source}`;
-      const edgeMap = new Map(get().edges.map((e) => [edgeKey(e), e]));
-      for (const e of newEdges) edgeMap.set(edgeKey(e), e);
-
-      set({
-        nodes,
-        edges: [...edgeMap.values()],
-        membersByFileId: { ...get().membersByFileId, [fileId]: ok },
-      });
-
-      // 入图成功后一并跑关键词流水线（失败不影响论文入图状态）
-      void useKeywordGraphStore.getState().syncAfterPaperIn({
-        paperNodeId: nodeId,
-        title: node.label,
-        pdfKeywords: keywords,
-        abstract,
-      });
-
-      return 'in';
-    } catch (e) {
+      return await finishJoinOperation(fileId, node, operationToken, true);
+    } catch (error) {
+      if (!graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        return get().membersByFileId[fileId]?.status ?? 'out';
+      }
       const failed = memberRecord(fileId, 'failed', {
-        errorMessage: e instanceof Error ? e.message : '入图失败',
+        errorMessage: error instanceof Error ? error.message : '入图失败',
       });
       await graphDb.putGraphMember(failed);
-      set({
-        membersByFileId: { ...get().membersByFileId, [fileId]: failed },
-      });
+      if (graphJoinOperationController.isCurrent(fileId, operationToken)) {
+        set((state) => ({
+          membersByFileId: { ...state.membersByFileId, [fileId]: failed },
+        }));
+      }
       return 'failed';
     } finally {
-      set({
-        joiningIds: get().joiningIds.filter((id) => id !== fileId),
-      });
+      const isCurrent = graphJoinOperationController.isCurrent(
+        fileId,
+        operationToken,
+      );
+      if (isCurrent) {
+        graphJoinOperationController.finish(fileId, operationToken);
+        set((state) => ({
+          joiningIds: state.joiningIds.filter((id) => id !== fileId),
+        }));
+      }
     }
+  },
+
+  retryGraphEnrichment: async (fileId) => {
+    if (get().joiningIds.includes(fileId)) {
+      return get().membersByFileId[fileId]?.status ?? 'pending';
+    }
+    const member = get().membersByFileId[fileId];
+    if (!member || member.status !== 'in' || !member.nodeId) {
+      return member?.status ?? 'out';
+    }
+    let node = get().nodes.find((candidate) => candidate.id === member.nodeId);
+    if (!node) {
+      const nodes = await graphDb.listGraphNodes();
+      node = nodes.find((candidate) => candidate.id === member.nodeId);
+    }
+    if (!node || node.fileId !== fileId) {
+      return 'in';
+    }
+    return beginEnrichment(fileId, node, false);
   },
 
   addFilesToGraph: async (fileIds) => {
@@ -274,6 +463,7 @@ export const useGraphStore = create<GraphState>((set, get) => ({
     const nodeIdSet = new Set(nodeIds);
     const fileIdSet = new Set(fileIds);
 
+    graphJoinOperationController.invalidateMany(fileIds);
     await graphDb.removeFilesFromGraphDb(fileIds);
     await useKeywordGraphStore.getState().detachPapers(nodeIds);
 
@@ -291,6 +481,8 @@ export const useGraphStore = create<GraphState>((set, get) => ({
       joiningIds: get().joiningIds.filter((id) => !fileIdSet.has(id)),
     });
   },
-}));
+  };
+});
 
 export type { GraphNode, GraphEdge };
+export { createGraphJoinOperationController };

@@ -23,3 +23,4 @@ export { Badge, type BadgeProps, type BadgeTone } from './Badge';
 export { Tooltip, type TooltipProps } from './Tooltip';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Tag, type TagProps, type TagTone } from './Tag';
+export { FormattedMessage, type FormattedMessageProps } from './FormattedMessage';

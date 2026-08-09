@@ -107,7 +107,7 @@ export function Sidebar({
         </div>
         {!visuallyCollapsed && (
           <div className="sidebar__user-meta">
-            <span className="sidebar__user-name">学森</span>
+            <span className="sidebar__user-name">Congnoscope</span>
           </div>
         )}
         <button

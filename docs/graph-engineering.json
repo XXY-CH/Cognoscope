@@ -1,8 +1,8 @@
 {
   "schema": "xuesen.graph-engineering/v1",
-  "project": "xuesen",
-  "title": "学森 AI 时代科研环境迭代图",
-  "updatedAt": "2026-08-08",
+  "project": "Congnoscope",
+  "title": "Congnoscope AI 时代科研环境迭代图",
+  "updatedAt": "2026-08-09",
   "purpose": "把产品目标、科研工作流、代码触点、数据合同和验证门组织成可执行的迭代图，供 Codex 恢复上下文并选择下一步。",
   "notThis": [
     "论文知识图谱",
@@ -10,12 +10,12 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "UI-4", "RM-00", "RM-01", "RM-02", "RM-03", "RM-04", "KG-05", "AI-03", "D3", "KG-06", "D4", "MON-02", "UX-06"],
-    "next": ["RM-06", "UX-06", "P4"],
-    "blocked": ["KG-06: browser source deletion/restore and real document interaction remain unavailable", "MON-02: browser/camera runtime evidence remains unavailable", "UX-06: full graph/matrix return flow and screenshot evidence remain pending"],
+    "current": ["P3", "C5", "KG-06", "MON-02"],
+    "next": ["P4"],
+    "blocked": ["KG-06: real browser delete/restore transaction remains unexercised; source invalidation and hard-purge contracts pass data probes", "MON-02: Python visual dependencies and camera runtime remain unavailable; monitor fallback and session-merge contracts pass"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘、减弱动效和多视口验收；RM-05 将局部探索收敛到选中节点附近的一到两跳邻域，30 节点以上改为列表，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；比较与演化视图只投影矩阵行和来源引用，不复制编辑器或使用提交历史；UX-06/AG-QA.browser 的真实图谱/矩阵返回路径和截图验收仍需浏览器运行时。",
-    "lastVerified": "2026-08-08",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘、减弱动效和多视口验收；RM-05 将局部探索收敛到选中节点附近的一到两跳邻域，30 节点以上改为列表，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；比较与演化视图只投影矩阵行和来源引用，不复制编辑器或使用提交历史；RM-06/UX-06 的真实 PDF、五视图切换、图谱 -> 矩阵 -> Reader 回读和多视口浏览器证据已通过；KG-06 删除/恢复交互与 MON-02 摄像头运行时保持明确边界。",
+    "lastVerified": "2026-08-09",
     "evidence": [
       "npm run build",
       "npm run lint",
@@ -40,13 +40,16 @@
       "READ-04 browser fixture: real PDF/EPUB selection and replay, duplicate PDF offsets, drift-unavailable state, CFI/TOC navigation, theme refresh, keyboard focus and host-SVG flash",
       "READ-04 browser matrix: 390/768/1280 no horizontal overflow; prefers-reduced-motion short-fade tokens observed",
       "Integration probes: evidence matrix, UI contract, esbuild-bundled source invalidation and esbuild-bundled monitor session (pass)",
-      "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, and source-versus-locator status split verified by build/lint/static probes; browser gate remains blocked",
+      "Graph/evidence workbench boundary follow-up: internal scrolling, collapsible scope rail, relation/evidence wording, source-versus-locator status split, and real browser return paths verified",
       "Phase 006 design contract and execution plan: five research-map projections, typed relation/evidence references, Apple Design presentation, responsive wireframe, RM-00 to RM-06 DAG; documentation-only verification",
-      "RM-01 relation adapter: legacy edge defaults, paper/concept relation mapping, stable reference-only metadata, evidence status reconciliation, semantic/directional IDs, typed DB keys, DB record roundtrip helper, source and executable fixtures; browser gate remains blocked",
+      "RM-01 relation adapter: legacy edge defaults, directional paper/concept relation mapping, stable reference-only metadata, evidence status reconciliation, semantic/directional IDs, typed DB keys, DB record roundtrip helper, source and executable fixtures pass",
       "RM-01 adversarial review loop: request-changes findings for identity collisions, whitespace refs, sticky status and DB key collisions were fixed and reverified",
-      "RM-02/03/04 multiview implementation: claim-first argument lanes, bounded materials hierarchy, comparison summary and evidence-backed evolution timeline integrated into KnowledgeGraphPage; evidence-matrix row deep links pass build/lint/static probes; browser gate remains blocked",
+      "RM-02/03/04 multiview implementation: claim-first argument lanes, bounded materials hierarchy, comparison summary and evidence-backed evolution timeline integrated into KnowledgeGraphPage; evidence-matrix row deep links and real graph/matrix/reader navigation pass",
       "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed",
-      "RM-05 local exploration: esbuild-bundled BFS fixture, one-to-two hop neighborhood, 30-node cap, reduced-motion list fallback, and stable graph zoom bounds passed node scripts/probe-research-map.mjs + node scripts/probe-graph-canvas.mjs + npm run build + npm run lint + git diff --check; browser gate remains blocked"
+      "RM-05 local exploration: esbuild-bundled BFS fixture, one-to-two hop neighborhood, 30-node cap, reduced-motion list fallback, stable graph zoom bounds, and real five-view tab switching pass",
+      "RM-06 integration follow-up: graph inclusion invalidation and retry preserve local membership and node positions; reader Enter/IME submission, Markdown/LaTeX MathML formatting, real PDF graph/matrix/reader return, theme, keyboard, reduced-motion, and responsive checks pass",
+      "Real browser evidence: Attention Residuals.pdf text layer/TOC, annotation Enter persistence, Q&A Enter and Shift+Enter, fixture Markdown/MathML rendering, light/dark theme, 390/768/1280 no overflow, mobile inspector/scope collapse, focus ring, five map views, graph evidence anchor and matrix source-reader return pass; console has no errors",
+      "Remaining boundaries: KG-06 real delete/restore transaction and MON-02 Python/camera runtime are not claimed by this browser pass"
     ]
   },
   "edgeTypes": {
@@ -82,7 +85,7 @@
       "goal": "每个可复用结论都能回到原文 locator，并保留核验状态。",
       "sourceOfTruth": ["docs/plans/2026-08-01-001-feat-cross-paper-evidence-matrix-plan.md", "src/types/index.ts"],
       "acceptance": ["verified 材料具有可解析 locator", "图谱边不能直接复制为引用"],
-      "next": ["RM-01", "KG-05", "KG-06", "P4"]
+      "next": ["P4"]
     },
     {
       "id": "O3",
@@ -176,7 +179,7 @@
       "touchpoints": ["src/features/knowledge-graph", "src/stores/graphStore.ts", "src/stores/keywordGraphStore.ts", "src/db/graph.ts", "docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "contracts": ["L0-L4 hierarchy", "GraphEdge is navigation clue", "legacy origin/reason defaults", "3-5 paper matrix entry", "one canonical relation projection"],
       "acceptance": ["资料/论证/比较/演化/探索视图不复制持久化记录", "节点检查器能解释来源/理由/状态", "图谱关系不能直接成为证据", "超过规模上限时先折叠为簇或局部列表"],
-      "next": ["RM-01", "KG-05", "KG-06", "UX-06"]
+      "next": ["KG-06", "P4"]
     },
     {
       "id": "RM-00",
@@ -220,9 +223,9 @@
       "touchpoints": ["src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/GraphInspector.tsx", "src/features/knowledge-graph"],
       "contracts": ["claim-to-evidence-to-reader path", "3-10 claim scope", "AI candidates remain clues", "inspector action order"],
       "acceptance": ["每条显示关系可解释类型/理由/来源/状态", "局部锚点可回读", "无定位关系不作为已核验证据"],
-      "verification": ["ArgumentView projection and bounded-anchor implementation", "node scripts/probe-graph-relations.mjs", "npm run build", "npm run lint", "git diff --check", "browser graph-to-reader return at 390/768/1280 (blocked: no Chromium executable)"],
+      "verification": ["ArgumentView projection and bounded-anchor implementation", "node scripts/probe-graph-relations.mjs", "npm run build", "npm run lint", "git diff --check", "browser graph-to-reader return at 390/768/1280"],
       "rollback": "回退到资料视图和既有证据矩阵入口，不删除关系记录。",
-      "next": ["RM-05", "RM-06"]
+      "next": ["P4"]
     },
     {
       "id": "RM-03",
@@ -236,9 +239,9 @@
       "touchpoints": ["src/features/knowledge-graph/GraphCanvas.tsx", "src/features/knowledge-graph/KnowledgeGraphPage.tsx", "src/features/knowledge-graph/graphFilters.ts"],
       "contracts": ["bounded node/edge projections", "scope persists across view switch", "drag changes presentation only", "legacy keyword links remain readable"],
       "acceptance": ["大范围默认折叠为簇", "主题/论文可双向高亮", "画布不以物理距离表达证据强度"],
-      "verification": ["MaterialsHierarchyView bounded-cluster implementation", "node scripts/probe-graph-canvas.mjs", "npm run build", "npm run lint", "git diff --check", "responsive browser screenshots (blocked: no Chromium executable)"],
+      "verification": ["MaterialsHierarchyView bounded-cluster implementation", "node scripts/probe-graph-canvas.mjs", "npm run build", "npm run lint", "git diff --check", "responsive browser screenshots at 390/768/1280"],
       "rollback": "保留当前概览/论文/主题投影，隐藏分层入口。",
-      "next": ["RM-05", "RM-06"]
+      "next": ["P4"]
     },
     {
       "id": "RM-04",
@@ -252,9 +255,9 @@
       "touchpoints": ["src/features/knowledge-graph", "src/features/evidence-matrix", "src/features/research-state", "src/utils/evidenceAnalysisCitation.ts"],
       "contracts": ["matrix remains source of truth", "judgment change references evidence IDs", "stale invalidation propagates"],
       "acceptance": ["摘要可跳转到矩阵编辑器", "每个判断变化可回到论文/证据", "来源失效后状态降级"],
-      "verification": ["ComparisonEvolutionView matrix/timeline implementation", "evidence-matrix row deep-link implementation", "node scripts/probe-evidence-matrix.mjs", "npm run build", "npm run lint", "git diff --check", "browser route/return checks (blocked: no Chromium executable)"],
+      "verification": ["ComparisonEvolutionView matrix/timeline implementation", "evidence-matrix row deep-link implementation", "node scripts/probe-evidence-matrix.mjs", "npm run build", "npm run lint", "git diff --check", "browser route/return checks"],
       "rollback": "隐藏摘要/时间线入口，保留既有矩阵和研究状态页面。",
-      "next": ["RM-06"]
+      "next": ["P4"]
     },
     {
       "id": "RM-05",
@@ -268,23 +271,24 @@
       "touchpoints": ["src/features/knowledge-graph/GraphCanvas.tsx", "src/features/knowledge-graph", "scripts"],
       "contracts": ["one-to-two hops only", "30 node target", "zoom bounds", "reduced-motion fallback", "AI clue label"],
       "acceptance": ["拖拽和缩放可中断且保留用户落点", "超限转为列表", "探索关系不能绕过证据门"],
-      "verification": ["esbuild-bundled scripts/probe-explore-projection.mjs", "node scripts/probe-graph-canvas.mjs", "node scripts/probe-research-map.mjs", "npm run build", "npm run lint", "git diff --check", "reduced-motion browser check (blocked: no Chromium executable)"],
+      "verification": ["esbuild-bundled scripts/probe-explore-projection.mjs", "node scripts/probe-graph-canvas.mjs", "node scripts/probe-research-map.mjs", "npm run build", "npm run lint", "git diff --check", "Codex browser reduced-motion check and five-view tab switching"],
       "rollback": "关闭探索入口，保留稳定资料与论证视图。",
-      "next": ["RM-06"]
+      "next": ["P4"]
     },
     {
       "id": "RM-06",
       "type": "verification",
       "layer": "verification",
       "title": "多视图研究地图集成验收",
-      "status": "next",
+      "status": "done",
       "priority": 6,
       "goal": "证明各视图共享一份证据事实、能回读来源，并在真实文档和多视口下不误导或溢出。",
       "dependsOn": ["RM-02", "RM-03", "RM-04", "RM-05", "UX-06"],
       "touchpoints": ["scripts", "src/features/knowledge-graph", "src/features/evidence-matrix", "Codex in-app browser"],
       "contracts": ["static and browser gates stay separate", "390/768/1280", "keyboard", "offline", "stale source", "reduced motion"],
       "acceptance": ["资料/论证/比较/演化/探索均有明确空/错/离线状态", "graph -> evidence -> reader return works", "无页面级横向溢出", "citation-ready boundary holds"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "focused probes", "browser screenshots and interaction evidence"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "focused probes", "Codex browser real PDF, five-view, responsive, keyboard, theme, reduced-motion and graph/matrix/reader return evidence"],
+      "blocker": null,
       "rollback": "按视图独立隐藏未通过入口，不回滚已核验证据或路由。",
       "next": ["P4"]
     },
@@ -345,7 +349,7 @@
       "dependsOn": ["P2", "C4"],
       "sourceOfTruth": ["docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-02-003-knowledge-graph-plan.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "acceptance": ["L0-L4 层级可解释", "节点检查器能连接证据和 Reader", "图谱边不可直接引用", "多视图投影共享稳定关系引用"],
-      "next": ["RM-01", "KG-05", "KG-06", "P4"]
+      "next": ["KG-06", "P4"]
     },
     {
       "id": "UI-4",
@@ -357,24 +361,24 @@
       "touchpoints": ["src/features/knowledge-graph", "src/features/evidence-matrix", "docs/plans/2026-08-02-004-ui-system-plan.md"],
       "contracts": ["route URLs", "responsive sheet behavior", "evidence status is more authoritative than graph styling"],
       "acceptance": ["graph/matrix visual language is related but not identical", "mobile inspector has close/focus return", "source actions remain visible"],
-      "next": ["UX-06"]
+      "next": ["P4"]
     },
     {
       "id": "KG-05",
       "type": "capability",
       "layer": "next",
       "title": "图谱到证据锚点与 Reader 回读",
-      "status": "in_progress",
+      "status": "done",
       "priority": 1,
       "goal": "选中图谱节点后，可查看证据锚点、locator、摘录、匹配方式和核验状态，并回读原文。",
       "dependsOn": ["C4", "C5", "R1"],
       "touchpoints": ["src/features/knowledge-graph/GraphInspector.tsx", "src/features/reader", "src/utils/evidenceMatch.ts", "src/types/index.ts"],
       "contracts": ["locator remains source of truth", "unresolved source disables jump/copy", "graph edge stays read-only"],
       "acceptance": ["graph node -> evidence anchor -> reader locator works", "missing source is explicit and non-copyable", "return path restores selected context"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "Node fixture probe for locator/source/dedupe gates", "Codex browser at 390/768/1280 (blocked: no browser instance)", "keyboard Escape/focus return (implemented via useFocusTrap; browser evidence pending)"],
-      "blocker": "Browser runtime has no available instance; keep KG-05 in_progress until real PDF/EPUB and responsive interaction evidence is collected.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "Node fixture probe for locator/source/dedupe gates", "Codex browser at 390/768/1280 with graph evidence anchor and matrix source-reader return", "keyboard Escape/focus return, visible focus ring and mobile inspector close"],
+      "blocker": null,
       "rollback": "Keep relation and show 来源未记录/待核对; do not delete old graph records.",
-      "next": ["KG-06", "UX-06"]
+      "next": ["KG-06", "P4"]
     },
     {
       "id": "KG-06",
@@ -388,8 +392,8 @@
       "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/db/sourceInvalidation.ts", "src/db/evidenceRows.ts", "src/db/evidenceAnalyses.ts", "src/db/researchSignals.ts", "src/db/researchLeads.ts", "src/utils/sourceInvalidation.ts", "src/utils/sourceInvalidationEvents.ts", "src/utils/evidenceCitation.ts", "src/utils/evidenceAnalysisCitation.ts", "src/utils/currentResearchState.ts"],
       "contracts": ["soft delete", "stale invalidation", "no orphaned source action", "restore requires re-verification", "hard purge remains explicit irreversible cascade"],
       "acceptance": ["dependent items show unresolved/stale", "verified/citation-ready is revoked when source is unavailable", "restore can recover navigability where supported"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs", "esbuild-bundled source invalidation fixture", "IndexedDB write guard contract probe", "browser source deletion and restore flow (blocked: no browser instance)"],
-      "blocker": "Static/data gates pass; browser runtime is unavailable for source deletion/restore and real PDF/EPUB interaction. Bundled fixture covers pure reconciliation; transaction execution remains a manual/browser gate.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs", "esbuild-bundled source invalidation fixture", "IndexedDB write guard contract probe", "real browser graph/matrix/reader return and stale-source presentation", "browser source deletion and restore flow remains a follow-up"],
+      "blocker": "Static/data gates and graph-to-reader browser flow pass; real browser delete/restore transaction was not exercised, so source invalidation remains an explicit bounded follow-up.",
       "rollback": "Soft delete preserves unresolved records and source IDs; hard purge remains an explicit irreversible cascade.",
       "next": ["P4"]
     },
@@ -398,15 +402,15 @@
       "type": "capability",
       "layer": "next",
       "title": "真实 QA 与结构化整理习得",
-      "status": "in_progress",
+      "status": "done",
       "priority": 3,
       "goal": "用当前文件的批注、问答和 locator 生成结构化摘要，且仅在会话边界运行。",
       "dependsOn": ["C2", "C3", "D2"],
       "touchpoints": ["src/features/reader/panels/QAPanel.tsx", "src/stores/qaStore.ts", "src/utils/aiChat.ts", "src/utils/runDigest.ts"],
       "contracts": ["OpenAI-compatible baseUrl", "offline disables new AI actions", "one file one QA session", "autoCite uses locators", "persistence failure never blocks reading", "clear invalidates queued stream writes", "structured projection requires the agreed headings", "digest remains working memory, not citation-ready"],
       "acceptance": ["streaming assistant state persists by file", "digest has structured sections and Markdown export", "AI failure never blocks reading or corrupts annotations"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "node scripts/probe-blank.mjs (skipped: no Chromium executable)", "Node digest parser fixture", "offline and missing-key state review", "stream cancel/stale file switch", "clear-AI stream invalidation review", "StrictMode session lifecycle and atomic line update review", "reader browser flow (blocked: no browser instance)"],
-      "blocker": "Browser runtime has no available instance; keep AI-03 in_progress until real QA, digest, offline, keyboard and responsive reader evidence is collected.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-evidence-matrix.mjs", "Node digest parser fixture", "offline and missing-key state review", "stream cancel/stale file switch", "clear-AI stream invalidation review", "StrictMode session lifecycle and atomic line update review", "real browser Q&A Enter/Shift+Enter, Markdown/MathML fixture rendering, theme, reduced-motion and responsive reader flow"],
+      "blocker": null,
       "rollback": "Retain existing shell and local annotations; disable network action without removing saved material.",
       "next": ["P4"]
     },
@@ -422,10 +426,10 @@
       "touchpoints": ["monitor/server.py", "monitor/README.md", "src/utils/monitorApi.ts", "src/features/reader/ReaderPage.tsx", "src/hooks/useReadingSession.ts", "src/db/sessions.ts", "src/stores/sessionStore.ts", "src/db/files.ts", "scripts/probe-monitor-session.mjs"],
       "contracts": ["camera inference stays local", "monitor unavailable does not block reading", "session IDs remain stable", "raw short-session gate", "late merge updates sessionStore", "hard purge removes file-scoped sessions"],
       "acceptance": ["batch analyze result maps to ended session", "frontmost/short-session rules are explicit", "dashboard and current state agree", "stale session snapshots cannot overwrite monitor fields"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "bundled monitor session probe", "session persistence transaction contract", "offline/unavailable fallback", "browser reader and camera smoke (blocked: no runtime/dependencies)"],
-      "blocker": "Static implementation and contract probes pass; browser runtime and Python monitor dependencies/camera are unavailable, so real PDF/EPUB and camera evidence remains blocked.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "bundled monitor session probe", "session persistence transaction contract", "offline/unavailable fallback", "real Reader route smoke without monitor", "camera smoke remains unavailable without Python visual dependencies"],
+      "blocker": "Static implementation and contract probes pass; Python visual dependencies and camera runtime are unavailable, so monitor camera evidence remains a bounded follow-up.",
       "rollback": "Keep monitor data separate when unavailable; do not fabricate focus metrics.",
-      "next": ["UX-06"]
+      "next": ["P4"]
     },
     {
       "id": "READ-04",
@@ -442,22 +446,22 @@
       "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-read04.mjs", "real PDF/EPUB browser fixtures: selection, exact duplicate replay, drift unavailable, CFI/TOC navigation, theme, keyboard, focus flash", "390/768/1280 reader overflow and prefers-reduced-motion checks"],
       "blocker": null,
       "rollback": "Keep annotation list and reader jump even if highlight rendering is unavailable.",
-      "next": ["UX-06"]
+      "next": ["P4"]
     },
     {
       "id": "UX-06",
       "type": "verification",
       "layer": "verification",
       "title": "真实文档和多视口验收",
-      "status": "in_progress",
+      "status": "done",
       "priority": 6,
       "goal": "在真实本地文档下验证研究闭环而不是只验证空状态。",
       "dependsOn": ["KG-05", "C4"],
       "touchpoints": ["scripts/probe-ui-contract.mjs", "src/features/research-state/CurrentResearchStatePage.module.css", "Codex in-app browser", "docs/plans/2026-08-02-004-ui-system-plan.md"],
       "contracts": ["390/768/1280", "light/dark", "keyboard", "reduced motion", "offline"],
       "acceptance": ["import -> read -> annotate -> exit -> review -> graph/matrix -> reader return completes", "no page-level horizontal overflow", "source state remains legible"],
-      "verification": ["node scripts/probe-ui-contract.mjs", "npm run build", "npm run lint", "git diff --check", "browser screenshots and interaction checks (blocked: no browser instance)"],
-      "blocker": "Reader browser evidence is available at 390/768/1280; full import -> read -> review -> graph/matrix -> reader return and screenshot evidence remain pending.",
+      "verification": ["node scripts/probe-ui-contract.mjs", "npm run build", "npm run lint", "git diff --check", "Codex browser screenshots and interaction checks at 390/768/1280", "light/dark theme, reduced motion, keyboard focus, five map views, graph evidence anchor and matrix source-reader return"],
+      "blocker": null,
       "rollback": "Keep route and data contracts; isolate visual regression to the affected surface.",
       "next": ["P4"]
     },

@@ -1,7 +1,7 @@
 [project]
 name = "xuesen-backend"
 version = "0.1.0"
-description = "Xuesen backend API (Beat integration without auth)"
+description = "Congnoscope backend API (Beat integration without auth)"
 requires-python = ">=3.12"
 dependencies = [
   "aiosqlite==0.20.0",

@@ -1,4 +1,4 @@
-# 学森 Graph Engineering
+# Congnoscope Graph Engineering
 
 > Graph Engineering 由项目上下文图和一个可选的 Codex-local Agent 执行覆盖层组成。本文件固化项目目标、工作流、代码触点和验证状态；Agent 覆盖层只保留在本地，不进入远端仓库。
 
@@ -12,7 +12,7 @@ Agent 图是执行入口，项目图是执行上下文。它们都不是论文�
 在 Codex 中可以直接说：
 
 ```text
-按 Graph Engineering 继续学森：先读取本地存在的 Agent 图和 `docs/agent-run-state.json`，再读取 `docs/GRAPH_ENGINEERING.md` 和 `docs/graph-engineering.json` 作为项目上下文；只启动当前依赖已满足的 Agent，完成 review/QA/integration 后更新本地 Agent 图和项目图。
+按 Graph Engineering 继续 Congnoscope：先读取本地存在的 Agent 图和 `docs/agent-run-state.json`，再读取 `docs/GRAPH_ENGINEERING.md` 和 `docs/graph-engineering.json` 作为项目上下文；只启动当前依赖已满足的 Agent，完成 review/QA/integration 后更新本地 Agent 图和项目图。`xuesen` 与 `cognoscope` 仅保留为运行时兼容标识。
 ```
 
 也可以指定节点：
@@ -24,7 +24,8 @@ Agent 图是执行入口，项目图是执行上下文。它们都不是论文�
 当前研究环境闭环的 Agent 推进 DAG、双 QA 门和可直接复制的调用模板见
 [`docs/AGENT_DEPENDENCY_GRAPH.md`](./AGENT_DEPENDENCY_GRAPH.md) 的“研究环境推进图”。
 其中 `AG-QA` 必须分别记录静态/数据门和浏览器/真实文档门；浏览器不可用时，
-浏览器门保持 `blocked`，不能用静态检查替代集成验收。
+浏览器门保持 `blocked`，不能用静态检查替代集成验收。本轮真实浏览器门已通过，
+未覆盖的摄像头和来源删除/恢复交易仍作为独立边界保留。
 
 每次迭代都遵守同一顺序：
 
@@ -108,16 +109,18 @@ flowchart TD
 | 3 | `RM-02` 主张中心论证视图 | `done` | 主张、关系和局部证据锚点可解释并回到 Reader | `RM-01`, `KG-05` |
 | 4 | `RM-03` 资料分层视图 | `done` | 研究范围、主题簇、论文和概念分层呈现 | `RM-01` |
 | 5 | `RM-04` 比较摘要与判断演化视图 | `done` | 比较矩阵摘要和研究判断变化保持可回读 | `RM-01`, `T4` |
-| 3 | `KG-05` 图谱 → 证据锚点 → Reader 回读 | `in_progress` | 选中节点后看到 locator、摘录、匹配状态，并能回读原文 | `C4`, `C5`, `R1` |
-| 4 | `KG-06` 失效来源与状态传播 | `next` | 删除/修改来源后，图谱、矩阵和研究状态统一降级 | `KG-05`, `D3` |
-| 5 | `AI-03` 真实 QA / 整理习得 | `in_progress` | 使用本地批注和问答生成结构化会话摘要，不打断阅读 | `C2`, `C3`, `D2` |
-| 6 | `MON-02` monitor → ReadingSession | `in_progress`（静态门通过，浏览器/monitor 运行时阻塞） | 专注分和分心事件进入会话与当前研究状态 | `C2`, `D4` |
+| 3 | `KG-05` 图谱 → 证据锚点 → Reader 回读 | `done` | 选中节点后看到 locator、摘录、匹配状态，并能回读原文 | `C4`, `C5`, `R1` |
+| 4 | `KG-06` 失效来源与状态传播 | `in_progress`（真实删除/恢复交易仍待补） | 删除/修改来源后，图谱、矩阵和研究状态统一降级 | `KG-05`, `D3` |
+| 5 | `AI-03` 真实 QA / 整理习得 | `done`（真实上游质量仍待补） | 使用本地批注和问答生成结构化会话摘要，不打断阅读 | `C2`, `C3`, `D2` |
+| 6 | `MON-02` monitor → ReadingSession | `in_progress`（Python 视觉依赖与摄像头运行时仍待补） | 专注分和分心事件进入会话与当前研究状态 | `C2`, `D4` |
 | 7 | `READ-04` 批注高亮层与真实 TOC | `done` | locator 在 PDF/EPUB 原文上可见、可回读 | `C2`, `R1` |
-| 8 | `UX-06` 真实文档视觉验收 | `next` | 390/768/1280、键盘、主题、离线、减弱动效均通过 | `KG-05`, `P4` |
+| 8 | `UX-06` 真实文档视觉验收 | `done` | 390/768/1280、键盘、主题、离线、减弱动效和图谱/矩阵回读均通过 | `KG-05`, `P4` |
 | 9 | `EXT-01` 外部检索与下载 | `deferred` | 后续阶段接入，不影响本地闭环 | `O4` 稳定后再立项 |
 | 10 | `TEX-01` TeX / 期刊格式和引用扫描 | `deferred` | 后续科研交付阶段接入，不在当前阅读闭环中偷渡 | `P4` |
 
-`RM-00` 已完成文档设计，`RM-01` 已完成运行时关系适配和静态验证，`RM-02`、`RM-03`、`RM-04` 已完成运行时多视图投影与回读入口。后续进入 `RM-05` 局部探索性能上限和 `RM-06` 集成验收；不得把相似度或矩阵共现自动升级为证据。浏览器门仍独立保持 `blocked`，不能用静态检查替代真实图谱/矩阵/Reader 回读验收。
+`RM-00` 至 `RM-06` 已完成运行时实现与集成验收，`UX-06` 的真实 PDF、多视口、键盘、主题、减弱动效、五视图切换和
+图谱 → 证据矩阵 → Reader 回读均已通过；不得把相似度或矩阵共现自动升级为证据。`KG-06` 的真实删除/恢复交易和
+`MON-02` 的 Python 摄像头运行时仍独立保持边界，完成后再推进 `P4`。
 
 ## 节点执行合同
 

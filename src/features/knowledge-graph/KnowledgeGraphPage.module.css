@@ -369,6 +369,14 @@
     flex-direction: column;
   }
 
+  /* Column stacking should keep controls at their intrinsic height. The
+     desktop flex-basis values otherwise become vertical expansion space. */
+  .toolbar .search,
+  .toolbar .filterSelect {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
   .viewSwitcher {
     width: 100%;
     overflow-x: auto;
