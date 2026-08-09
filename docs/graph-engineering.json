@@ -10,11 +10,11 @@
     "没有验收条件的待办清单"
   ],
   "state": {
-    "current": ["P3", "C5", "KG-06", "MON-02"],
-    "next": ["P4"],
-    "blocked": ["KG-06: real browser delete/restore transaction remains unexercised; source invalidation and hard-purge contracts pass data probes", "MON-02: Python visual dependencies and camera runtime remain unavailable; monitor fallback and session-merge contracts pass"],
+    "current": ["O2", "MON-02"],
+    "next": ["P5"],
+    "blocked": ["MON-02: Python visual dependencies and camera runtime remain unavailable; monitor fallback and session-merge contracts pass"],
     "deferred": ["EXT-01", "TEX-01", "WRK-01"],
-    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘、减弱动效和多视口验收；RM-05 将局部探索收敛到选中节点附近的一到两跳邻域，30 节点以上改为列表，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；比较与演化视图只投影矩阵行和来源引用，不复制编辑器或使用提交历史；RM-06/UX-06 的真实 PDF、五视图切换、图谱 -> 矩阵 -> Reader 回读和多视口浏览器证据已通过；KG-06 删除/恢复交互与 MON-02 摄像头运行时保持明确边界。",
+    "lastDecision": "图谱是导航线索，证据矩阵是可引用材料的唯一核验入口；AI-03 的整理结果只作工作记忆；AI 连接设置以本机保存为事实源，后端同步只能 best-effort，服务不可用不阻塞用户保存；软删除只撤销核验，跨标签页写入也必须重新读取来源状态，硬清空仍是显式不可恢复级联；MON-02 只把已停止且达到原始 5 秒门槛的本地 monitor JSONL 合并到最新 ReadingSession，服务不可用时不造数据；READ-04 的 PDF/EPUB locator 已通过真实文档回读、漂移显式 unavailable、主题/键盘、减弱动效和多视口验收；RM-05 将局部探索收敛到选中节点附近的一到两跳邻域，30 节点以上改为列表，图谱关系仍不升级为 citation-ready，成果页保留 claim -> evidence -> paper -> locator；比较与演化视图只投影矩阵行和来源引用，不复制编辑器或使用提交历史；RM-06/UX-06 与 P4 的真实 PDF、五视图切换、矩阵来源检查器、复制门禁、图谱 -> 矩阵 -> Reader 回读和多视口浏览器证据已通过；KG-06 真实软删除 -> 回收站 -> 恢复 -> 资料库路径已通过；MON-02 摄像头运行时保持独立边界，P5 科研交付能力继续按 deferred 处理。",
     "lastVerified": "2026-08-09",
     "evidence": [
       "npm run build",
@@ -49,7 +49,9 @@
       "RM-05 local exploration: esbuild-bundled BFS fixture, one-to-two hop neighborhood, 30-node cap, reduced-motion list fallback, stable graph zoom bounds, and real five-view tab switching pass",
       "RM-06 integration follow-up: graph inclusion invalidation and retry preserve local membership and node positions; reader Enter/IME submission, Markdown/LaTeX MathML formatting, real PDF graph/matrix/reader return, theme, keyboard, reduced-motion, and responsive checks pass",
       "Real browser evidence: Attention Residuals.pdf text layer/TOC, annotation Enter persistence, Q&A Enter and Shift+Enter, fixture Markdown/MathML rendering, light/dark theme, 390/768/1280 no overflow, mobile inspector/scope collapse, focus ring, five map views, graph evidence anchor and matrix source-reader return pass; console has no errors",
-      "Remaining boundaries: KG-06 real delete/restore transaction and MON-02 Python/camera runtime are not claimed by this browser pass"
+      "KG-06 browser lifecycle: generated PDF copy moved to trash, appeared in trash, restored to library, and was then hard-purged as test cleanup",
+      "P4 browser evidence: existing matrix source inspector showed pending verification, readable source and disabled citation copy; matrix return URL carried matrixId/rowId into Reader with no console errors",
+      "Remaining boundary: MON-02 Python/camera runtime is not claimed by this browser pass"
     ]
   },
   "edgeTypes": {
@@ -85,7 +87,7 @@
       "goal": "每个可复用结论都能回到原文 locator，并保留核验状态。",
       "sourceOfTruth": ["docs/plans/2026-08-01-001-feat-cross-paper-evidence-matrix-plan.md", "src/types/index.ts"],
       "acceptance": ["verified 材料具有可解析 locator", "图谱边不能直接复制为引用"],
-      "next": ["P4"]
+      "next": ["P5"]
     },
     {
       "id": "O3",
@@ -174,12 +176,12 @@
       "type": "capability",
       "layer": "workflow",
       "title": "多视图个人研究地图",
-      "status": "in_progress",
+      "status": "done",
       "goal": "把研究空间、文献、概念、主张、证据和判断通过不同任务视图呈现，并提供可解释导航。",
       "touchpoints": ["src/features/knowledge-graph", "src/stores/graphStore.ts", "src/stores/keywordGraphStore.ts", "src/db/graph.ts", "docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "contracts": ["L0-L4 hierarchy", "GraphEdge is navigation clue", "legacy origin/reason defaults", "3-5 paper matrix entry", "one canonical relation projection"],
       "acceptance": ["资料/论证/比较/演化/探索视图不复制持久化记录", "节点检查器能解释来源/理由/状态", "图谱关系不能直接成为证据", "超过规模上限时先折叠为簇或局部列表"],
-      "next": ["KG-06", "P4"]
+      "next": ["P4"]
     },
     {
       "id": "RM-00",
@@ -344,12 +346,12 @@
       "type": "phase",
       "layer": "phase",
       "title": "图谱分层与证据桥接",
-      "status": "in_progress",
+      "status": "done",
       "goal": "把图谱从关系展示升级为带来源、状态、证据回读路径和任务型投影的研究导航。",
       "dependsOn": ["P2", "C4"],
       "sourceOfTruth": ["docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-02-003-knowledge-graph-plan.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "acceptance": ["L0-L4 层级可解释", "节点检查器能连接证据和 Reader", "图谱边不可直接引用", "多视图投影共享稳定关系引用"],
-      "next": ["KG-06", "P4"]
+      "next": ["P4"]
     },
     {
       "id": "UI-4",
@@ -385,15 +387,15 @@
       "type": "capability",
       "layer": "next",
       "title": "失效来源与状态传播",
-      "status": "in_progress",
+      "status": "done",
       "priority": 2,
       "goal": "来源删除、locator 失效或矩阵行编辑后，图谱、矩阵和当前研究状态一起降级。",
       "dependsOn": ["KG-05", "D3"],
       "touchpoints": ["src/stores/fileStore.ts", "src/stores/evidenceMatrixStore.ts", "src/db/sourceInvalidation.ts", "src/db/evidenceRows.ts", "src/db/evidenceAnalyses.ts", "src/db/researchSignals.ts", "src/db/researchLeads.ts", "src/utils/sourceInvalidation.ts", "src/utils/sourceInvalidationEvents.ts", "src/utils/evidenceCitation.ts", "src/utils/evidenceAnalysisCitation.ts", "src/utils/currentResearchState.ts"],
       "contracts": ["soft delete", "stale invalidation", "no orphaned source action", "restore requires re-verification", "hard purge remains explicit irreversible cascade"],
       "acceptance": ["dependent items show unresolved/stale", "verified/citation-ready is revoked when source is unavailable", "restore can recover navigability where supported"],
-      "verification": ["npm run build", "npm run lint", "git diff --check", "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs", "esbuild-bundled source invalidation fixture", "IndexedDB write guard contract probe", "real browser graph/matrix/reader return and stale-source presentation", "browser source deletion and restore flow remains a follow-up"],
-      "blocker": "Static/data gates and graph-to-reader browser flow pass; real browser delete/restore transaction was not exercised, so source invalidation remains an explicit bounded follow-up.",
+      "verification": ["npm run build", "npm run lint", "git diff --check", "BASE_URL=http://127.0.0.1:5173 node scripts/probe-evidence-matrix.mjs", "esbuild-bundled source invalidation fixture", "IndexedDB write guard contract probe", "real browser graph/matrix/reader return and stale-source presentation", "real browser soft-delete -> trash -> restore -> library lifecycle; hard-purge test cleanup"],
+      "blocker": null,
       "rollback": "Soft delete preserves unresolved records and source IDs; hard purge remains an explicit irreversible cascade.",
       "next": ["P4"]
     },
@@ -429,7 +431,7 @@
       "verification": ["npm run build", "npm run lint", "git diff --check", "bundled monitor session probe", "session persistence transaction contract", "offline/unavailable fallback", "real Reader route smoke without monitor", "camera smoke remains unavailable without Python visual dependencies"],
       "blocker": "Static implementation and contract probes pass; Python visual dependencies and camera runtime are unavailable, so monitor camera evidence remains a bounded follow-up.",
       "rollback": "Keep monitor data separate when unavailable; do not fabricate focus metrics.",
-      "next": ["P4"]
+      "next": ["P5"]
     },
     {
       "id": "READ-04",
@@ -520,11 +522,13 @@
       "type": "phase",
       "layer": "phase",
       "title": "证据矩阵闭环与真实材料验收",
-      "status": "next",
+      "status": "done",
       "goal": "让图谱、矩阵、Reader、研究状态在真实本地文档下形成可反复回访的闭环。",
       "dependsOn": ["KG-05", "KG-06", "UX-06"],
       "sourceOfTruth": [".omx/plans/ai-era-research-environment-frontend.md", "docs/plans/2026-08-01-001-feat-cross-paper-evidence-matrix-plan.md"],
       "acceptance": ["source return path works", "verified material remains citation-ready only after checks", "stale state is visible"],
+      "verification": ["real browser matrix source inspector shows readable source and pending verification", "citation copy remains disabled until verification", "matrix row return URL carries matrixId/rowId into Reader", "no browser console errors"],
+      "blocker": null,
       "next": ["P5"]
     },
     {
@@ -534,7 +538,7 @@
       "title": "科研成果交付能力",
       "status": "deferred",
       "goal": "后续加入外部检索、TeX/期刊检查、引用扫描和写作交付适配。",
-      "dependsOn": ["P4"],
+      "dependsOn": ["P4", "O2"],
       "sourceOfTruth": [".omx/specs/deep-interview-frontend-research-environment.md"],
       "acceptance": ["每项新能力都有独立安全/隐私/验证合同", "不削弱本地阅读闭环"],
       "next": ["EXT-01", "TEX-01", "WRK-01"]

@@ -11,7 +11,7 @@ Congnoscope 的产品目标是一个阅读优先、证据可回读、图谱可�
 | [`plans/2026-08-07-006-research-map-multiview-UI-SPEC.md`](plans/2026-08-07-006-research-map-multiview-UI-SPEC.md) | 资料、论证、比较、演化、探索五种地图视图的呈现权威 |
 | [`GRAPH_ENGINEERING.md`](GRAPH_ENGINEERING.md) | 当前工程图、状态和验证门 |
 | [`graph-engineering.json`](graph-engineering.json) | 机器可读的工程节点、依赖和证据 |
-| [`agent-run-state.json`](agent-run-state.json) | 本轮 Agent Graph checkpoint；浏览器门可明确保持 blocked |
+| [`agent-run-state.json`](agent-run-state.json) | 本轮 Agent Graph checkpoint；当前仅保留 MON-02 摄像头运行时阻塞 |
 
 ## 阶段计划
 
@@ -31,4 +31,4 @@ Congnoscope 的产品目标是一个阅读优先、证据可回读、图谱可�
 
 ## 状态规则
 
-静态 QA 通过不等于浏览器 QA 通过。涉及图谱、Reader、真实 PDF/EPUB、键盘、主题或响应式的节点，在没有 Chromium-compatible runtime 时必须标为 `blocked`，不得进入完整集成或 release。
+静态 QA 通过不等于浏览器 QA 通过。涉及图谱、Reader、真实 PDF/EPUB、键盘、主题或响应式的节点，在没有 Chromium-compatible runtime 时必须标为 `blocked`，不得进入完整集成或 release；当前 RM-06、KG-06 和 P4 的真实浏览器门已通过。

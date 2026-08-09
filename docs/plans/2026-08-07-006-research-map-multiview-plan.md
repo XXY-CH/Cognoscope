@@ -52,7 +52,9 @@ RM-01 关系语义与投影适配器
 ```
 
 RM-02、RM-03、RM-04 在 RM-01 完成后可并行；RM-05 需要至少一个稳定投影；
-RM-06 已完成静态门准备；浏览器门与静态门必须分开记录，当前浏览器门因缺少 Chromium-compatible runtime 保持 blocked。
+RM-06 已通过静态门和 Codex 浏览器门；随后 KG-06 的真实来源软删除/恢复生命周期与 P4
+矩阵来源检查器门也已通过。浏览器门与静态门仍必须分开记录，MON-02 摄像头运行时
+不属于本轮证据，继续保留独立边界。
 
 ## Work packages
 
@@ -135,7 +137,7 @@ new pure selectors and small view components, `GraphInspector` styles.
 
 ### RM-06 - QA 与集成
 
-当前状态：静态构建、lint、关系/图谱/消息格式化探针已通过；真实 PDF/EPUB、多视口、键盘、主题和跨页面集成仍待可用浏览器运行时。
+当前状态：静态构建、lint、关系/图谱/消息格式化探针和真实 PDF/EPUB 浏览器集成已通过；真实图谱/矩阵/Reader 回读、多视口、键盘、主题和减弱动效均有证据。KG-06 真实删除/恢复交易已通过，MON-02 摄像头运行时仍独立待补。
 
 **Ownership:** static probes, browser QA, integration evidence and docs state.
 
@@ -155,6 +157,6 @@ new pure selectors and small view components, `GraphInspector` styles.
 
 ## Definition of done
 
-Phase 006 只有在 RM-01 到 RM-06 的 acceptance、静态门和浏览器门都满足后，
-才能从 `design` 进入 `implemented`。设计文档完成本身只关闭 RM-00，不关闭
-任何运行时 QA 节点。
+Phase 006 已满足 RM-01 到 RM-06 的 acceptance、静态门和浏览器门，当前状态为
+`implementation-browser-verified`。设计文档完成本身只关闭 RM-00；MON-02 的独立
+摄像头运行时边界不被本阶段证据隐式宣称完成。

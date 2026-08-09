@@ -50,12 +50,15 @@
     "RM-04",
     "RM-05",
     "RM-06",
+    "P3",
+    "C5",
+    "KG-06",
+    "P4",
     "AG-QA.browser",
     "AG-INTEGRATION",
     "AG-RELEASE"
   ],
   "blocked": [
-    "KG-06: real browser delete/restore transaction was not exercised; source invalidation and hard-purge contracts remain covered by data probes",
     "MON-02: Python visual dependencies and camera runtime are unavailable; monitor fallback and session-merge contracts remain covered"
   ],
   "attempts": {
@@ -98,7 +101,7 @@
     "主题筛选会让论文节点为空但仍保留论文-主题边，D3 可能因 dangling link 抛 node not found；现已按可见论文闭合投影边端点。",
     "AI 建边上游失败此前会把整篇论文标成 failed；现已将建边降级为 best-effort，论文节点和入图成员不再被关系建议失败阻断。",
     "图谱与证据工作台的检查器现在使用内部滚动和窄栏换行；范围导引可收起；主题元数据关联、矩阵候选和可回读锚点分层展示；来源失效与定位不可回读分别呈现。",
-    "Browser QA completed in the Codex browser with a real IndexedDB PDF fixture; remaining runtime boundaries are isolated to KG-06 delete/restore and MON-02 camera dependencies.",
+    "Browser QA completed in the Codex browser with a real IndexedDB PDF fixture; KG-06 delete/restore and P4 matrix source/citation gates are now verified, with only MON-02 camera dependencies remaining.",
     "Phase 006 design and runtime integration are complete through RM-06; RM-01 relation semantics, RM-02/RM-03/RM-04 projections, evidence-matrix deep links, and browser return paths are verified.",
     "Graph inclusion now keeps local membership when AI/keyword enrichment is unavailable, exposes a retry action, preserves node coordinates, and guards queued keyword writes with the file operation token.",
     "Reader QA surface now sends with plain Enter while preserving Shift+Enter and IME composition, and renders Markdown plus common LaTeX as safe React/MathML; digest Markdown-only output uses the same formatter."
@@ -126,9 +129,11 @@
     "node scripts/probe-research-map.mjs: five task views, claim/anchor bounds, bounded materials hierarchy, matrix/timeline return and stale-source downgrade contract passed",
     "RM-05 integration gate: esbuild-bundled BFS projection fixture, one-to-two hop local explore, 30-node cap, reduced-motion list fallback, graph zoom/physics probes, and real five-view tab switching pass",
     "RM-06 release gate: build, lint (three pre-existing warnings), diff check, graph inclusion/retry, message formatting, research-map, graph-canvas, evidence-matrix probes, and real PDF graph/matrix/reader return pass",
-    "AG-INTEGRATION and AG-RELEASE completed after the browser gate; remaining blockers are scoped to KG-06 real delete/restore interaction and MON-02 camera runtime"
+    "KG-06 browser lifecycle passed: generated PDF copy moved to trash, appeared in trash, restored to library, and was hard-purged as test cleanup",
+    "P4 browser gate passed: source inspector showed readable source with pending verification, citation copy stayed disabled, and matrix row returned to Reader through matrixId/rowId",
+    "AG-INTEGRATION and AG-RELEASE completed after the browser gate; remaining blocker is scoped to MON-02 camera runtime"
   ],
-  "next": ["P4"],
-  "iteration": 10,
-  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 -> RM-05 -> RM-06 -> AG-QA.browser -> AG-INTEGRATION -> AG-RELEASE; KG-06 delete/restore and MON-02 camera remain bounded follow-ups before P4."
+  "next": ["P5"],
+  "iteration": 11,
+  "lastCheckpoint": "AG-ORCH -> AG-STATE -> AG-PLAN -> AG-ARCH/AG-UX/AG-DATA/AG-RESEARCH -> RM-00 -> RM-01 -> RM-02/RM-03/RM-04 -> RM-05 -> RM-06 -> AG-QA.browser -> KG-06 -> P4 -> AG-INTEGRATION -> AG-RELEASE; O2 cross-paper quality and MON-02 camera remain bounded gates before P5."
 }
