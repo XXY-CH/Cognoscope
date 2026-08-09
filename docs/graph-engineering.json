@@ -181,6 +181,8 @@
       "touchpoints": ["src/features/knowledge-graph", "src/stores/graphStore.ts", "src/stores/keywordGraphStore.ts", "src/db/graph.ts", "docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "contracts": ["L0-L4 hierarchy", "GraphEdge is navigation clue", "legacy origin/reason defaults", "3-5 paper matrix entry", "one canonical relation projection"],
       "acceptance": ["资料/论证/比较/演化/探索视图不复制持久化记录", "节点检查器能解释来源/理由/状态", "图谱关系不能直接成为证据", "超过规模上限时先折叠为簇或局部列表"],
+      "verification": ["node scripts/probe-research-map.mjs", "node scripts/probe-graph-canvas.mjs", "real browser five-view switching, bounded local exploration and evidence return"],
+      "blocker": null,
       "next": ["P4"]
     },
     {
@@ -351,6 +353,8 @@
       "dependsOn": ["P2", "C4"],
       "sourceOfTruth": ["docs/plans/2026-08-02-003-knowledge-graph-UI-SPEC.md", "docs/plans/2026-08-02-003-knowledge-graph-plan.md", "docs/plans/2026-08-07-006-research-map-multiview-UI-SPEC.md"],
       "acceptance": ["L0-L4 层级可解释", "节点检查器能连接证据和 Reader", "图谱边不可直接引用", "多视图投影共享稳定关系引用"],
+      "verification": ["npm run build", "npm run lint", "git diff --check", "node scripts/probe-research-map.mjs", "real browser five-view switching, graph evidence anchor and matrix/Reader return"],
+      "blocker": null,
       "next": ["P4"]
     },
     {
